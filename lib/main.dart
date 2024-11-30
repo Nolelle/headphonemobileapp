@@ -178,7 +178,7 @@ class _PresetsPageState extends State<PresetsPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Preset2Page()),
+                            MaterialPageRoute(builder: (context) => const Preset1Page(title: '',)),
                           );
                         },
                         child: const Icon(
@@ -230,7 +230,7 @@ class _PresetsPageState extends State<PresetsPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Preset2Page()),
+                            MaterialPageRoute(builder: (context) => const Preset2Page(title: '',)),
                           );
                         },
                         child: const Icon(
@@ -250,8 +250,6 @@ class _PresetsPageState extends State<PresetsPage> {
   }
 }
 
-//BALJOT WORK HERE
-//don't actually work on all the pages, just do the 'Preset 1' page and duplicate it to 'Preset 2' page
 class SoundTestPage extends StatelessWidget {
   const SoundTestPage({super.key});
 
@@ -269,9 +267,29 @@ class SoundTestPage extends StatelessWidget {
       ),
     );
   }
+}//we leave this empty, nothing goes here!
+
+class Preset1Page extends StatefulWidget {
+  const Preset1Page({super.key, required this.title});
+  final String title;
+  @override
+  _Preset1PageState createState() => _Preset1PageState();
 }
-class Preset1Page extends StatelessWidget {//will not have the bottom bar, only back button
-  const Preset1Page({super.key});
+class _Preset1PageState extends State<Preset1Page> {//will not have the bottom bar, only back button
+  double db_valueOV = 0.0;
+  double db_valueSB_BS = 0.0;
+  double db_valueSB_MRS = 0.0;
+  double db_valueSB_TS = 0.0;
+
+  double overall_volume = 0;
+  double base_sounds = 0;
+  double mid_range_sounds = 0;
+  double treble_sounds = 0;
+
+  bool reduce_background_noise = false;
+  bool reduce_wind_noise = false;
+  bool soften_sudden_noise = false;
+  //its either true = on, or false = off
 
   @override
   Widget build(BuildContext context) {
@@ -297,12 +315,471 @@ class Preset1Page extends StatelessWidget {//will not have the bottom bar, only 
         ),
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
-      body: const Text('Nothing is here!'),
+      body: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          //this will be for the header
+          children: [
+            //'Overall Volume' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Overall Volume' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.volume_up,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Overall Volume',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+                  //'Softer' -> 'Louder' bar
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Softer'),
+                      Text('Louder'),
+                    ],
+                  ),
+                  //constant sliding bar
+                  Slider(
+                    value: db_valueOV,
+                    onChanged: (new_value) {
+                      setState(() {
+                        db_valueOV = new_value;
+                        overall_volume = db_valueOV;
+                      });
+                    },
+                    min: -90.0, // Minimum slider value
+                    max: 90.0, // Maximum slider value
+                    divisions: 18, // Optional, creates steps
+                    label: '${db_valueOV.toStringAsFixed(1)} dB',
+                  ),
+                  //dB level text
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${overall_volume.toStringAsFixed(1)} dB',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            //'Sound Balance' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Sound Balance' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.earbuds_rounded,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Sound Balance',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+
+                  //'Bass Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Bass Sounds' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Bass Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_BS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_BS = new_value;
+                              base_sounds = db_valueSB_BS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_BS.toStringAsFixed(1)} dB',
+                        ),
+                        //enhancing deep sounds text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances deep sounds like background noise and speech fundamentals\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  //'Mid-Range Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Mid-Range Sounds' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Mid-Range Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_MRS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_MRS = new_value;
+                              mid_range_sounds = db_valueSB_MRS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_MRS.toStringAsFixed(1)} dB',
+                        ),
+                        //enhancing main speech text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances main speech sounds and voices\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  //'Treble Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Softer' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Treble Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_TS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_TS = new_value;
+                              overall_volume = db_valueSB_TS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_TS.toStringAsFixed(1)} dB',
+                        ),
+                        //dB level text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances clarity and crisp sounds like consonants\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            //'Sound Enhancement' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Sound Enhancement' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_sharp,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Sound Enhancement',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+                  //reduce background noise section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reduce Background Noise',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Minimize constant background sounds',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: reduce_background_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                reduce_background_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                  //reduce wind noise section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reduce Wind Noise',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Helps in outdoor environments',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: reduce_wind_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                reduce_wind_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                  //soften sudden sounds section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Soften Sudden Sounds',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Reduces unexpected loud noises',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: soften_sudden_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                soften_sudden_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            //'Save' and 'Delete' buttons container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  //save
+                  ElevatedButton(
+                    onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('\'Preset 1\' Successfully Saved!'),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                      },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
+                      foregroundColor: Colors.white, // Text color
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                      ),
+                    ),
+                    child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.save),
+                          Text(
+                            " Save",
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
+                      )
+                  ),
+                  //delete
+                  ElevatedButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('\'Preset 1\' Successfully Deleted!'),
+                          duration: Duration(seconds: 4),
+                        ),
+                      );
+                      Navigator.pop(context); // Custom behavior for back button
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
+                      foregroundColor: Colors.white, // Text color
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                      ),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.delete_forever),
+                        Text(
+                          " Delete",
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ],
+                    )
+
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }
-class Preset2Page extends StatelessWidget {//will not have the bottom bar, only back button
-  const Preset2Page({super.key});
+
+class Preset2Page extends StatefulWidget {
+  const Preset2Page({super.key, required this.title});
+  final String title;
+  @override
+  _Preset2PageState createState() => _Preset2PageState();
+}
+class _Preset2PageState extends State<Preset2Page> {//will not have the bottom bar, only back button
+  double db_valueOV = 0.0;
+  double db_valueSB_BS = 0.0;
+  double db_valueSB_MRS = 0.0;
+  double db_valueSB_TS = 0.0;
+
+  double overall_volume = 0;
+  double base_sounds = 0;
+  double mid_range_sounds = 0;
+  double treble_sounds = 0;
+
+  bool reduce_background_noise = false;
+  bool reduce_wind_noise = false;
+  bool soften_sudden_noise = false;
+  //its either true = on, or false = off
 
   @override
   Widget build(BuildContext context) {
@@ -328,10 +805,451 @@ class Preset2Page extends StatelessWidget {//will not have the bottom bar, only 
         ),
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
-      body: const Text('Nothing is here!'),
+      body: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          //this will be for the header
+          children: [
+            //'Overall Volume' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Overall Volume' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.volume_up,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Overall Volume',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+                  //'Softer' -> 'Louder' bar
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Softer'),
+                      Text('Louder'),
+                    ],
+                  ),
+                  //constant sliding bar
+                  Slider(
+                    value: db_valueOV,
+                    onChanged: (new_value) {
+                      setState(() {
+                        db_valueOV = new_value;
+                        overall_volume = db_valueOV;
+                      });
+                    },
+                    min: -90.0, // Minimum slider value
+                    max: 90.0, // Maximum slider value
+                    divisions: 18, // Optional, creates steps
+                    label: '${db_valueOV.toStringAsFixed(1)} dB',
+                  ),
+                  //dB level text
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${overall_volume.toStringAsFixed(1)} dB',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            //'Sound Balance' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Sound Balance' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.earbuds_rounded,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Sound Balance',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+
+                  //'Bass Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Bass Sounds' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Bass Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_BS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_BS = new_value;
+                              base_sounds = db_valueSB_BS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_BS.toStringAsFixed(1)} dB',
+                        ),
+                        //enhancing deep sounds text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances deep sounds like background noise and speech fundamentals\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  //'Mid-Range Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Mid-Range Sounds' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Mid-Range Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_MRS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_MRS = new_value;
+                              mid_range_sounds = db_valueSB_MRS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_MRS.toStringAsFixed(1)} dB',
+                        ),
+                        //enhancing main speech text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances main speech sounds and voices\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  //'Treble Sounds' slider
+                  Container(
+                    child: Column(
+                      children: [
+                        //'Softer' -> 'Louder' bar
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Treble Sounds'),
+                            Text('Louder'),
+                          ],
+                        ),
+                        //constant sliding bar
+                        Slider(
+                          value: db_valueSB_TS,
+                          onChanged: (new_value) {
+                            setState(() {
+                              db_valueSB_TS = new_value;
+                              overall_volume = db_valueSB_TS;
+                            });
+                          },
+                          min: -90.0, // Minimum slider value
+                          max: 90.0, // Maximum slider value
+                          divisions: 18, // Optional, creates steps
+                          label: '${db_valueSB_TS.toStringAsFixed(1)} dB',
+                        ),
+                        //dB level text
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Enhances clarity and crisp sounds like consonants\n',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            //'Sound Enhancement' container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  //'Sound Enhancement' header
+                  const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_sharp,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        Text(
+                          ' Sound Enhancement',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ]
+                  ),
+                  //reduce background noise section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reduce Background Noise',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Minimize constant background sounds',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: reduce_background_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                reduce_background_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                  //reduce wind noise section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reduce Wind Noise',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Helps in outdoor environments',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: reduce_wind_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                reduce_wind_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                  //soften sudden sounds section
+                  Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Soften Sudden Sounds',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            Text(
+                              'Reduces unexpected loud noises',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Switch(
+                            value: soften_sudden_noise,
+                            onChanged: (value) {
+                              setState(() {
+                                soften_sudden_noise = value; // Update the toggle state
+                              });
+                            },
+                            activeColor: Colors.white,
+                            inactiveThumbColor: Colors.white,
+                            activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                            inactiveTrackColor: Colors.grey,
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            //'Save' and 'Delete' buttons container
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  //save
+                  ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('\'Preset 1\' Successfully Saved!'),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
+                        foregroundColor: Colors.white, // Text color
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                        ),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.save),
+                          Text(
+                            " Save",
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
+                      )
+                  ),
+                  //delete
+                  ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('\'Preset 1\' Successfully Deleted!'),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                        Navigator.pop(context); // Custom behavior for back button
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
+                        foregroundColor: Colors.white, // Text color
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                        ),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete_forever),
+                          Text(
+                            " Delete",
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
+                      )
+
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }
+
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -349,4 +1267,4 @@ class SettingsPage extends StatelessWidget {
         ),
     );
   }
-}
+}//we leave this empty, nothing goes here!
