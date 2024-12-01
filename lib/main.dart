@@ -1,24 +1,43 @@
 import 'package:flutter/material.dart';
+import 'dart:convert'; // For JSON decoding
+import 'package:flutter/services.dart' show rootBundle; // For rootBundle
+import 'dart:io'; // For File I/O
+import 'package:path_provider/path_provider.dart'; // To get the app's document directory
 
-void main() => runApp(const MyApp());
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure async code can run in main()
+  final presetData = await loadJson(); // Load the JSON data asynchronously
+  runApp(MyApp(presetData: presetData)); // Pass the data to the app
+}
+
+Future<Map<String, dynamic>> loadJson() async {
+  try {
+    final String jsonString = await rootBundle.loadString('assets/preset_1_prototype.json');
+    return json.decode(jsonString); // Return the parsed JSON data as a Map
+  } catch (e) {
+    print('Error loading or parsing JSON: $e');
+    return {}; // Return an empty map in case of error
+  }
+}
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Map<String, dynamic> presetData; // This holds the JSON data
+
+  const MyApp({super.key, required this.presetData}); // Constructor for presetData
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MainPage(),
+      home: MainPage(presetData: presetData), // Pass the presetData directly
     );
   }
 }
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final Map<String, dynamic> presetData;
+
+  const MainPage({super.key, required this.presetData});
 
   @override
   _MainPageState createState() => _MainPageState();
@@ -178,7 +197,7 @@ class _PresetsPageState extends State<PresetsPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Preset1Page(title: '',)),
+                            MaterialPageRoute(builder: (context) => Preset1Page(presetData: {},)),
                           );
                         },
                         child: const Icon(
@@ -270,8 +289,10 @@ class SoundTestPage extends StatelessWidget {
 }//we leave this empty, nothing goes here!
 
 class Preset1Page extends StatefulWidget {
-  const Preset1Page({super.key, required this.title});
-  final String title;
+  late Map<String, dynamic> presetData;
+
+  Preset1Page({super.key, required this.presetData});
+
   @override
   _Preset1PageState createState() => _Preset1PageState();
 }
@@ -281,15 +302,133 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
   double db_valueSB_MRS = 0.0;
   double db_valueSB_TS = 0.0;
 
-  double overall_volume = 0;
-  double base_sounds = 0;
-  double mid_range_sounds = 0;
-  double treble_sounds = 0;
-
+  //its either true = on, or false = off
   bool reduce_background_noise = false;
   bool reduce_wind_noise = false;
   bool soften_sudden_noise = false;
-  //its either true = on, or false = off
+
+  // A method to load data from the file
+  Future<Map<String, dynamic>> loadPresetData() async {
+    final directory = await getApplicationDocumentsDirectory();
+    print('Saving file at: ${directory.path}');
+    final file = File('${directory.path}/preset_1_prototype.json');
+
+    if (await file.exists()) {
+      String jsonData = await file.readAsString();
+      return jsonDecode(jsonData);  // Return decoded JSON as Map
+    } else {
+      return {};  // Return an empty map if the file doesn't exist
+    }
+  }
+
+  // Method to update preset data from loaded JSON
+  void _updatePresetData() {
+    final presetData = widget.presetData['preset1']?['presetData']?[0];
+
+    if (presetData != null) {
+      setState(() {
+        db_valueOV = presetData['db_valueOV'];
+        db_valueSB_BS = presetData['db_valueSB_BS'];
+        db_valueSB_MRS = presetData['db_valueSB_MRS'];
+        db_valueSB_TS = presetData['db_valueSB_TS'];
+
+        reduce_background_noise = presetData['reduce_background_noise'] ?? false;
+        reduce_wind_noise = presetData['reduce_wind_noise'] ?? false;
+        soften_sudden_noise = presetData['soften_sudden_noise'] ?? false;
+      });
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    loadPresetData().then((data) {
+      // Assign the loaded data to widget.presetData or another local variable
+      widget.presetData = data;
+      _updatePresetData();  // Update UI with loaded data
+    });
+  }
+
+  // Method to save preset data to a file
+  Future<void> _savePresetData() async {
+    try {
+      // Ensure presetData is initialized
+      if (widget.presetData == null) {
+        print('presetData is null!');
+        return; // Exit if presetData is null
+      }
+
+      // Ensure 'preset1' and its 'presetData' are initialized
+      if (widget.presetData['preset1'] == null) {
+        print('preset1 is null, initializing preset1...');
+        widget.presetData['preset1'] = {'presetData': [{}]};
+      }
+
+      // Ensure 'presetData' is initialized within 'preset1'
+      if (widget.presetData['preset1']['presetData'] == null) {
+        print('presetData is null, initializing presetData...');
+        widget.presetData['preset1']['presetData'] = [{}];
+      }
+
+      // Update the presetData values
+      widget.presetData['preset1']['presetData'][0] = {
+        'db_valueOV': db_valueOV,
+        'db_valueSB_BS': db_valueSB_BS,
+        'db_valueSB_MRS': db_valueSB_MRS,
+        'db_valueSB_TS': db_valueSB_TS,
+        'reduce_background_noise': reduce_background_noise,
+        'reduce_wind_noise': reduce_wind_noise,
+        'soften_sudden_noise': soften_sudden_noise,
+      };
+
+      String updatedJsonData = jsonEncode(widget.presetData);
+
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/preset_1_prototype.json');
+      print('Saving file at: ${file.path}');
+
+      // Writing to the file
+      await file.writeAsString(updatedJsonData);
+      print('File saved successfully!');
+    } catch (e) {
+      print('Error saving preset data: $e');
+    }
+  }
+  // Method to reset the preset data (to stand in for the delete method used in the final version of the app)
+  void _resetPresetData() {
+    setState(() {
+      // Reset all preset data values to default values
+      db_valueOV = 0.0;
+      db_valueSB_BS = 0.0;
+      db_valueSB_MRS = 0.0;
+      db_valueSB_TS = 0.0;
+
+      reduce_background_noise = false;
+      reduce_wind_noise = false;
+      soften_sudden_noise = false;
+    });
+
+    // Optionally, reset the data in the `widget.presetData` as well
+    if (widget.presetData != null && widget.presetData['preset1'] != null) {
+      widget.presetData['preset1']['presetData'][0] = {
+        'db_valueOV': db_valueOV,
+        'db_valueSB_BS': db_valueSB_BS,
+        'db_valueSB_MRS': db_valueSB_MRS,
+        'db_valueSB_TS': db_valueSB_TS,
+        'reduce_background_noise': reduce_background_noise,
+        'reduce_wind_noise': reduce_wind_noise,
+        'soften_sudden_noise': soften_sudden_noise,
+      };
+      // Save the reset data (if needed)
+      _savePresetData();
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Preset data reset successfully!'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +438,7 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
         title: const Align(
           alignment: Alignment.center,
           child: Text(
-            'Preset 1',
+            'Preset 1 [NEW]',
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
@@ -357,7 +496,6 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                     onChanged: (new_value) {
                       setState(() {
                         db_valueOV = new_value;
-                        overall_volume = db_valueOV;
                       });
                     },
                     min: -90.0, // Minimum slider value
@@ -369,7 +507,7 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                   Align(
                     alignment: Alignment.center,
                     child: Text(
-                      '${overall_volume.toStringAsFixed(1)} dB',
+                      '${db_valueOV.toStringAsFixed(1)} dB',
                     ),
                   ),
                 ],
@@ -417,7 +555,6 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                           onChanged: (new_value) {
                             setState(() {
                               db_valueSB_BS = new_value;
-                              base_sounds = db_valueSB_BS;
                             });
                           },
                           min: -90.0, // Minimum slider value
@@ -457,7 +594,6 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                           onChanged: (new_value) {
                             setState(() {
                               db_valueSB_MRS = new_value;
-                              mid_range_sounds = db_valueSB_MRS;
                             });
                           },
                           min: -90.0, // Minimum slider value
@@ -497,7 +633,6 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                           onChanged: (new_value) {
                             setState(() {
                               db_valueSB_TS = new_value;
-                              overall_volume = db_valueSB_TS;
                             });
                           },
                           min: -90.0, // Minimum slider value
@@ -685,26 +820,27 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                 children: [
                   //save
                   ElevatedButton(
-                    onPressed: () {
+                      onPressed: () async {
+                        await _savePresetData();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('\'Preset 1\' Successfully Saved!'),
-                            duration: Duration(seconds: 4),
+                            duration: Duration(seconds: 3),
                           ),
                         );
                       },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
-                      foregroundColor: Colors.white, // Text color
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00), // Button background color
+                        foregroundColor: Colors.white, // Text color
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                        ),
                       ),
-                    ),
-                    child: const Row(
+                      child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(Icons.save),
+                          Icon(Icons.save_rounded),
                           Text(
                             " Save",
                             style: TextStyle(
@@ -714,14 +850,16 @@ class _Preset1PageState extends State<Preset1Page> {//will not have the bottom b
                           ),
                         ],
                       )
+
                   ),
                   //delete
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      _resetPresetData();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('\'Preset 1\' Successfully Deleted!'),
-                          duration: Duration(seconds: 4),
+                          duration: Duration(seconds: 3),
                         ),
                       );
                       Navigator.pop(context); // Custom behavior for back button
@@ -789,7 +927,7 @@ class _Preset2PageState extends State<Preset2Page> {//will not have the bottom b
         title: const Align(
           alignment: Alignment.center,
           child: Text(
-            'Preset 2',
+            'Preset 2 [OLD]',
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,

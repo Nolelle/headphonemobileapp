@@ -1,0 +1,17 @@
+{
+  "preset1": {
+    "presetData": [
+      {
+        "db_valueOV": 0.0,
+        "db_valueSB_BS": 0.0,
+        "db_valueSB_MRS": 0.0,
+        "db_valueSB_TS": 0.0,
+
+        "reduce_background_noise": false,
+        "reduce_wind_noise": false,
+        "soften_sudden_noise": false
+      }
+    ],
+    "dateCreated": "2024-11-30-15:40:31"
+  }
+}
