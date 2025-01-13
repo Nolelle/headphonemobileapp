@@ -1,6 +1,3 @@
-// lib/models/preset.dart
-import 'package:flutter/foundation.dart';
-
 class Preset {
   final String id;
   final String name;
