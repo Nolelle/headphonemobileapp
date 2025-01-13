@@ -12,26 +12,32 @@ lib/
 │
 ├── features/                  # Feature modules
 │   ├── presets/              # Core preset management feature
-│   │   ├── models/           # Data models for configurations
-│   │   │   └── preset.dart   # Preset data structure
+│   │   ├── models/           # Data models
+│   │   │   └── preset.dart
 │   │   ├── repositories/     # Data access layer
 │   │   │   └── preset_repository.dart
 │   │   ├── providers/        # State management
 │   │   │   └── preset_provider.dart
 │   │   └── views/           # UI components
-│   │       ├── screens/     # Full page screens
-│   │       │   ├── preset_list_screen.dart
-│   │       │   └── preset_detail_screen.dart
-│   │       └── widgets/     # Reusable UI components
-│   │           └── preset_list_item.dart
+│   │       └── screens/     
+│   │           ├── preset_list_page.dart
+│   │           └── preset_page.dart
 │   │
 │   ├── settings/            # Application settings feature
-│   │   └── views/
-│   │       └── settings_screen.dart
+│   │   ├── models/          # Settings data models
+│   │   ├── repositories/    # Settings data access
+│   │   ├── providers/       # Settings state management
+│   │   └── views/          # Settings UI components
+│   │       └── screens/
+│   │           └── settings_page.dart
 │   │
 │   └── sound_test/         # Audio testing feature
-│       └── views/
-│           └── sound_test_screen.dart
+│       ├── models/         # Sound test data models
+│       ├── repositories/   # Sound test data access
+│       ├── providers/      # Sound test state management
+│       └── views/         # Sound test UI components
+│           └── screens/
+│               └── sound_test_page.dart
 │
 ├── shared/                  # Shared utilities and widgets
 │   ├── widgets/            # Common UI components
