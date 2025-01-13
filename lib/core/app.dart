@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../features/main_page/main_page.dart';
+import '../config/routes.dart';
+import '../config/theme.dart';
 
 class MyApp extends StatelessWidget {
-  final Map<String, dynamic> presetData; // This holds the JSON data
+  final Map<String, dynamic> presetData;
 
-  const MyApp(
-      {super.key, required this.presetData}); // Constructor for presetData
+  const MyApp({super.key, required this.presetData});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainPage(presetData: presetData), // Pass the presetData directly
+      theme: appTheme,
+      initialRoute: '/', // Use initialRoute instead of home
+      routes: appRoutes(presetData),
     );
   }
 }
