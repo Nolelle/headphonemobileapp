@@ -1,57 +1,71 @@
-# Hearing Aid Companion App
-
-A Flutter-based mobile application designed to help users manage and customize their hearing aid settings through an intuitive interface. This app allows users to create, manage, and switch between different audio presets, making it easier to adapt to various listening environments.
-
-## Features
-
-- Create and manage custom hearing aid presets
-- Adjust overall volume and sound balance settings
-- Fine-tune sound enhancement parameters
-- Save and switch between multiple preset configurations
-- User-friendly interface with intuitive controls
-- Real-time preset activation and device synchronization
-- Local storage for preset configurations
+# Mobile Audio Companion App
 
 ## Project Structure
 
-The project follows a feature-first architecture with clear separation of concerns:
+The project follows a feature-first architecture with clean separation of concerns:
 
 ```
 lib/
 ├── config/                    # App-wide configuration
-│   ├── theme.dart            # Theme and styling definitions
+│   ├── theme.dart            # Custom theme and styling definitions
 │   └── routes.dart           # Application routing configuration
 │
 ├── features/                  # Feature modules
-│   ├── presets/              # Preset management feature
-│   │   ├── models/           # Data models
+│   ├── presets/              # Core preset management feature
+│   │   ├── models/           # Data models for configurations
+│   │   │   └── preset.dart   # Preset data structure
 │   │   ├── repositories/     # Data access layer
+│   │   │   └── preset_repository.dart
 │   │   ├── providers/        # State management
+│   │   │   └── preset_provider.dart
 │   │   └── views/           # UI components
-│   ├── settings/            # App settings feature
-│   └── sound_test/         # Sound testing feature
+│   │       ├── screens/     # Full page screens
+│   │       │   ├── preset_list_screen.dart
+│   │       │   └── preset_detail_screen.dart
+│   │       └── widgets/     # Reusable UI components
+│   │           └── preset_list_item.dart
+│   │
+│   ├── settings/            # Application settings feature
+│   │   └── views/
+│   │       └── settings_screen.dart
+│   │
+│   └── sound_test/         # Audio testing feature
+│       └── views/
+│           └── sound_test_screen.dart
 │
 ├── shared/                  # Shared utilities and widgets
 │   ├── widgets/            # Common UI components
+│   │   ├── error_display.dart
+│   │   └── loading_overlay.dart
 │   └── utils/              # Helper functions
+│       └── json_loader.dart
 │
 └── main.dart               # Application entry point
 ```
 
-### Directory Purposes
+### Architecture Overview
 
-- **config/**: Contains application-wide configurations including theme settings and routing logic. These files establish the foundational setup of the app.
+The application follows these key architectural principles:
 
-- **features/**: Houses the main feature modules of the application, each containing its own complete stack:
-  - **presets/**: The core feature for managing hearing aid presets
-  - **settings/**: User preferences and application settings
-  - **sound_test/**: Functionality for testing and calibrating audio settings
+1. **Feature-First Organization**: Each major feature is self-contained with its own models, views, and business logic.
 
-- **shared/**: Contains code and components used across multiple features:
-  - **widgets/**: Reusable UI components shared between features
-  - **utils/**: Helper functions and utilities used throughout the app
+2. **Clean Layer Separation**:
+   - Models: Define data structures
+   - Repositories: Handle data persistence
+   - Providers: Manage application state
+   - Views: Present UI and handle user interactions
 
-## Getting Started
+3. **State Management**:
+   - Uses Provider pattern for efficient state management
+   - Maintains clean separation between UI and business logic
+   - Implements observable pattern for reactive updates
+
+4. **Data Persistence**:
+   - SharedPreferences for local storage
+   - JSON-based data structure for flexibility
+   - Efficient preset management system
+
+## Setup and Development
 
 ### Prerequisites
 
@@ -65,13 +79,13 @@ lib/
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/hearing-aid-companion.git
+   git clone https://github.com/Nolelle/headphonemobileapp.git
    ```
 
-2. Navigate to the project directory:
+2. Navigate to project directory:
 
    ```bash
-   cd hearing-aid-companion
+   cd headphonemobileapp
    ```
 
 3. Install dependencies:
@@ -86,35 +100,31 @@ lib/
    flutter run
    ```
 
-## Development Setup
+### Development Guidelines
 
-### Code Style
+1. **Code Organization**:
+   - Follow feature-first architecture
+   - Maintain separation of concerns
+   - Keep features self-contained
 
-The project follows the official Dart style guide and Flutter best practices:
+2. **Style Guide**:
+   - Use `flutter format .` for consistent formatting
+   - Follow analysis_options.yaml lint rules
+   - Document public APIs thoroughly
 
-- Use `flutter format .` to maintain consistent code formatting
-- Follow the lint rules defined in `analysis_options.yaml`
-- Maintain proper documentation for public APIs
+3. **State Management**:
+   - Implement providers for complex state
+   - Use StateNotifier for immutable state
+   - Maintain unidirectional data flow
 
-### State Management
-
-The application uses Provider for state management:
-
-- Each feature has its own provider for state management
-- The `PresetProvider` handles the core preset management functionality
-- Providers are initialized at the app level in `main.dart`
-
-### Data Persistence
-
-Preset data is stored locally using SharedPreferences:
-
-- Presets are stored as JSON objects
-- The `PresetRepository` handles all data persistence operations
-- Each preset contains configuration data and metadata
+4. **Testing**:
+   - Write unit tests for business logic
+   - Create widget tests for UI components
+   - Implement integration tests for features
 
 ## Building for Production
 
-To create a release build:
+Generate production builds using:
 
 For Android:
 
@@ -131,25 +141,26 @@ flutter build ios --release
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Future Enhancements
-
-- Bluetooth connectivity for direct device communication
-- Cloud backup and sync functionality
-- Advanced sound analysis features
-- Multi-device support
-- User profiles and settings sync
+2. Create your feature branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Add NewFeature'`)
+4. Push to the branch (`git push origin feature/NewFeature`)
+5. Create a Pull Request
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Technical Documentation
+
+For detailed technical documentation about specific components:
+
+- [State Management](docs/state-management.md)
+- [Data Models](docs/data-models.md)
+- [UI Components](docs/ui-components.md)
+- [Testing Guide](docs/testing.md)
+
 ## Acknowledgments
 
-- Flutter team for the amazing framework
-- The open-source community for various packages used in this project
-- Contributors and testers who helped improve the application
+- Flutter team for the framework
+- Contributors and testers
+- Open source community for various packages used in the project
