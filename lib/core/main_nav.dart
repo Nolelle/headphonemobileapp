@@ -33,6 +33,7 @@ class _MainNavigationState extends State<MainNavigation> {
           presetProvider: provider,
         ),
       ),
+      //changes the settings page to bluetooth page
       BluetoothPage(),
     ];
   }
@@ -57,6 +58,7 @@ class _MainNavigationState extends State<MainNavigation> {
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.music_note_rounded),
@@ -73,7 +75,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.shifting,
         showSelectedLabels: true,

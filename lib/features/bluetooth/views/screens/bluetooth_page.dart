@@ -53,7 +53,6 @@ class _BluetoothPageState extends State<BluetoothPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Bluetooth Devices')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -72,7 +71,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
                   return ListTile(
                     title: Text(devices[index].device.name.isNotEmpty
                         ? devices[index].device.name
-                        : 'Unnamed device'),
+                        : 'Unknown device'),
                     subtitle: Text(devices[index].device.id.toString()),
                   );
                 },
