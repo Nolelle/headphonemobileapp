@@ -118,10 +118,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
                         ),
                       ),
                     ),
-                    // Show dropdown only if this preset is active
+
                     if (activePresetId == preset.id)
                       DropdownButton<String>(
-                        value: null, // No initial value for the dropdown
+                        value: null,
                         hint: const Text('What does thou want to do :3'),
                         onChanged: (String? value) {
                           if (value == null) return;
