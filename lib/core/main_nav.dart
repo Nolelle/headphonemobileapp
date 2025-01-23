@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projects/features/bluetooth/views/screens/bluetooth_page.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
 import '../features/settings/views/settings_page.dart';
 import '../features/sound_test/views/sound_test_page.dart';
@@ -32,7 +33,7 @@ class _MainNavigationState extends State<MainNavigation> {
           presetProvider: provider,
         ),
       ),
-      const SettingsPage(),
+      BluetoothPage(),
     ];
   }
 
