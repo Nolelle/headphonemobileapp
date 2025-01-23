@@ -122,7 +122,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                     if (activePresetId == preset.id)
                       DropdownButton<String>(
                         value: null, // No initial value for the dropdown
-                        hint: const Text('Choose an action'),
+                        hint: const Text('What does thou want to do :3'),
                         onChanged: (String? value) {
                           if (value == null) return;
 
