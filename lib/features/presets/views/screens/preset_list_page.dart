@@ -4,7 +4,7 @@ import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
 
-class PresetsListPage extends StatelessWidget {
+class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
 
   const PresetsListPage({
@@ -12,28 +12,35 @@ class PresetsListPage extends StatelessWidget {
     required this.presetProvider,
   });
 
+  @override
+  State<PresetsListPage> createState() => _PresetsListPageState();
+}
+
+class _PresetsListPageState extends State<PresetsListPage> {
+  String? activePresetId; // Tracks the currently active preset ID
+
   Future<bool> _showConfirmationDialog(
       BuildContext context, String presetName) async {
     return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Confirm Preset Activation'),
-              content:
-                  Text('Do you want to send "$presetName" to your device?'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-                TextButton(
-                  child: const Text('Send'),
-                  onPressed: () => Navigator.of(context).pop(true),
-                ),
-              ],
-            );
-          },
-        ) ??
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Preset Activation'),
+          content:
+          Text('Do you want to send "$presetName" to your device?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('Send'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    ) ??
         false;
   }
 
@@ -53,69 +60,111 @@ class PresetsListPage extends StatelessWidget {
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final shouldActivate =
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        final shouldActivate =
                         await _showConfirmationDialog(context, preset.name);
 
-                    if (shouldActivate) {
-                      provider.setActivePreset(preset.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                '\'${preset.name}\' Successfully Sent To Device!'),
-                            duration: const Duration(seconds: 1),
+                        if (shouldActivate) {
+                          setState(() {
+                            activePresetId = preset.id; // Show dropdown for this preset
+                          });
+
+                          provider.setActivePreset(preset.id);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    '${preset.name} Successfully Sent To Device!'),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isActive
+                            ? const Color.fromRGBO(93, 59, 129, 1.00)
+                            : const Color.fromRGBO(133, 86, 169, 1.00),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                preset.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward,
+                                color: Colors.white,
+                              ),
+                            ],
                           ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isActive
-                        ? const Color.fromRGBO(93, 59, 129, 1.00)
-                        : const Color.fromRGBO(133, 86, 169, 1.00),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
                     ),
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            preset.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
+                    // Show dropdown only if this preset is active
+                    if (activePresetId == preset.id)
+                      DropdownButton<String>(
+                        value: null, // No initial value for the dropdown
+                        hint: const Text('Choose an action'),
+                        onChanged: (String? value) {
+                          if (value == null) return;
+
+                          switch (value) {
+                            case 'edit':
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => PresetPage(
                                     presetId: preset.id,
                                     presetName: preset.name,
-                                    presetProvider: provider,
+                                    presetProvider: widget.presetProvider,
                                   ),
                                 ),
                               );
-                            },
-                            child: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                            ),
-                          )
+                              break;
+                            case 'delete':
+                              provider.deletePreset(preset.id);
+                              setState(() {
+                                activePresetId = null; // Hide dropdown
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      '${preset.name} deleted successfully!'),
+                                ),
+                              );
+                              break;
+                          }
+                        },
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
+                  ],
                 ),
               );
             },
@@ -141,7 +190,7 @@ class PresetsListPage extends StatelessWidget {
             },
           );
 
-          await presetProvider.createPreset(newPreset);
+          await widget.presetProvider.createPreset(newPreset);
 
           if (context.mounted) {
             Navigator.push(
@@ -150,7 +199,7 @@ class PresetsListPage extends StatelessWidget {
                 builder: (context) => PresetPage(
                   presetId: newId,
                   presetName: 'New Preset',
-                  presetProvider: presetProvider,
+                  presetProvider: widget.presetProvider,
                 ),
               ),
             );

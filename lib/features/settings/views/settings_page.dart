@@ -7,7 +7,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        '¯\\_(ツ)_/¯',
+        'Hamburger',
         style: TextStyle(
           fontSize: 25,
           fontWeight: FontWeight.bold,
