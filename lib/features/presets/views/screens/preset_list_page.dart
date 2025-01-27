@@ -44,6 +44,30 @@ class _PresetsListPageState extends State<PresetsListPage> {
         false;
   }
 
+  Future<bool> _showDeleteConfirmationDialog(
+      BuildContext context, String presetName) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content: Text('Are you sure you want to delete "$presetName"?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,7 +153,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             DropdownButton<String>(
                               value: null, // No initial value for the dropdown
                               hint: const Text('What does thou want to do :3'),
-                              onChanged: (String? value) {
+                              onChanged: (String? value) async {
                                 if (value == null) return;
 
                                 switch (value) {
@@ -146,17 +170,21 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                     );
                                     break;
                                   case 'delete':
-                                    provider.deletePreset(preset.id);
-                                    setState(() {
-                                      activePresetId = null; // Hide dropdown
-                                    });
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            '${preset.name} deleted successfully!'),
-                                      ),
-                                    );
+                                    final shouldDelete = await _showDeleteConfirmationDialog(
+                                        context, preset.name);
+                                    if (shouldDelete) {
+                                      provider.deletePreset(preset.id);
+                                      setState(() {
+                                        activePresetId = null; // Hide dropdown
+                                      });
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              '${preset.name} deleted successfully!'),
+                                        ),
+                                      );
+                                    }
                                     break;
                                 }
                               },
