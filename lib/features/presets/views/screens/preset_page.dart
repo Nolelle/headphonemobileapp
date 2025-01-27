@@ -81,7 +81,7 @@ class _PresetPageState extends State<PresetPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_nameController.text} Successfully Saved!'),
+          content: Text('${_nameController.text} Successfully Updated!'),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -89,32 +89,32 @@ class _PresetPageState extends State<PresetPage> {
   }
 
   @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-          title: const Text(
-            'Edit Preset',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        title: const Text(
+          'Edit Preset',
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-          actions: [
-            TextButton(
-              onPressed: _savePreset,
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _savePreset,
+            child: const Text(
+              'Update',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: SingleChildScrollView(
         child: Container(
@@ -133,9 +133,6 @@ class _PresetPageState extends State<PresetPage> {
 
               // Sound Enhancement Section
               _buildSoundEnhancementSection(),
-
-              // Buttons Section
-              _buildButtonsSection(),
             ],
           ),
         ),
@@ -165,13 +162,17 @@ class _PresetPageState extends State<PresetPage> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
+                  color: Theme
+                      .of(context)
+                      .primaryColor,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
+                  color: Theme
+                      .of(context)
+                      .primaryColor,
                   width: 2.0,
                 ),
               ),
@@ -312,7 +313,6 @@ class _PresetPageState extends State<PresetPage> {
           ),
 
 
-
           // Mid-Range Sounds slider
           Container(
             child: Column(
@@ -344,7 +344,6 @@ class _PresetPageState extends State<PresetPage> {
           ),
 
 
-
           // Mid-High Sounds slider
           Container(
             child: Column(
@@ -374,8 +373,6 @@ class _PresetPageState extends State<PresetPage> {
               ],
             ),
           ),
-
-
 
 
           // Treble Sounds slider
@@ -536,74 +533,6 @@ class _PresetPageState extends State<PresetPage> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildButtonsSection() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Save button
-          ElevatedButton(
-              onPressed: _savePreset,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(Icons.save_rounded),
-                  Text(
-                    " Save",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )),
-
-          // Delete button
-          ElevatedButton(
-              onPressed: () async {
-                await widget.presetProvider.deletePreset(widget.presetId);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text('${widget.presetName} Successfully Deleted!'),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(Icons.delete_forever),
-                  Text(
-                    " Delete",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )),
         ],
       ),
     );
