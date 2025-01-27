@@ -89,24 +89,32 @@ class _PresetPageState extends State<PresetPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        title: const Text(
-          'Edit Preset',
-          style: TextStyle(
-            fontSize: 24.0,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    Widget build(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+          title: const Text(
+            'Edit Preset',
+            style: TextStyle(
+              fontSize: 24.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: _savePreset,
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
-        leading: IconButton(
-          icon:
-              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: SingleChildScrollView(
         child: Container(
@@ -563,39 +571,39 @@ class _PresetPageState extends State<PresetPage> {
               )),
 
           // Delete button
-            ElevatedButton(
-                onPressed: () async {
-                  await widget.presetProvider.deletePreset(widget.presetId);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text('${widget.presetName} Successfully Deleted!'),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 10.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(Icons.delete_forever),
-                    Text(
-                      " Delete",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ElevatedButton(
+              onPressed: () async {
+                await widget.presetProvider.deletePreset(widget.presetId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('${widget.presetName} Successfully Deleted!'),
+                      duration: const Duration(seconds: 3),
                     ),
-                  ],
-                )),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 10.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(Icons.delete_forever),
+                  Text(
+                    " Delete",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )),
         ],
       ),
     );
