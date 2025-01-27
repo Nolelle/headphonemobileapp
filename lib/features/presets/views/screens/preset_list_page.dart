@@ -48,132 +48,168 @@ class _PresetsListPageState extends State<PresetsListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
-      body: Consumer<PresetProvider>(
-        builder: (context, provider, child) {
-          final presets = provider.presets.values.toList();
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: presets.length,
-            itemBuilder: (context, index) {
-              final preset = presets[index];
-              final isActive = preset.id == provider.activePresetId;
+      body: Column(
+        children: [
+          Expanded(
+            child: Consumer<PresetProvider>(
+              builder: (context, provider, child) {
+                final presets = provider.presets.values.toList();
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: presets.length,
+                  itemBuilder: (context, index) {
+                    final preset = presets[index];
+                    final isActive = preset.id == provider.activePresetId;
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        final shouldActivate =
-                        await _showConfirmationDialog(context, preset.name);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              final shouldActivate = await _showConfirmationDialog(
+                                  context, preset.name);
 
-                        if (shouldActivate) {
-                          setState(() {
-                            activePresetId = preset.id; // Show dropdown for this preset
-                          });
+                              if (shouldActivate) {
+                                setState(() {
+                                  activePresetId =
+                                      preset.id; // Show dropdown for this preset
+                                });
 
-                          provider.setActivePreset(preset.id);
+                                provider.setActivePreset(preset.id);
 
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    '${preset.name} Successfully Sent To Device!'),
-                                duration: const Duration(seconds: 1),
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          '${preset.name} Successfully Sent To Device!'),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isActive
+                                  ? const Color.fromRGBO(93, 59, 129, 1.00)
+                                  : const Color.fromRGBO(133, 86, 169, 1.00),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
                               ),
-                            );
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isActive
-                            ? const Color.fromRGBO(93, 59, 129, 1.00)
-                            : const Color.fromRGBO(133, 86, 169, 1.00),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                preset.name,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                            ),
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Padding(
+                                padding:
+                                const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      preset.name,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const Icon(
-                                Icons.arrow_forward,
-                                color: Colors.white,
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    // Show dropdown only if this preset is active
-                    if (activePresetId == preset.id)
-                      DropdownButton<String>(
-                        value: null, // No initial value for the dropdown
-                        hint: const Text('What does thou want to do :3'),
-                        onChanged: (String? value) {
-                          if (value == null) return;
+                          // Show dropdown only if this preset is active
+                          if (activePresetId == preset.id)
+                            DropdownButton<String>(
+                              value: null, // No initial value for the dropdown
+                              hint: const Text('What does thou want to do :3'),
+                              onChanged: (String? value) {
+                                if (value == null) return;
 
-                          switch (value) {
-                            case 'edit':
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PresetPage(
-                                    presetId: preset.id,
-                                    presetName: preset.name,
-                                    presetProvider: widget.presetProvider,
-                                  ),
+                                switch (value) {
+                                  case 'edit':
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PresetPage(
+                                          presetId: preset.id,
+                                          presetName: preset.name,
+                                          presetProvider: widget.presetProvider,
+                                        ),
+                                      ),
+                                    );
+                                    break;
+                                  case 'delete':
+                                    provider.deletePreset(preset.id);
+                                    setState(() {
+                                      activePresetId = null; // Hide dropdown
+                                    });
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            '${preset.name} deleted successfully!'),
+                                      ),
+                                    );
+                                    break;
+                                }
+                              },
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit'),
                                 ),
-                              );
-                              break;
-                            case 'delete':
-                              provider.deletePreset(preset.id);
-                              setState(() {
-                                activePresetId = null; // Hide dropdown
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      '${preset.name} deleted successfully!'),
+                                DropdownMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
                                 ),
-                              );
-                              break;
-                          }
-                        },
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'edit',
-                            child: Text('Edit'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'delete',
-                            child: Text('Delete'),
-                          ),
+                              ],
+                            ),
                         ],
                       ),
-                  ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Consumer<PresetProvider>(
+            builder: (context, provider, child) {
+              final presetCount = provider.presets.length;
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Presets: $presetCount/10',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               );
             },
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
         onPressed: () async {
+          final presetCount = widget.presetProvider.presets.length;
+          if (presetCount >= 10) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('You can only have a maximum of 10 presets!'),
+              ),
+            );
+            return;
+          }
+
           final newId = 'preset_${DateTime.now().millisecondsSinceEpoch}';
           final newPreset = Preset(
             id: newId,
