@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
@@ -12,6 +13,22 @@ class PresetsListPage extends StatelessWidget {
     required this.presetProvider,
   });
 
+<<<<<<< Updated upstream
+=======
+  @override
+  State<PresetsListPage> createState() => _PresetsListPageState();
+}
+
+class _PresetsListPageState extends State<PresetsListPage> {
+  String? activePresetId; // Tracks the currently active preset ID
+  final player = AudioPlayer();
+
+  Future<void> playSound() async {
+    String audioPath = "audio/eminem.mp3";
+    await player.play(AssetSource(audioPath)  );
+  }
+
+>>>>>>> Stashed changes
   Future<bool> _showConfirmationDialog(
       BuildContext context, String presetName) async {
     return await showDialog<bool>(
@@ -114,13 +131,50 @@ class PresetsListPage extends StatelessWidget {
                           )
                         ],
                       ),
+<<<<<<< Updated upstream
                     ),
+=======
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          //temp
+          //audio player for testing purposes
+          Center(
+            child: ElevatedButton(
+                onPressed: () {
+                  playSound();
+                },
+                child: const Text("Play me!")
+            )
+          ),
+
+          Consumer<PresetProvider>(
+            builder: (context, provider, child) {
+              final presetCount = provider.presets.length;
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Presets: $presetCount/10',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+>>>>>>> Stashed changes
                   ),
                 ),
               );
             },
+<<<<<<< Updated upstream
           );
         },
+=======
+          ),
+
+        ],
+>>>>>>> Stashed changes
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
