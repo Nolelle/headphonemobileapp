@@ -23,7 +23,9 @@ class _PresetPageState extends State<PresetPage> {
   late TextEditingController _nameController;
   double db_valueOV = 0.0;
   double db_valueSB_BS = 0.0;
+  double db_valueSB_LMS = 0.0;
   double db_valueSB_MRS = 0.0;
+  double db_valueSB_MHS = 0.0;
   double db_valueSB_TS = 0.0;
   bool reduce_background_noise = false;
   bool reduce_wind_noise = false;
@@ -79,7 +81,7 @@ class _PresetPageState extends State<PresetPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_nameController.text} Successfully Saved!'),
+          content: Text('${_nameController.text} Successfully Updated!'),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -99,11 +101,19 @@ class _PresetPageState extends State<PresetPage> {
             color: Colors.white,
           ),
         ),
-        leading: IconButton(
-          icon:
-              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        actions: [
+          TextButton(
+            onPressed: _savePreset,
+            child: const Text(
+              'Update',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: SingleChildScrollView(
@@ -123,9 +133,6 @@ class _PresetPageState extends State<PresetPage> {
 
               // Sound Enhancement Section
               _buildSoundEnhancementSection(),
-
-              // Buttons Section
-              _buildButtonsSection(),
             ],
           ),
         ),
@@ -155,13 +162,17 @@ class _PresetPageState extends State<PresetPage> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
+                  color: Theme
+                      .of(context)
+                      .primaryColor,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
+                  color: Theme
+                      .of(context)
+                      .primaryColor,
                   width: 2.0,
                 ),
               ),
@@ -202,8 +213,8 @@ class _PresetPageState extends State<PresetPage> {
           Slider(
             value: db_valueOV,
             onChanged: (value) => setState(() => db_valueOV = value),
-            min: -90.0,
-            max: 90.0,
+            min: -10.0,
+            max: 10.0,
             divisions: 18,
             label: '${db_valueOV.toStringAsFixed(1)} dB',
           ),
@@ -239,6 +250,7 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ]),
 
+
           // Bass Sounds slider
           Container(
             child: Column(
@@ -253,8 +265,8 @@ class _PresetPageState extends State<PresetPage> {
                 Slider(
                   value: db_valueSB_BS,
                   onChanged: (value) => setState(() => db_valueSB_BS = value),
-                  min: -90.0,
-                  max: 90.0,
+                  min: -10.0,
+                  max: 10.0,
                   divisions: 18,
                   label: '${db_valueSB_BS.toStringAsFixed(1)} dB',
                 ),
@@ -268,6 +280,38 @@ class _PresetPageState extends State<PresetPage> {
               ],
             ),
           ),
+
+
+          // Low-Mid Sounds slider
+          Container(
+            child: Column(
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Low-Mid Sounds'),
+                    Text('Louder'),
+                  ],
+                ),
+                Slider(
+                  value: db_valueSB_LMS,
+                  onChanged: (value) => setState(() => db_valueSB_LMS = value),
+                  min: -10.0,
+                  max: 10.0,
+                  divisions: 18,
+                  label: '${db_valueSB_LMS.toStringAsFixed(1)} dB',
+                ),
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'GUH?!\n',
+                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
 
           // Mid-Range Sounds slider
           Container(
@@ -283,8 +327,8 @@ class _PresetPageState extends State<PresetPage> {
                 Slider(
                   value: db_valueSB_MRS,
                   onChanged: (value) => setState(() => db_valueSB_MRS = value),
-                  min: -90.0,
-                  max: 90.0,
+                  min: -10.0,
+                  max: 10.0,
                   divisions: 18,
                   label: '${db_valueSB_MRS.toStringAsFixed(1)} dB',
                 ),
@@ -298,6 +342,38 @@ class _PresetPageState extends State<PresetPage> {
               ],
             ),
           ),
+
+
+          // Mid-High Sounds slider
+          Container(
+            child: Column(
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Mid-High Sounds'),
+                    Text('Louder'),
+                  ],
+                ),
+                Slider(
+                  value: db_valueSB_MHS,
+                  onChanged: (value) => setState(() => db_valueSB_MHS = value),
+                  min: -10.0,
+                  max: 10.0,
+                  divisions: 18,
+                  label: '${db_valueSB_MHS.toStringAsFixed(1)} dB',
+                ),
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Guh!?\n',
+                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
 
           // Treble Sounds slider
           Container(
@@ -313,8 +389,8 @@ class _PresetPageState extends State<PresetPage> {
                 Slider(
                   value: db_valueSB_TS,
                   onChanged: (value) => setState(() => db_valueSB_TS = value),
-                  min: -90.0,
-                  max: 90.0,
+                  min: -10.0,
+                  max: 10.0,
                   divisions: 18,
                   label: '${db_valueSB_TS.toStringAsFixed(1)} dB',
                 ),
@@ -457,74 +533,6 @@ class _PresetPageState extends State<PresetPage> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildButtonsSection() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Save button
-          ElevatedButton(
-              onPressed: _savePreset,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(Icons.save_rounded),
-                  Text(
-                    " Save",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )),
-
-          // Delete button
-          ElevatedButton(
-              onPressed: () async {
-                await widget.presetProvider.deletePreset(widget.presetId);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text('${widget.presetName} Successfully Deleted!'),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(Icons.delete_forever),
-                  Text(
-                    " Delete",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )),
         ],
       ),
     );
