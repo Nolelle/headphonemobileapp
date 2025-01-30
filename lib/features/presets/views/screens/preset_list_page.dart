@@ -20,10 +20,19 @@ class PresetsListPage extends StatefulWidget {
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
   final player = AudioPlayer();
+  double volume = 1.0;
 
   Future<void> playSound() async {
     String audioPath = "audio/eminem.mp3";
+    await player.setVolume(volume);
     await player.play(AssetSource(audioPath));
+  }
+
+  void updateVolume(double value) {
+    setState(() {
+      volume = value;
+    });
+    player.setVolume(volume);
   }
 
   Future<bool> _showConfirmationDialog(
@@ -50,7 +59,6 @@ class _PresetsListPageState extends State<PresetsListPage> {
     ) ??
         false;
   }
-
   Future<bool> _showDeleteConfirmationDialog(
       BuildContext context, String presetName) async {
     return await showDialog<bool>(
@@ -217,12 +225,37 @@ class _PresetsListPageState extends State<PresetsListPage> {
           //temp
           //audio player for testing purposes
           Center(
-            child: ElevatedButton(
-                onPressed: () {
-                  playSound();
-                },
-                child: const Text("Play me!")
-            )
+            child: Column (
+              children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        playSound();
+                      },
+                      child: const Text("Play me!")
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        player.stop();
+                      },
+                      child: const Text("Stop")
+                  ),
+                const SizedBox(height: 10),
+                // Volume Control Slider
+                Column(
+                  children: [
+                    const Text('Volume', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Slider(
+                      value: volume,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 100,
+                      label: (volume * 100).toStringAsFixed(0),
+                      onChanged: updateVolume,
+                    ),
+                  ],
+                ),
+              ]
+            ),
           ),
 
           Consumer<PresetProvider>(
