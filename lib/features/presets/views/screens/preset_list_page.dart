@@ -22,6 +22,14 @@ class PresetsListPage extends StatelessWidget {
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
   final player = AudioPlayer();
+<<<<<<< Updated upstream
+=======
+
+  Future<void> playSound() async {
+    String audioPath = "audio/eminem.mp3";
+    await player.play(AssetSource(audioPath));
+  }
+>>>>>>> Stashed changes
 
   Future<void> playSound() async {
     String audioPath = "audio/eminem.mp3";
