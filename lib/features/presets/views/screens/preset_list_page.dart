@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
+import '../../../bluetooth/providers/bluetooth_provider.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
+import '../../../bluetooth/providers/bluetooth_provider.dart';
 import '../../models/preset.dart';
 
 class PresetsListPage extends StatefulWidget {
@@ -18,73 +20,21 @@ class PresetsListPage extends StatefulWidget {
 }
 
 class _PresetsListPageState extends State<PresetsListPage> {
-  String connectedDeviceName = "CONNECTED_DEVICE_NAME";
-  String connectedDeviceID = "CONNECTED_DEVICE_ID";
-  bool connectedDeviceStatus = false;
-  String connectedDeviceBattery = "???"; // Placeholder for now
-
   @override
   void initState() {
     super.initState();
-    _fetchConnectedDeviceInfo();
+    _fetchDeviceInfo(); // Fetch device info on initialization
   }
 
-  Future<void> _fetchConnectedDeviceInfo() async {
-    // Fetch connected devices
-    List<BluetoothDevice> devices = await FlutterBluePlus.connectedDevices;
-
-    if (devices.isNotEmpty) {
-      BluetoothDevice device = devices.first;
-
-      setState(() {
-        connectedDeviceName = device.name.isNotEmpty
-            ? device.name
-            : "Unnamed Device";
-        connectedDeviceID = device.id.id;
-        connectedDeviceStatus = true; // Assuming it's connected if listed
-      });
-
-      // Optionally, fetch additional details like battery if supported by your BLE device
-    }
-  }
-
-  String _truncateConnectedDeviceName(String deviceName) {
-    if (deviceName.length <= 20) {
-      return deviceName;
-    }
-    return '${deviceName.substring(0, 20)}...';
-  }
-
-  String _displayConnectionStatus(bool deviceConnectionStatus) {
-    return deviceConnectionStatus ? "Connected" : "N/A";
-  }
-
-  Future<bool> _showConfirmationDialog(
-      BuildContext context, String presetName) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Preset Activation'),
-          content: Text('Do you want to send "$presetName" to your device?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: const Text('Send'),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
-    ) ??
-        false;
+  Future<void> _fetchDeviceInfo() async {
+    final bluetoothProvider = Provider.of<BluetoothProvider>(context, listen: false);
+    await bluetoothProvider.checkConnectedDevice();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bluetoothProvider = Provider.of<BluetoothProvider>(context);
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: Column(
@@ -100,17 +50,20 @@ class _PresetsListPageState extends State<PresetsListPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _truncateConnectedDeviceName(connectedDeviceName),
+                      bluetoothProvider.connectedDeviceName,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.normal,
                       ),
                     ),
                     Text(
-                      _displayConnectionStatus(connectedDeviceStatus),
-                      style: const TextStyle(
+                      bluetoothProvider.isDeviceConnected ? "Connected" : "No Device Connected",
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.normal,
+                        color: bluetoothProvider.isDeviceConnected
+                            ? Colors.blue // Deep blue for connected
+                            : Color.fromRGBO(93, 59, 129, 1.00), // Dark reddish-purple for disconnected
                       ),
                     ),
                   ],
@@ -119,21 +72,13 @@ class _PresetsListPageState extends State<PresetsListPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      connectedDeviceID,
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      bluetoothProvider.connectedDeviceID,
+                      style: const TextStyle(fontSize: 14),
                     ),
                     Text(
-                      '$connectedDeviceBattery%',
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    )
+                      bluetoothProvider.connectedDeviceBattery,
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ],
                 ),
               ],
@@ -226,42 +171,30 @@ class _PresetsListPageState extends State<PresetsListPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        onPressed: () async {
-          final newId = 'preset_${DateTime.now().millisecondsSinceEpoch}';
-          final newPreset = Preset(
-            id: newId,
-            name: 'New Preset',
-            dateCreated: DateTime.now(),
-            presetData: {
-              'db_valueOV': 0.0,
-              'db_valueSB_BS': 0.0,
-              'db_valueSB_MRS': 0.0,
-              'db_valueSB_TS': 0.0,
-              'reduce_background_noise': false,
-              'reduce_wind_noise': false,
-              'soften_sudden_noise': false,
-            },
-          );
-
-          await widget.presetProvider.createPreset(newPreset);
-
-          if (context.mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PresetPage(
-                  presetId: newId,
-                  presetName: 'New Preset',
-                  presetProvider: widget.presetProvider,
-                ),
-              ),
-            );
-          }
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
+  }
+
+  Future<bool> _showConfirmationDialog(
+      BuildContext context, String presetName) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Preset Activation'),
+          content: Text('Do you want to send "$presetName" to your device?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('Send'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    ) ??
+        false;
   }
 }
