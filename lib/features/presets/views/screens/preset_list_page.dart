@@ -18,6 +18,15 @@ class PresetsListPage extends StatefulWidget {
 
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
+<<<<<<< Updated upstream
+=======
+  final player = AudioPlayer();
+
+  Future<void> playSound() async {
+    String audioPath = "audio/soundTest.mp3";
+    await player.play(AssetSource(audioPath));
+  }
+>>>>>>> Stashed changes
 
   Future<bool> _showConfirmationDialog(
       BuildContext context, String presetName) async {
@@ -152,7 +161,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                           if (activePresetId == preset.id)
                             DropdownButton<String>(
                               value: null, // No initial value for the dropdown
-                              hint: const Text('What does thou want to do :3'),
+                              hint: const Text('What would you like to do?'),
                               onChanged: (String? value) async {
                                 if (value == null) return;
 
