@@ -33,7 +33,7 @@ dependencies:
     sdk: flutter
   provider: ^6.0.0
   flutter_blue_plus: ^1.0.0
-
+  external_app_launcher: ^4.0.1
 
 
 
