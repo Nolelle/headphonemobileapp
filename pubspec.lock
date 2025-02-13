@@ -137,6 +137,10 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.10"
+      sha256: "79e0c23480ff85dc68de79e2cd6334add97e48f7f4865d17686dd6ea81a47e8c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.11"
   fake_async:
     dependency: transitive
     description:
@@ -178,26 +182,27 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_blue_plus
-      sha256: "6dd2b572b3e392aadd7f3ab125657af83deefdb02d8c069e60b13ebd0e09b67e"
+      sha256: cbce36053c333932bdbb63bb14719b52743e8d97d7468077e1a7ab5691096987
       url: "https://pub.dev"
     source: hosted
-    version: "1.35.0"
+    version: "1.35.2"
   flutter_blue_plus_android:
     dependency: transitive
     description:
       name: flutter_blue_plus_android
-      sha256: c6ad39d039bc638d47138c6ca957b6f58e60c62528d6e2ac2368f659995b2932
+
+      sha256: db8272e605f8b8d5c2314b7005fefefccbc57ab4219bfc805ea8133e0738872a
       url: "https://pub.dev"
     source: hosted
-    version: "1.35.0"
-  flutter_blue_plus_ios:
+    version: "2.0.1"
+  flutter_blue_plus_darwin:
     dependency: transitive
     description:
-      name: flutter_blue_plus_ios
-      sha256: "45e2101962b0280013279cac10ce1ff3d2cfdb36dd9bcf6ecec4c19f079d7fc7"
+      name: flutter_blue_plus_darwin
+      sha256: "782e677aca52d99444d8b633869bf127566787330f42eaa67350798b099a1aed"
       url: "https://pub.dev"
     source: hosted
-    version: "1.35.0"
+    version: "2.0.1"
   flutter_blue_plus_linux:
     dependency: transitive
     description:
@@ -218,18 +223,18 @@ packages:
     dependency: transitive
     description:
       name: flutter_blue_plus_platform_interface
-      sha256: e6231cd38b110fcbd910bb89c276fc2668492838fd7d53e1afce3c79c9c1ba38
+      sha256: "42affeaaa7031ff0b68ab6c987cb5b28d24d587fa308fdb33d239ce2b600f496"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "2.0.1"
   flutter_blue_plus_web:
     dependency: transitive
     description:
       name: flutter_blue_plus_web
-      sha256: "57ce85830f30cac9b51d93e7114ccde4d7ec0e12e84eb04bde12b2857e045f9d"
+      sha256: "43eb96bd3d5ca8ccd17077508dd4cd72dee3ed109144ecf7ae028b5076ac17ff"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "2.0.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -392,6 +397,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  permission_handler:
+    dependency: "direct main"
+    description:
+      name: permission_handler
+      sha256: bc56bfe9d3f44c3c612d8d393bd9b174eb796d706759f9b495ac254e4294baa5
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.4.5"
+  permission_handler_android:
+    dependency: transitive
+    description:
+      name: permission_handler_android
+      sha256: "59c6322171c29df93a22d150ad95f3aa19ed86542eaec409ab2691b8f35f9a47"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.3.6"
+  permission_handler_apple:
+    dependency: transitive
+    description:
+      name: permission_handler_apple
+      sha256: "99e220bce3f8877c78e4ace901082fb29fa1b4ebde529ad0932d8d664b34f3f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.1.4"
+  permission_handler_platform_interface:
+    dependency: transitive
+    description:
+      name: permission_handler_platform_interface
+      sha256: "6760eb5ef34589224771010805bea6054ad28453906936f843a8cc4d3a55c4a4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.12.0"
+  permission_handler_windows:
+    dependency: transitive
+    description:
+      name: permission_handler_windows
+      sha256: cc074aace208760f1eee6aa4fae766b45d947df85bc831cde77009cdb4720098
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
   petitparser:
     dependency: transitive
     description:

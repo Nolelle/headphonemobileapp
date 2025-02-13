@@ -7,6 +7,7 @@ import Foundation
 
 import audioplayers_darwin
 import flutter_blue_plus_macos
+import flutter_blue_plus_darwin
 import path_provider_foundation
 import shared_preferences_foundation
 

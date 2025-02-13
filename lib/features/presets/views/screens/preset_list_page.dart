@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
+import '../../../bluetooth/providers/bluetooth_provider.dart';
 import '../../models/preset.dart';
 
 class PresetsListPage extends StatefulWidget {
@@ -81,10 +83,13 @@ class _PresetsListPageState extends State<PresetsListPage> {
       },
     ) ??
         false;
+
   }
 
   @override
   Widget build(BuildContext context) {
+    final bluetoothProvider = Provider.of<BluetoothProvider>(context);
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: Column(
@@ -324,5 +329,29 @@ class _PresetsListPageState extends State<PresetsListPage> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  Future<bool> _showConfirmationDialog(
+      BuildContext context, String presetName) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Preset Activation'),
+          content: Text('Do you want to send "$presetName" to your device?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text('Send'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    ) ??
+        false;
   }
 }
