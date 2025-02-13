@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projects/features/bluetooth/views/screens/bluetooth_page.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:projects/core/utils/bluetooth_manager.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
@@ -32,8 +33,13 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     _pages = [
       const SoundTestPage(),
-      Consumer<PresetProvider>(builder: (context, provider, _) => PresetsListPage(presetProvider: provider)),
-      const SettingsPage(),
+      Consumer<PresetProvider>(
+        builder: (context, provider, _) => PresetsListPage(
+          presetProvider: provider,
+        ),
+      ),
+      //changes the settings page to bluetooth page
+      BluetoothPage(),
     ];
     _checkBluetoothConnection();
   }
