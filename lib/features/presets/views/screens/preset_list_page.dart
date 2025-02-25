@@ -23,11 +23,79 @@ class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
   final player = AudioPlayer();
   double volume = 1.0;
+  bool isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set up audio session for proper routing
+    _setupAudioSession();
+
+    // Listen for playback completion
+    player.onPlayerComplete.listen((event) {
+      setState(() {
+        isPlaying = false;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _setupAudioSession() async {
+    // This ensures the audio session is properly configured
+    await player.setReleaseMode(ReleaseMode.stop);
+  }
 
   Future<void> playSound() async {
-    String audioPath = "audio/eminem.mp3";
-    await player.setVolume(volume);
-    await player.play(AssetSource(audioPath));
+    // Check if already playing
+    if (isPlaying) {
+      await player.stop();
+      setState(() {
+        isPlaying = false;
+      });
+      return;
+    }
+
+    final bluetoothProvider =
+        Provider.of<BluetoothProvider>(context, listen: false);
+
+    try {
+      String audioPath = "audio/eminem.mp3";
+      await player.setVolume(volume);
+
+      // Log the connection status
+      print(
+          "Playing audio. Bluetooth connected: ${bluetoothProvider.isDeviceConnected}");
+      print("Connected device: ${bluetoothProvider.connectedDeviceName}");
+
+      // Play the audio - it will automatically route to the connected audio device
+      await player.play(AssetSource(audioPath));
+
+      setState(() {
+        isPlaying = true;
+      });
+
+      // Show a message about where audio is playing
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            bluetoothProvider.isDeviceConnected
+                ? 'Playing through ${bluetoothProvider.connectedDeviceName}'
+                : 'Playing through device speaker',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print("Error playing audio: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error playing audio: $e')),
+      );
+    }
   }
 
   void updateVolume(double value) {
@@ -257,16 +325,15 @@ class _PresetsListPageState extends State<PresetsListPage> {
           //audio player for testing purposes
           Center(
             child: Column(children: [
-              ElevatedButton(
-                  onPressed: () {
-                    playSound();
-                  },
-                  child: const Text("Play me!")),
-              ElevatedButton(
-                  onPressed: () {
-                    player.stop();
-                  },
-                  child: const Text("Stop")),
+              ElevatedButton.icon(
+                icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+                label: Text(isPlaying ? 'Stop' : 'Play Test Sound'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isPlaying ? Colors.red : Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: playSound,
+              ),
               const SizedBox(height: 10),
               // Volume Control Slider
               Column(

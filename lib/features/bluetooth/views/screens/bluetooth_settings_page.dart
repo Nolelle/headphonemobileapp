@@ -3,25 +3,33 @@ import 'package:provider/provider.dart';
 import '../../providers/bluetooth_provider.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-class BluetoothSettingsPage extends StatelessWidget {
+class BluetoothSettingsPage extends StatefulWidget {
   const BluetoothSettingsPage({super.key});
 
   @override
+  State<BluetoothSettingsPage> createState() => _BluetoothSettingsPageState();
+}
+
+class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
+  bool _isReconnecting = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bluetooth Settings'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-      ),
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
-      body: Consumer<BluetoothProvider>(
-        builder: (context, provider, _) {
-          return Padding(
+    return Consumer<BluetoothProvider>(
+      builder: (context, provider, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Bluetooth Settings'),
+            backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+            foregroundColor: Colors.white,
+          ),
+          backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+          body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Registered Device Section
+                // Connection Status Section
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -29,15 +37,39 @@ class BluetoothSettingsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Registered Device',
+                          'Connection Status',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 8),
+                        Text(
+                          'Bluetooth: ${provider.isBluetoothEnabled ? 'Enabled' : 'Disabled'}',
+                          style: TextStyle(
+                            color: provider.isBluetoothEnabled
+                                ? Colors.green
+                                : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Device: ${provider.isDeviceConnected ? provider.connectedDeviceName : 'Not Connected'}',
+                          style: TextStyle(
+                            color: provider.isDeviceConnected
+                                ? Colors.green
+                                : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         if (provider.registeredDeviceId != null) ...[
-                          Text('Device ID: ${provider.registeredDeviceId}'),
+                          const Text('Registered Device:'),
+                          Text(
+                            provider.connectedDeviceName,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
@@ -46,12 +78,50 @@ class BluetoothSettingsPage extends StatelessWidget {
                                     ? () {
                                         provider.disconnectDevice();
                                       }
-                                    : null,
-                                child: Text(
-                                  provider.isDeviceConnected
-                                      ? 'Disconnect'
-                                      : 'Connect',
-                                ),
+                                    : _isReconnecting
+                                        ? null
+                                        : () async {
+                                            setState(() {
+                                              _isReconnecting = true;
+                                            });
+
+                                            try {
+                                              await provider.reconnectDevice();
+                                            } catch (e) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Failed to reconnect: $e')),
+                                                );
+                                              }
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _isReconnecting = false;
+                                                });
+                                              }
+                                            }
+                                          },
+                                child: _isReconnecting
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
+                                    : Text(
+                                        provider.isDeviceConnected
+                                            ? 'Disconnect'
+                                            : provider.connectedDevice != null
+                                                ? 'Reconnect'
+                                                : 'Connect',
+                                      ),
                               ),
                               const SizedBox(width: 8),
                               ElevatedButton(
@@ -127,9 +197,9 @@ class BluetoothSettingsPage extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

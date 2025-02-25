@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/bluetooth_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:async'; // Add this import for TimeoutException
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BluetoothProvider extends ChangeNotifier {
   final MyBluetoothService _bluetoothService;
@@ -115,10 +116,28 @@ class BluetoothProvider extends ChangeNotifier {
     if (_isEmulatorTestMode) return;
 
     try {
+      // First ensure the device is connected
+      if (!device.isConnected) {
+        print('Device not connected, connecting first...');
+        await device.connect(timeout: const Duration(seconds: 10));
+      }
+
+      // Save the device ID
       _registeredDeviceId = device.id.toString();
+      _connectedDevice = device;
+      _isDeviceConnected = true;
+      _connectedDeviceName = device.name.isNotEmpty
+          ? device.name
+          : "Unknown Device (${device.id.toString().substring(0, 8)})";
+
+      // Store the device ID in persistent storage for reconnection after app restart
+      // You'll need to implement this using shared_preferences or another storage method
+
       notifyListeners();
+      print('Successfully registered device: ${device.name}');
     } catch (e) {
       print('Error registering device: $e');
+      rethrow;
     }
   }
 
@@ -134,15 +153,31 @@ class BluetoothProvider extends ChangeNotifier {
   }
 
   Future<void> disconnectDevice() async {
-    if (_isEmulatorTestMode || _registeredDeviceId == null) return;
+    if (_isEmulatorTestMode) return;
 
     try {
-      await _bluetoothService.disconnectDevice(_registeredDeviceId!);
+      if (_connectedDevice != null) {
+        print('Disconnecting from device: ${_connectedDevice!.name}');
+        await _connectedDevice!.disconnect();
+      } else if (_registeredDeviceId != null) {
+        try {
+          await _bluetoothService.disconnectDevice(_registeredDeviceId!);
+        } catch (e) {
+          print('Error disconnecting registered device: $e');
+        }
+      }
+
       _isDeviceConnected = false;
       _connectedDeviceName = "No Device";
+      // Don't set _connectedDevice to null here to allow reconnection
+
       notifyListeners();
+      print('Device disconnected successfully');
     } catch (e) {
       print('Error disconnecting device: $e');
+      // Even if there's an error, update the UI state
+      _isDeviceConnected = false;
+      notifyListeners();
     }
   }
 
@@ -173,7 +208,9 @@ class BluetoothProvider extends ChangeNotifier {
     try {
       await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
       FlutterBluePlus.scanResults.listen((results) {
-        _scanResults = results;
+        // Filter to only show devices with names
+        _scanResults =
+            results.where((result) => result.device.name.isNotEmpty).toList();
         notifyListeners();
       });
     } finally {
@@ -233,10 +270,51 @@ class BluetoothProvider extends ChangeNotifier {
   }
 
   Future<void> deregisterDevice() async {
-    if (_connectedDevice != null) {
-      await _connectedDevice!.disconnect();
+    try {
+      if (_connectedDevice != null) {
+        try {
+          await _connectedDevice!.disconnect();
+        } catch (e) {
+          print('Error disconnecting device during deregistration: $e');
+        }
+      }
+
       _connectedDevice = null;
+      _registeredDeviceId = null;
+      _isDeviceConnected = false;
+      _connectedDeviceName = "No Device";
+
+      // Clear from persistent storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('registered_device_id');
+
       notifyListeners();
+      print('Device deregistered successfully');
+    } catch (e) {
+      print('Error deregistering device: $e');
+    }
+  }
+
+  Future<void> reconnectDevice() async {
+    if (_isEmulatorTestMode || _connectedDevice == null) return;
+
+    try {
+      print('Attempting to reconnect to: ${_connectedDevice!.name}');
+      await _connectedDevice!.connect(
+        timeout: const Duration(seconds: 10),
+        autoConnect: false,
+      );
+
+      _isDeviceConnected = true;
+      _connectedDeviceName = _connectedDevice!.name.isNotEmpty
+          ? _connectedDevice!.name
+          : "Unknown Device (${_connectedDevice!.id.toString().substring(0, 8)})";
+
+      notifyListeners();
+      print('Successfully reconnected to: ${_connectedDevice!.name}');
+    } catch (e) {
+      print('Error reconnecting to device: $e');
+      rethrow;
     }
   }
 }
