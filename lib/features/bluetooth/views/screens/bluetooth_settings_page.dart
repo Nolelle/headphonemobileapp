@@ -43,7 +43,7 @@ class BluetoothSettingsPage extends StatelessWidget {
                             children: [
                               ElevatedButton(
                                 onPressed: provider.isDeviceConnected
-                                    ? provider.disconnectDevice
+                                    ? () => provider.disconnectDevice()
                                     : provider.connectToDevice,
                                 child: Text(
                                   provider.isDeviceConnected
@@ -101,17 +101,23 @@ class BluetoothSettingsPage extends StatelessWidget {
                           itemCount: provider.scanResults.length,
                           itemBuilder: (context, index) {
                             final result = provider.scanResults[index];
+                            final deviceName = result.device.name.isNotEmpty
+                                ? result.device.name
+                                : "Unknown Device (${result.device.id.toString().substring(0, 8)})";
+
                             return ListTile(
-                              title: Text(
-                                result.device.name.isNotEmpty
-                                    ? result.device.name
-                                    : 'Unknown Device',
+                              title: Text(deviceName),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Signal Strength: ${result.rssi} dBm'),
+                                  Text(result.device.id.toString()),
+                                ],
                               ),
-                              subtitle: Text(result.device.id.toString()),
                               trailing: ElevatedButton(
-                                onPressed: () =>
-                                    provider.registerDevice(result.device),
-                                child: const Text('Register'),
+                                onPressed: () => _connectToDevice(
+                                    context, provider, result.device),
+                                child: const Text('Connect'),
                               ),
                             );
                           },
@@ -123,5 +129,74 @@ class BluetoothSettingsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  // New method to handle connection workflow
+  void _connectToDevice(BuildContext context, BluetoothProvider provider,
+      BluetoothDevice device) async {
+    // Show connecting indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text("Connecting to ${device.name}..."),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      // Attempt to connect to the device
+      await provider.connectToDeviceDirectly(device);
+
+      // Close the connecting dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      // If connection successful, ask if they want to register
+      if (provider.isDeviceConnected && context.mounted) {
+        final shouldRegister = await showDialog<bool>(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Device Connected'),
+                  content: Text(
+                      'Do you want to register "${device.name}" as your primary device?'),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('No'),
+                      onPressed: () => Navigator.of(context).pop(false),
+                    ),
+                    TextButton(
+                      child: const Text('Yes'),
+                      onPressed: () => Navigator.of(context).pop(true),
+                    ),
+                  ],
+                );
+              },
+            ) ??
+            false;
+
+        if (shouldRegister) {
+          provider.registerDevice(device);
+        }
+      }
+    } catch (e) {
+      // Close the connecting dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to connect: ${e.toString()}')),
+        );
+      }
+    }
   }
 }

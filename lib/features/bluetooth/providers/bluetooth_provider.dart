@@ -1,56 +1,92 @@
+// File: lib/features/bluetooth/providers/bluetooth_provider.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../services/bluetooth_service.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BluetoothProvider extends ChangeNotifier {
-  final MyBluetoothService _bluetoothService = MyBluetoothService();
-
+  final MyBluetoothService _bluetoothService;
+  bool _isDeviceConnected = false;
+  bool _isBluetoothEnabled = false;
   String _connectedDeviceName = "No Device";
   String? _registeredDeviceId;
-  bool _isDeviceConnected = false;
-  final String _connectedDeviceBattery = "???";
-  bool _isEmulatorTestMode = false;
-  List<ScanResult> _scanResults = [];
+  final bool _isEmulatorTestMode;
   bool _isScanning = false;
+  List<ScanResult> _scanResults = [];
+  BluetoothDevice? _connectedDevice;
 
-  // Getters
-  String get connectedDeviceName => _connectedDeviceName;
-  String? get registeredDeviceId => _registeredDeviceId;
-  bool get isDeviceConnected => _isDeviceConnected || _isEmulatorTestMode;
-  String get connectedDeviceBattery => _connectedDeviceBattery;
-  bool get isEmulatorTestMode => _isEmulatorTestMode;
-  List<ScanResult> get scanResults => _scanResults;
-  bool get isScanning => _isScanning;
+  // Add this getter to access the service
+  MyBluetoothService get bluetoothService => _bluetoothService;
 
-  BluetoothProvider() {
-    initBluetoothStateListener();
-    checkBluetoothConnection();
+  BluetoothProvider({
+    required MyBluetoothService bluetoothService,
+    bool isEmulatorTestMode = false,
+  })  : _bluetoothService = bluetoothService,
+        _isEmulatorTestMode = isEmulatorTestMode {
+    _init();
   }
 
-  void initBluetoothStateListener() {
-    _bluetoothService.listenToBluetoothState().listen((isOn) {
-      if (isOn) {
+  bool get isDeviceConnected => _isDeviceConnected || _isEmulatorTestMode;
+  bool get isBluetoothEnabled => _isBluetoothEnabled || _isEmulatorTestMode;
+  String get connectedDeviceName =>
+      _isEmulatorTestMode ? "Emulator Test Device" : _connectedDeviceName;
+  String? get registeredDeviceId => _registeredDeviceId;
+  bool get isScanning => _isScanning;
+  List<ScanResult> get scanResults => _scanResults;
+  BluetoothDevice? get connectedDevice => _connectedDevice;
+
+  void _init() async {
+    if (_isEmulatorTestMode) {
+      _isDeviceConnected = true;
+      _isBluetoothEnabled = true;
+      _connectedDeviceName = "Emulator Test Device";
+      return;
+    }
+
+    // Listen to Bluetooth state changes
+    _bluetoothService.listenToBluetoothState().listen((isEnabled) {
+      _isBluetoothEnabled = isEnabled;
+      notifyListeners();
+
+      // If Bluetooth is enabled, check for connected devices
+      if (isEnabled) {
         checkBluetoothConnection();
       } else {
         _isDeviceConnected = false;
+        _connectedDeviceName = "No Device";
         notifyListeners();
       }
     });
-  }
 
-  void setEmulatorTestMode(bool value) {
-    _isEmulatorTestMode = value;
-    notifyListeners();
+    // Initial check for connected devices
+    await checkBluetoothConnection();
   }
 
   Future<void> checkBluetoothConnection() async {
     if (_isEmulatorTestMode) return;
 
     try {
+      print("Checking for Bluetooth connections...");
       final devices = await _bluetoothService.getConnectedDevices();
+
+      if (devices.isNotEmpty) {
+        print("Found connected devices: ${devices.map((d) => d.name)}");
+      }
+
       _isDeviceConnected = devices.isNotEmpty;
-      _connectedDeviceName =
-          _isDeviceConnected ? devices.first.platformName : "No Device";
+
+      if (_isDeviceConnected) {
+        _connectedDeviceName = devices.first.name.isNotEmpty
+            ? devices.first.name
+            : devices.first.platformName;
+
+        // Auto-register the connected device if none is registered
+        _registeredDeviceId ??= devices.first.id.toString();
+        print("Connected to: $_connectedDeviceName");
+      } else {
+        _connectedDeviceName = "No Device";
+      }
+
       notifyListeners();
     } catch (e) {
       print('Error checking Bluetooth connection: $e');
@@ -59,74 +95,110 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> openBluetoothSettings() async {
-    await _bluetoothService.openBluetoothSettings();
-  }
-
-  // Device Registration Methods
   Future<void> registerDevice(BluetoothDevice device) async {
-    _registeredDeviceId = device.id.toString();
-    notifyListeners();
-    // You might want to save this to persistent storage
-  }
+    if (_isEmulatorTestMode) return;
 
-  Future<void> deregisterDevice() async {
-    if (isDeviceConnected) {
-      await disconnectDevice();
+    try {
+      _registeredDeviceId = device.id.toString();
+      notifyListeners();
+    } catch (e) {
+      print('Error registering device: $e');
     }
-    _registeredDeviceId = null;
-    notifyListeners();
   }
 
-  Future<void> connectToDevice() async {
-    if (_registeredDeviceId == null) return;
+  Future<void> connectToRegisteredDevice() async {
+    if (_isEmulatorTestMode || _registeredDeviceId == null) return;
 
     try {
       await _bluetoothService.connectToDevice(_registeredDeviceId!);
-      _isDeviceConnected = true;
-      notifyListeners();
+      await checkBluetoothConnection();
     } catch (e) {
-      print('Error connecting to device: $e');
+      print('Error connecting to registered device: $e');
     }
   }
 
   Future<void> disconnectDevice() async {
-    if (_registeredDeviceId == null) return;
+    if (_isEmulatorTestMode || _registeredDeviceId == null) return;
 
     try {
       await _bluetoothService.disconnectDevice(_registeredDeviceId!);
       _isDeviceConnected = false;
+      _connectedDeviceName = "No Device";
       notifyListeners();
     } catch (e) {
-      print('Error disconnecting from device: $e');
+      print('Error disconnecting device: $e');
     }
   }
 
-  // Scanning Methods
+  Future<void> connectViaSystemSettings() async {
+    // Open Android's Bluetooth settings
+    await _bluetoothService.openBluetoothSettings();
+
+    // Check connection immediately after returning
+    await checkBluetoothConnection();
+
+    // If not connected yet, try checking a few more times with a delay
+    if (!_isDeviceConnected) {
+      for (int i = 0; i < 5; i++) {
+        await Future.delayed(const Duration(seconds: 1));
+        print("Checking again for Bluetooth connections...");
+        await checkBluetoothConnection();
+        if (_isDeviceConnected) break;
+      }
+    }
+  }
+
   Future<void> startScan() async {
+    if (_isScanning) return;
+    _scanResults.clear();
     _isScanning = true;
     notifyListeners();
 
-    _bluetoothService.startScan().listen(
-      (results) {
+    try {
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      FlutterBluePlus.scanResults.listen((results) {
         _scanResults = results;
         notifyListeners();
-      },
-      onError: (e) {
-        print('Error scanning: $e');
-        _isScanning = false;
-        notifyListeners();
-      },
-      onDone: () {
-        _isScanning = false;
-        notifyListeners();
-      },
-    );
+      });
+    } finally {
+      _isScanning = false;
+      notifyListeners();
+    }
   }
 
   void stopScan() {
-    _bluetoothService.stopScan();
+    FlutterBluePlus.stopScan();
     _isScanning = false;
     notifyListeners();
+  }
+
+  Future<void> connectToDevice(BluetoothDevice device) async {
+    try {
+      await device.connect();
+      _connectedDevice = device;
+      notifyListeners();
+    } catch (e) {
+      print('Error connecting to device: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> connectToDeviceDirectly(BluetoothDevice device) async {
+    try {
+      await device.connect(timeout: const Duration(seconds: 4));
+      _connectedDevice = device;
+      notifyListeners();
+    } catch (e) {
+      print('Error connecting directly to device: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deregisterDevice() async {
+    if (_connectedDevice != null) {
+      await _connectedDevice!.disconnect();
+      _connectedDevice = null;
+      notifyListeners();
+    }
   }
 }
