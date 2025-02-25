@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/bluetooth_provider.dart';
+import '../screens/bluetooth_settings_page.dart';
 
 class BluetoothWrapper extends StatefulWidget {
   final Widget child;
@@ -166,6 +167,64 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
                                       });
                                     }
                                   }
+                                },
+                              ),
+
+                              const SizedBox(height: 20),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.settings),
+                                label: const Text('App Bluetooth Settings'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.blue,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const BluetoothSettingsPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // Add bypass button
+                              const SizedBox(height: 40),
+                              const Divider(),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Developer Options',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.developer_mode),
+                                label: const Text('Bypass Bluetooth Check'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                ),
+                                onPressed: () {
+                                  // Set bypass mode to true
+                                  bluetoothProvider
+                                      .setBypassBluetoothCheck(true);
+
+                                  // Show a snackbar to indicate bypass mode
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Bluetooth check bypassed. App running in developer mode.',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
                                 },
                               ),
                             ],

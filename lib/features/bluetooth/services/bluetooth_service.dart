@@ -6,7 +6,6 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:async';
 import '../platform/bluetooth_platform.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class MyBluetoothService {
   // Start scanning for BLE devices
@@ -66,195 +65,52 @@ class MyBluetoothService {
   }
 
   Future<void> connectToDeviceDirectly(BluetoothDevice device) async {
-    await device.connect();
+    try {
+      print("Attempting direct connection to: ${device.name}");
+
+      // Set a reasonable timeout
+      await device
+          .connect(
+        timeout: const Duration(seconds: 10),
+        autoConnect: false, // Don't try to auto-connect, which can hang
+      )
+          .timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          print("Connection attempt timed out");
+          throw TimeoutException("Connection timed out");
+        },
+      );
+
+      print("Connection successful to: ${device.name}");
+    } catch (e) {
+      print("Error in connectToDeviceDirectly: $e");
+      // Make sure to disconnect if there was an error
+      try {
+        await device.disconnect();
+      } catch (disconnectError) {
+        print(
+            "Error during disconnect after failed connection: $disconnectError");
+      }
+      rethrow;
+    }
   }
 
   Future<List<BluetoothDevice>> getConnectedDevices() async {
     try {
-      // Try the direct API approach first
+      // Get connected BLE devices
       final devices = FlutterBluePlus.connectedDevices;
 
       if (devices.isNotEmpty) {
-        print("Found ${devices.length} connected BLE devices via API");
+        print("Found ${devices.length} connected BLE devices");
         return devices;
       }
 
-      // If no devices found through the API, check if Android indicates connected audio devices
-      final isAudioConnected = await isAudioDeviceConnected();
-      if (isAudioConnected) {
-        print("Audio device detected as connected!");
-
-        // Do a quick scan to find nearby devices - if audio is connected
-        // there should be a device with a strong signal nearby
-        print("Scanning for nearby devices...");
-
-        // Start a quick scan with high power
-        FlutterBluePlus.startScan(
-          timeout: const Duration(seconds: 2),
-          androidScanMode: AndroidScanMode.lowLatency,
-        );
-
-        // Wait for scan results
-        await Future.delayed(const Duration(seconds: 3));
-
-        // Get scan results
-        final scanResults = await FlutterBluePlus.scanResults.first;
-
-        // Find devices with strong signal
-        final nearbyDevices = scanResults
-            .where(
-                (result) => result.rssi > -60) // Very strong signal threshold
-            .map((result) => result.device)
-            .toList();
-
-        // Stop scan
-        FlutterBluePlus.stopScan();
-
-        if (nearbyDevices.isNotEmpty) {
-          print(
-              "Found ${nearbyDevices.length} nearby devices with strong signal");
-          return nearbyDevices;
-        }
-      }
-
-      // Fall back to checking if any audio devices are connected via system API
+      // If no devices found, return empty list
       return [];
     } catch (e) {
       print("Error getting connected devices: $e");
       return [];
-    } finally {
-      // Always make sure scan is stopped
-      try {
-        FlutterBluePlus.stopScan();
-      } catch (_) {}
-    }
-  }
-
-  Future<bool> isAudioDeviceConnected() async {
-    try {
-      // First check connected devices through FlutterBluePlus
-      final connectedDevices = FlutterBluePlus.connectedDevices;
-
-      // Check if any connected device is likely an audio device
-      for (var device in connectedDevices) {
-        final name = device.name.toLowerCase();
-        if (name.contains('airpod') ||
-            name.contains('headphone') ||
-            name.contains('earphone') ||
-            name.contains('headset') ||
-            name.contains('speaker') ||
-            name.contains('audio')) {
-          return true;
-        }
-      }
-
-      // Check via platform channel for system-connected audio devices
-      final systemAudioConnected =
-          await BluetoothPlatform.isAudioDeviceConnected();
-      if (systemAudioConnected) {
-        print("System audio device detected via native API!");
-        return true;
-      }
-
-      // If still not found, fall back to scanning
-      bool foundAudioDevice = false;
-
-      FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 1),
-        androidScanMode: AndroidScanMode.lowLatency,
-      );
-
-      // Listen for scan results
-      await for (List<ScanResult> results
-          in FlutterBluePlus.scanResults.take(1)) {
-        for (ScanResult result in results) {
-          final name = result.device.name.toLowerCase();
-          // Check if any scanned device is likely an audio device with strong signal
-          if ((name.contains('airpod') ||
-                  name.contains('headphone') ||
-                  name.contains('earphone') ||
-                  name.contains('headset') ||
-                  name.contains('speaker') ||
-                  name.contains('audio')) &&
-              result.rssi > -70) {
-            foundAudioDevice = true;
-            break;
-          }
-        }
-      }
-
-      try {
-        FlutterBluePlus.stopScan();
-      } catch (_) {}
-
-      return foundAudioDevice;
-    } catch (e) {
-      print('Error checking audio devices: $e');
-      return false;
-    } finally {
-      // Always ensure scan is stopped
-      try {
-        FlutterBluePlus.stopScan();
-      } catch (_) {}
-    }
-  }
-}
-
-class BluetoothService {
-  final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
-  BluetoothConnection? _connection;
-  BluetoothDevice? _connectedDevice;
-
-  bool get isConnected => _connection != null && _connection!.isConnected;
-  BluetoothDevice? get connectedDevice => _connectedDevice;
-
-  Future<bool> get isBluetoothEnabled async {
-    return await _bluetooth.isEnabled ?? false;
-  }
-
-  Future<List<BluetoothDevice>> getPairedDevices() async {
-    try {
-      return await _bluetooth.getBondedDevices();
-    } catch (e) {
-      debugPrint('Error getting paired devices: $e');
-      return [];
-    }
-  }
-
-  Future<bool> connectToDevice(BluetoothDevice device) async {
-    try {
-      _connection = await BluetoothConnection.toAddress(device.address);
-      if (_connection!.isConnected) {
-        _connectedDevice = device;
-        return true;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Error connecting to device: $e');
-      return false;
-    }
-  }
-
-  Future<void> disconnectDevice() async {
-    try {
-      if (_connection != null) {
-        await _connection!.close();
-        _connection = null;
-        _connectedDevice = null;
-      }
-    } catch (e) {
-      debugPrint('Error disconnecting device: $e');
-    }
-  }
-
-  Future<void> sendData(String data) async {
-    try {
-      if (_connection != null && _connection!.isConnected) {
-        _connection!.output.add(Uint8List.fromList(data.codeUnits));
-        await _connection!.output.allSent;
-      }
-    } catch (e) {
-      debugPrint('Error sending data: $e');
     }
   }
 }

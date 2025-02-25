@@ -28,7 +28,7 @@ void main() async {
 
   // Create provider first so we can use it for the observer
   final bluetoothProvider =
-      BluetoothProvider(bluetoothService: BluetoothService());
+      BluetoothProvider(bluetoothService: MyBluetoothService());
 
   // Register lifecycle observer
   final observer = BluetoothLifecycleObserver(bluetoothProvider);

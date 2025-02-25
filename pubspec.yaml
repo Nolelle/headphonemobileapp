@@ -32,7 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.0
-  flutter_blue_plus: ^1.35.3 # Use the latest version available
+  flutter_blue_plus: ^1.35.3 # Keep only this Bluetooth library
   permission_handler: ^10.0.0
   external_app_launcher: ^4.0.1
   url_launcher: ^6.1.12  

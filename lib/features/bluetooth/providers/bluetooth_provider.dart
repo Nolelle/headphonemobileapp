@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../services/bluetooth_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'dart:async'; // Add this import for TimeoutException
 
 class BluetoothProvider extends ChangeNotifier {
   final MyBluetoothService _bluetoothService;
@@ -14,9 +15,18 @@ class BluetoothProvider extends ChangeNotifier {
   bool _isScanning = false;
   List<ScanResult> _scanResults = [];
   BluetoothDevice? _connectedDevice;
+  bool _bypassBluetoothCheck = false;
 
   // Add this getter to access the service
   MyBluetoothService get bluetoothService => _bluetoothService;
+
+  // Add this getter and setter for bypass
+  bool get bypassBluetoothCheck => _bypassBluetoothCheck;
+
+  void setBypassBluetoothCheck(bool value) {
+    _bypassBluetoothCheck = value;
+    notifyListeners();
+  }
 
   BluetoothProvider({
     required MyBluetoothService bluetoothService,
@@ -26,10 +36,16 @@ class BluetoothProvider extends ChangeNotifier {
     _init();
   }
 
-  bool get isDeviceConnected => _isDeviceConnected || _isEmulatorTestMode;
-  bool get isBluetoothEnabled => _isBluetoothEnabled || _isEmulatorTestMode;
-  String get connectedDeviceName =>
-      _isEmulatorTestMode ? "Emulator Test Device" : _connectedDeviceName;
+  bool get isDeviceConnected =>
+      _isDeviceConnected || _isEmulatorTestMode || _bypassBluetoothCheck;
+  bool get isBluetoothEnabled =>
+      _isBluetoothEnabled || _isEmulatorTestMode || _bypassBluetoothCheck;
+  String get connectedDeviceName {
+    if (_isEmulatorTestMode) return "Emulator Test Device";
+    if (_bypassBluetoothCheck) return "Bypass Mode";
+    return _connectedDeviceName;
+  }
+
   String? get registeredDeviceId => _registeredDeviceId;
   bool get isScanning => _isScanning;
   List<ScanResult> get scanResults => _scanResults;
@@ -185,11 +201,33 @@ class BluetoothProvider extends ChangeNotifier {
 
   Future<void> connectToDeviceDirectly(BluetoothDevice device) async {
     try {
-      await device.connect(timeout: const Duration(seconds: 4));
+      print("Attempting to connect to device: ${device.name}");
+
+      // Add a timeout to prevent hanging
+      await Future.any([
+        _bluetoothService.connectToDeviceDirectly(device),
+        Future.delayed(const Duration(seconds: 20)).then((_) {
+          throw TimeoutException(
+              "Connection attempt timed out after 20 seconds");
+        }),
+      ]);
+
       _connectedDevice = device;
+
+      // Update connection status
+      _isDeviceConnected = true;
+      _connectedDeviceName = device.name.isNotEmpty
+          ? device.name
+          : "Unknown Device (${device.id.toString().substring(0, 8)})";
+
       notifyListeners();
+      print("Successfully connected to: ${device.name}");
     } catch (e) {
       print('Error connecting directly to device: $e');
+      // Reset connection status
+      _isDeviceConnected = false;
+      _connectedDevice = null;
+      notifyListeners();
       rethrow;
     }
   }

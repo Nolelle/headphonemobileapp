@@ -43,8 +43,10 @@ class BluetoothSettingsPage extends StatelessWidget {
                             children: [
                               ElevatedButton(
                                 onPressed: provider.isDeviceConnected
-                                    ? () => provider.disconnectDevice()
-                                    : provider.connectToDevice,
+                                    ? () {
+                                        provider.disconnectDevice();
+                                      }
+                                    : null,
                                 child: Text(
                                   provider.isDeviceConnected
                                       ? 'Disconnect'
@@ -134,7 +136,7 @@ class BluetoothSettingsPage extends StatelessWidget {
   // New method to handle connection workflow
   void _connectToDevice(BuildContext context, BluetoothProvider provider,
       BluetoothDevice device) async {
-    // Show connecting indicator
+    // Show connecting indicator with cancel button
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -146,6 +148,19 @@ class BluetoothSettingsPage extends StatelessWidget {
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
               Text("Connecting to ${device.name}..."),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Try to cancel the connection attempt
+                  try {
+                    device.disconnect();
+                  } catch (e) {
+                    print("Error cancelling connection: $e");
+                  }
+                },
+                child: const Text("Cancel"),
+              ),
             ],
           ),
         );
