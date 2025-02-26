@@ -6,6 +6,7 @@ import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../../bluetooth/providers/bluetooth_provider.dart';
 import '../../models/preset.dart';
+import '../../../bluetooth/platform/bluetooth_platform.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -64,15 +65,25 @@ class _PresetsListPageState extends State<PresetsListPage> {
         Provider.of<BluetoothProvider>(context, listen: false);
 
     try {
+      // Verify audio connection first
+      bool audioConnected = await bluetoothProvider.verifyAudioConnection();
+
+      if (bluetoothProvider.isDeviceConnected && !audioConnected) {
+        // If our app thinks it's connected but audio isn't working, try to force it
+        await BluetoothPlatform.forceAudioRoutingToBluetooth();
+        audioConnected = await bluetoothProvider.verifyAudioConnection();
+      }
+
       String audioPath = "audio/eminem.mp3";
       await player.setVolume(volume);
 
       // Log the connection status
       print(
           "Playing audio. Bluetooth connected: ${bluetoothProvider.isDeviceConnected}");
+      print("Audio connected: $audioConnected");
       print("Connected device: ${bluetoothProvider.connectedDeviceName}");
 
-      // Play the audio - it will automatically route to the connected audio device
+      // Play the audio
       await player.play(AssetSource(audioPath));
 
       setState(() {
@@ -83,11 +94,11 @@ class _PresetsListPageState extends State<PresetsListPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            bluetoothProvider.isDeviceConnected
+            audioConnected
                 ? 'Playing through ${bluetoothProvider.connectedDeviceName}'
-                : 'Playing through device speaker',
+                : 'Playing through device speaker (Bluetooth not connected for audio)',
           ),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
     } catch (e) {

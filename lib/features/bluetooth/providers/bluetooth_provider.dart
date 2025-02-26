@@ -1,42 +1,22 @@
-// File: lib/features/bluetooth/providers/bluetooth_provider.dart
-
 import 'package:flutter/material.dart';
-import '../services/bluetooth_service.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'dart:async'; // Add this import for TimeoutException
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../platform/bluetooth_platform.dart';
 
 class BluetoothProvider extends ChangeNotifier {
-  final MyBluetoothService _bluetoothService;
   bool _isDeviceConnected = false;
   bool _isBluetoothEnabled = false;
   String _connectedDeviceName = "No Device";
   String? _registeredDeviceId;
   final bool _isEmulatorTestMode;
   bool _isScanning = false;
-  List<ScanResult> _scanResults = [];
+  List<BluetoothDevice> _scanResults = [];
   BluetoothDevice? _connectedDevice;
   bool _bypassBluetoothCheck = false;
+  BluetoothAudioType _audioType = BluetoothAudioType.none;
+  Timer? _bluetoothStateTimer;
 
-  // Add this getter to access the service
-  MyBluetoothService get bluetoothService => _bluetoothService;
-
-  // Add this getter and setter for bypass
-  bool get bypassBluetoothCheck => _bypassBluetoothCheck;
-
-  void setBypassBluetoothCheck(bool value) {
-    _bypassBluetoothCheck = value;
-    notifyListeners();
-  }
-
-  BluetoothProvider({
-    required MyBluetoothService bluetoothService,
-    bool isEmulatorTestMode = false,
-  })  : _bluetoothService = bluetoothService,
-        _isEmulatorTestMode = isEmulatorTestMode {
-    _init();
-  }
-
+  // Getters
   bool get isDeviceConnected =>
       _isDeviceConnected || _isEmulatorTestMode || _bypassBluetoothCheck;
   bool get isBluetoothEnabled =>
@@ -49,9 +29,19 @@ class BluetoothProvider extends ChangeNotifier {
 
   String? get registeredDeviceId => _registeredDeviceId;
   bool get isScanning => _isScanning;
-  List<ScanResult> get scanResults => _scanResults;
+  List<BluetoothDevice> get scanResults => _scanResults;
   BluetoothDevice? get connectedDevice => _connectedDevice;
+  BluetoothAudioType get audioType => _audioType;
+  bool get isUsingLEAudio => _audioType == BluetoothAudioType.leAudio;
 
+  // Constructor
+  BluetoothProvider({
+    bool isEmulatorTestMode = false,
+  }) : _isEmulatorTestMode = isEmulatorTestMode {
+    _init();
+  }
+
+  // Initialize
   void _init() async {
     if (_isEmulatorTestMode) {
       _isDeviceConnected = true;
@@ -60,46 +50,147 @@ class BluetoothProvider extends ChangeNotifier {
       return;
     }
 
-    // Listen to Bluetooth state changes
-    _bluetoothService.listenToBluetoothState().listen((isEnabled) {
-      _isBluetoothEnabled = isEnabled;
+    // Setup periodic check for Bluetooth state
+    _bluetoothStateTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _checkBluetoothState();
+    });
+
+    // Initial checks
+    await _checkBluetoothState();
+    await checkBluetoothConnection();
+
+    // Load registered device from storage
+    await _loadRegisteredDevice();
+  }
+
+  // Check Bluetooth state
+  Future<void> _checkBluetoothState() async {
+    final wasEnabled = _isBluetoothEnabled;
+    _isBluetoothEnabled = await BluetoothPlatform.isBluetoothEnabled();
+
+    if (wasEnabled != _isBluetoothEnabled) {
       notifyListeners();
 
-      // If Bluetooth is enabled, check for connected devices
-      if (isEnabled) {
-        checkBluetoothConnection();
+      // If Bluetooth state changed, check for connections
+      if (_isBluetoothEnabled) {
+        await checkBluetoothConnection();
       } else {
         _isDeviceConnected = false;
         _connectedDeviceName = "No Device";
+        _connectedDevice = null;
         notifyListeners();
       }
-    });
-
-    // Initial check for connected devices
-    await checkBluetoothConnection();
+    }
   }
 
+  // Load registered device from storage
+  Future<void> _loadRegisteredDevice() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _registeredDeviceId = prefs.getString('registered_device_id');
+
+      if (_registeredDeviceId != null) {
+        print("Found registered device ID: $_registeredDeviceId");
+      }
+    } catch (e) {
+      print('Error loading registered device: $e');
+    }
+  }
+
+  // Save registered device to storage
+  Future<void> _saveRegisteredDevice() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_registeredDeviceId != null) {
+        await prefs.setString('registered_device_id', _registeredDeviceId!);
+      } else {
+        await prefs.remove('registered_device_id');
+      }
+    } catch (e) {
+      print('Error saving registered device: $e');
+    }
+  }
+
+  // Set bypass mode
+  void setBypassBluetoothCheck(bool value) {
+    _bypassBluetoothCheck = value;
+    notifyListeners();
+  }
+
+  // Start scan for Bluetooth devices
+  Future<void> startScan() async {
+    if (_isScanning) return;
+
+    try {
+      _isScanning = true;
+      _scanResults.clear();
+      notifyListeners();
+
+      await BluetoothPlatform.startScan();
+
+      // Wait for the scan to complete, then get results
+      await Future.delayed(const Duration(seconds: 10));
+      await _updateScanResults();
+
+      _isScanning = false;
+      notifyListeners();
+    } catch (e) {
+      _isScanning = false;
+      notifyListeners();
+      print('Error scanning for devices: $e');
+      rethrow;
+    }
+  }
+
+  // Stop scan
+  Future<void> stopScan() async {
+    if (!_isScanning) return;
+
+    try {
+      await BluetoothPlatform.stopScan();
+      _isScanning = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error stopping scan: $e');
+    }
+  }
+
+  // Update scan results
+  Future<void> _updateScanResults() async {
+    try {
+      _scanResults = await BluetoothPlatform.getScannedDevices();
+      notifyListeners();
+    } catch (e) {
+      print('Error updating scan results: $e');
+    }
+  }
+
+  // Check Bluetooth connection
   Future<void> checkBluetoothConnection() async {
     if (_isEmulatorTestMode) return;
 
     try {
-      print("Checking for Bluetooth connections...");
-      final devices = await _bluetoothService.getConnectedDevices();
+      // Get the currently connected device from the platform
+      _connectedDevice = await BluetoothPlatform.getConnectedDevice();
 
-      if (devices.isNotEmpty) {
-        print("Found connected devices: ${devices.map((d) => d.name)}");
-      }
+      // Update connection status
+      _isDeviceConnected = _connectedDevice != null;
+      _audioType = await BluetoothPlatform.getBluetoothAudioType();
 
-      _isDeviceConnected = devices.isNotEmpty;
+      if (_isDeviceConnected && _connectedDevice != null) {
+        _connectedDeviceName = _connectedDevice!.name;
 
-      if (_isDeviceConnected) {
-        _connectedDeviceName = devices.first.name.isNotEmpty
-            ? devices.first.name
-            : devices.first.platformName;
+        // If we have a connection but no registered device, register this one
+        _registeredDeviceId ??= _connectedDevice!.id;
+        await _saveRegisteredDevice();
 
-        // Auto-register the connected device if none is registered
-        _registeredDeviceId ??= devices.first.id.toString();
-        print("Connected to: $_connectedDeviceName");
+        // Add indicator if it's LE Audio
+        if (_audioType == BluetoothAudioType.leAudio) {
+          _connectedDeviceName += " (LE Audio)";
+        }
+
+        print(
+            "Connected to: $_connectedDeviceName with audio type: $_audioType");
       } else {
         _connectedDeviceName = "No Device";
       }
@@ -112,63 +203,77 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  // Register a device
   Future<void> registerDevice(BluetoothDevice device) async {
     if (_isEmulatorTestMode) return;
 
     try {
-      // First ensure the device is connected
-      if (!device.isConnected) {
-        print('Device not connected, connecting first...');
-        await device.connect(timeout: const Duration(seconds: 10));
+      // Try to connect to the device
+      final connected = await BluetoothPlatform.connectToDevice(device.id);
+
+      if (connected) {
+        // Save the device ID
+        _registeredDeviceId = device.id;
+        _connectedDevice = device;
+        _isDeviceConnected = true;
+        _connectedDeviceName = device.name;
+
+        // Store the device ID in persistent storage
+        await _saveRegisteredDevice();
+
+        // Check audio type
+        _audioType = await BluetoothPlatform.getBluetoothAudioType();
+        if (_audioType == BluetoothAudioType.leAudio) {
+          _connectedDeviceName += " (LE Audio)";
+        }
+
+        notifyListeners();
+        print('Successfully registered device: ${device.name}');
+      } else {
+        throw Exception("Failed to connect to device");
       }
-
-      // Save the device ID
-      _registeredDeviceId = device.id.toString();
-      _connectedDevice = device;
-      _isDeviceConnected = true;
-      _connectedDeviceName = device.name.isNotEmpty
-          ? device.name
-          : "Unknown Device (${device.id.toString().substring(0, 8)})";
-
-      // Store the device ID in persistent storage for reconnection after app restart
-      // You'll need to implement this using shared_preferences or another storage method
-
-      notifyListeners();
-      print('Successfully registered device: ${device.name}');
     } catch (e) {
       print('Error registering device: $e');
       rethrow;
     }
   }
 
-  Future<void> connectToRegisteredDevice() async {
-    if (_isEmulatorTestMode || _registeredDeviceId == null) return;
-
+  // Connect to a device
+  Future<void> connectToDevice(BluetoothDevice device) async {
     try {
-      await _bluetoothService.connectToDevice(_registeredDeviceId!);
-      await checkBluetoothConnection();
+      final connected = await BluetoothPlatform.connectToDevice(device.id);
+
+      if (connected) {
+        _connectedDevice = device;
+        _isDeviceConnected = true;
+        _connectedDeviceName = device.name;
+
+        // Check audio type
+        _audioType = await BluetoothPlatform.getBluetoothAudioType();
+        if (_audioType == BluetoothAudioType.leAudio) {
+          _connectedDeviceName += " (LE Audio)";
+        }
+
+        notifyListeners();
+      } else {
+        throw Exception("Failed to connect to device");
+      }
     } catch (e) {
-      print('Error connecting to registered device: $e');
+      print('Error connecting to device: $e');
+      rethrow;
     }
   }
 
+  // Disconnect device
   Future<void> disconnectDevice() async {
     if (_isEmulatorTestMode) return;
 
     try {
-      if (_connectedDevice != null) {
-        print('Disconnecting from device: ${_connectedDevice!.name}');
-        await _connectedDevice!.disconnect();
-      } else if (_registeredDeviceId != null) {
-        try {
-          await _bluetoothService.disconnectDevice(_registeredDeviceId!);
-        } catch (e) {
-          print('Error disconnecting registered device: $e');
-        }
-      }
+      await BluetoothPlatform.disconnectDevice();
 
       _isDeviceConnected = false;
       _connectedDeviceName = "No Device";
+      _audioType = BluetoothAudioType.none;
       // Don't set _connectedDevice to null here to allow reconnection
 
       notifyListeners();
@@ -181,9 +286,38 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  // Deregister device
+  Future<void> deregisterDevice() async {
+    try {
+      if (_isDeviceConnected) {
+        try {
+          await BluetoothPlatform.disconnectDevice();
+        } catch (e) {
+          print('Error disconnecting device during deregistration: $e');
+        }
+      }
+
+      _connectedDevice = null;
+      _registeredDeviceId = null;
+      _isDeviceConnected = false;
+      _connectedDeviceName = "No Device";
+      _audioType = BluetoothAudioType.none;
+
+      // Clear from persistent storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('registered_device_id');
+
+      notifyListeners();
+      print('Device deregistered successfully');
+    } catch (e) {
+      print('Error deregistering device: $e');
+    }
+  }
+
+  // Connect via system settings
   Future<void> connectViaSystemSettings() async {
     // Open Android's Bluetooth settings
-    await _bluetoothService.openBluetoothSettings();
+    await BluetoothPlatform.platform.invokeMethod('openBluetoothSettings');
 
     // Check connection immediately after returning
     await checkBluetoothConnection();
@@ -199,122 +333,78 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> startScan() async {
-    if (_isScanning) return;
-    _scanResults.clear();
-    _isScanning = true;
-    notifyListeners();
-
-    try {
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
-      FlutterBluePlus.scanResults.listen((results) {
-        // Filter to only show devices with names
-        _scanResults =
-            results.where((result) => result.device.name.isNotEmpty).toList();
-        notifyListeners();
-      });
-    } finally {
-      _isScanning = false;
-      notifyListeners();
+  // Reconnect to device
+  Future<void> reconnectDevice() async {
+    if (_isEmulatorTestMode) return;
+    if (_connectedDevice == null && _registeredDeviceId == null) {
+      throw Exception("No device to reconnect to");
     }
-  }
 
-  void stopScan() {
-    FlutterBluePlus.stopScan();
-    _isScanning = false;
-    notifyListeners();
-  }
-
-  Future<void> connectToDevice(BluetoothDevice device) async {
     try {
-      await device.connect();
-      _connectedDevice = device;
-      notifyListeners();
-    } catch (e) {
-      print('Error connecting to device: $e');
-      rethrow;
-    }
-  }
+      print('Attempting to reconnect to device');
 
-  Future<void> connectToDeviceDirectly(BluetoothDevice device) async {
-    try {
-      print("Attempting to connect to device: ${device.name}");
+      bool connected = false;
 
-      // Add a timeout to prevent hanging
-      await Future.any([
-        _bluetoothService.connectToDeviceDirectly(device),
-        Future.delayed(const Duration(seconds: 20)).then((_) {
-          throw TimeoutException(
-              "Connection attempt timed out after 20 seconds");
-        }),
-      ]);
-
-      _connectedDevice = device;
-
-      // Update connection status
-      _isDeviceConnected = true;
-      _connectedDeviceName = device.name.isNotEmpty
-          ? device.name
-          : "Unknown Device (${device.id.toString().substring(0, 8)})";
-
-      notifyListeners();
-      print("Successfully connected to: ${device.name}");
-    } catch (e) {
-      print('Error connecting directly to device: $e');
-      // Reset connection status
-      _isDeviceConnected = false;
-      _connectedDevice = null;
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> deregisterDevice() async {
-    try {
+      // Try to connect using the device object if available
       if (_connectedDevice != null) {
-        try {
-          await _connectedDevice!.disconnect();
-        } catch (e) {
-          print('Error disconnecting device during deregistration: $e');
-        }
+        connected =
+            await BluetoothPlatform.connectToDevice(_connectedDevice!.id);
+      }
+      // Otherwise try using the registered device ID
+      else if (_registeredDeviceId != null) {
+        connected =
+            await BluetoothPlatform.connectToDevice(_registeredDeviceId!);
       }
 
-      _connectedDevice = null;
-      _registeredDeviceId = null;
-      _isDeviceConnected = false;
-      _connectedDeviceName = "No Device";
+      if (!connected) {
+        throw Exception("Failed to reconnect to device");
+      }
 
-      // Clear from persistent storage
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('registered_device_id');
+      // Force audio routing to ensure audio works
+      await BluetoothPlatform.forceAudioRoutingToBluetooth();
 
-      notifyListeners();
-      print('Device deregistered successfully');
-    } catch (e) {
-      print('Error deregistering device: $e');
-    }
-  }
+      // Verify the audio connection
+      await verifyAudioConnection();
 
-  Future<void> reconnectDevice() async {
-    if (_isEmulatorTestMode || _connectedDevice == null) return;
-
-    try {
-      print('Attempting to reconnect to: ${_connectedDevice!.name}');
-      await _connectedDevice!.connect(
-        timeout: const Duration(seconds: 10),
-        autoConnect: false,
-      );
-
-      _isDeviceConnected = true;
-      _connectedDeviceName = _connectedDevice!.name.isNotEmpty
-          ? _connectedDevice!.name
-          : "Unknown Device (${_connectedDevice!.id.toString().substring(0, 8)})";
+      if (!_isDeviceConnected) {
+        throw Exception("Failed to establish audio connection");
+      }
 
       notifyListeners();
-      print('Successfully reconnected to: ${_connectedDevice!.name}');
+      print('Successfully reconnected to device');
     } catch (e) {
       print('Error reconnecting to device: $e');
       rethrow;
     }
+  }
+
+  // Verify audio connection
+  Future<bool> verifyAudioConnection() async {
+    if (_isEmulatorTestMode || _bypassBluetoothCheck) return true;
+
+    try {
+      // Check what type of audio connection we have
+      _audioType = await BluetoothPlatform.getBluetoothAudioType();
+
+      // Check if any audio is actually connected
+      final isAudioConnected = await BluetoothPlatform.isAudioDeviceConnected();
+
+      // Update our internal state to match reality
+      if (_isDeviceConnected != isAudioConnected) {
+        _isDeviceConnected = isAudioConnected;
+        notifyListeners();
+      }
+
+      return isAudioConnected;
+    } catch (e) {
+      print('Error verifying audio connection: $e');
+      return false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _bluetoothStateTimer?.cancel();
+    super.dispose();
   }
 }
