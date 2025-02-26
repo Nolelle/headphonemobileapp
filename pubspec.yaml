@@ -37,7 +37,6 @@ dependencies:
 
 
 
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -64,7 +63,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/audio/
+    - assets/audio/250Hz.wav
+    - assets/audio/500Hz.wav
+    - assets/audio/1000Hz.wav
+    - assets/audio/2000Hz.wav
+    - assets/audio/4000Hz.wav
+    - assets/audio/8000Hz.wav
 
   # To add assets to your application, add an assets section, like this:
   # assets:

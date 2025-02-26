@@ -19,8 +19,7 @@ class PresetsListPage extends StatefulWidget {
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
 
-  Future<bool> _showDeleteConfirmationDialog(
-      BuildContext context, String presetName) async {
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context, String presetName) async {
     return await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {

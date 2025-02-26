@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    package="edu.sait.boneplus"> <!-- Add this line with your app's package name -->
     <application
-        android:label="projects"
+        android:label="Bone+"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
