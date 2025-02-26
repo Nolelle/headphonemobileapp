@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../features/presets/models/preset.dart';
 import '../features/bluetooth/providers/bluetooth_provider.dart';
+import '../features/bluetooth/views/widgets/bluetooth_wrapper.dart';
 import 'main_nav.dart';
 
 class MyApp extends StatelessWidget {
@@ -17,7 +18,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MainNavigation(),
+      home: const BluetoothWrapper(
+        child: MainNavigation(),
+      ),
     );
   }
 }

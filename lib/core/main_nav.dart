@@ -33,6 +33,7 @@ class _MainNavigationState extends State<MainNavigation> {
     final presetProvider = Provider.of<PresetProvider>(context);
 
     final List<Widget> pages = [
+      const SoundTestPage(),
       PresetsListPage(
         presetProvider: presetProvider,
       ),
@@ -43,6 +44,10 @@ class _MainNavigationState extends State<MainNavigation> {
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.hearing),
+            label: 'Hearing Test',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.headphones),
             label: 'Presets',

@@ -117,6 +117,11 @@ class BluetoothProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Set bypass Bluetooth check (alias for setBypassMode for compatibility)
+  void setBypassBluetoothCheck(bool bypass) {
+    setBypassMode(bypass);
+  }
+
   // Start scan for Bluetooth devices
   Future<void> startScan() async {
     if (_isEmulatorTestMode) {
