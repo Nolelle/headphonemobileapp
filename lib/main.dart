@@ -18,7 +18,20 @@ class BluetoothLifecycleObserver extends WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // App came back to foreground - check Bluetooth connections
       print("App resumed - checking Bluetooth connections");
-      bluetoothProvider.checkBluetoothConnection();
+
+      // Load saved state then check actual connections
+      bluetoothProvider.loadConnectionState().then((_) {
+        bluetoothProvider.checkBluetoothConnection();
+
+        // Force audio routing if a device is connected
+        if (bluetoothProvider.isDeviceConnected) {
+          bluetoothProvider.forceAudioRouting();
+        }
+      });
+    } else if (state == AppLifecycleState.paused) {
+      // App going to background - save current state
+      print("App paused - saving connection state");
+      bluetoothProvider.saveConnectionState();
     }
   }
 }

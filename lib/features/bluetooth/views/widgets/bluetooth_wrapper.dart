@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/bluetooth_provider.dart';
 import 'package:flutter/services.dart';
+import '../../../bluetooth/platform/bluetooth_platform.dart';
 
 class BluetoothWrapper extends StatefulWidget {
   final Widget child;
@@ -224,34 +225,61 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
     });
 
     try {
-      // Check connection multiple times with a delay
-      await bluetoothProvider.checkBluetoothConnection();
-
-      for (int i = 0; i < 3; i++) {
-        if (bluetoothProvider.isDeviceConnected) break;
-
+      // First, verify Bluetooth is enabled
+      final isBluetoothEnabled = await BluetoothPlatform.isBluetoothEnabled();
+      if (!isBluetoothEnabled) {
         setState(() {
-          _statusMessage = 'Checking again (${i + 1}/3)...';
+          _statusMessage = 'Bluetooth is not enabled. Please enable Bluetooth.';
         });
-
-        await Future.delayed(const Duration(seconds: 1));
-        await bluetoothProvider.checkBluetoothConnection();
+        await Future.delayed(const Duration(seconds: 2));
+        return;
       }
 
-      // Show final status message
+      // Check connection status using platform methods directly
+      setState(() {
+        _statusMessage = 'Checking system connections...';
+      });
+
+      // Try to get connected device from platform layer
+      final connectedDevice = await BluetoothPlatform.getConnectedDevice();
+
+      // Check audio status too
+      final isAudioConnected = await BluetoothPlatform.isAudioDeviceConnected();
+      final audioType = await BluetoothPlatform.getBluetoothAudioType();
+
+      // Update the provider with this info
+      if (connectedDevice != null && isAudioConnected) {
+        // Use the provider's public method to update the connection
+        await bluetoothProvider.updateConnectionFromDevice(
+            connectedDevice, audioType);
+
+        setState(() {
+          _statusMessage = 'Found connected device: ${connectedDevice.name}';
+        });
+      } else {
+        setState(() {
+          _statusMessage = 'No connected devices found';
+        });
+      }
+
+      // For robustness, add a delay then check one more time using the provider's method
+      await Future.delayed(const Duration(seconds: 1));
+      await bluetoothProvider.checkBluetoothConnection();
+
+      // Final status message
       setState(() {
         _statusMessage = bluetoothProvider.isDeviceConnected
-            ? 'Found connected device!'
+            ? 'Connected to: ${bluetoothProvider.connectedDeviceName}'
             : 'No connected devices found';
       });
 
       // Wait a moment to show the result
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 2));
     } catch (e) {
       setState(() {
-        _statusMessage = 'Error checking devices';
+        _statusMessage = 'Error checking devices: $e';
       });
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 2));
     } finally {
       if (mounted) {
         setState(() {

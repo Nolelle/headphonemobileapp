@@ -41,7 +41,7 @@ class BluetoothProvider extends ChangeNotifier {
     _init();
   }
 
-  // Initialize
+// Inside the _init() method of BluetoothProvider
   void _init() async {
     if (_isEmulatorTestMode) {
       _isDeviceConnected = true;
@@ -50,17 +50,25 @@ class BluetoothProvider extends ChangeNotifier {
       return;
     }
 
+    // First, load saved connection state
+    await loadConnectionState();
+
     // Setup periodic check for Bluetooth state
     _bluetoothStateTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkBluetoothState();
     });
 
-    // Initial checks
+    // Initial checks - these will verify our loaded state
     await _checkBluetoothState();
     await checkBluetoothConnection();
 
     // Load registered device from storage
     await _loadRegisteredDevice();
+
+    // Perform a delayed check after app initialization
+    Future.delayed(const Duration(seconds: 3), () {
+      checkBluetoothConnection();
+    });
   }
 
   // Check Bluetooth state
@@ -81,6 +89,72 @@ class BluetoothProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+// Public method to save connection state
+  Future<void> saveConnectionState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_connectedDevice != null) {
+        await prefs.setString('connected_device_id', _connectedDevice!.id);
+        await prefs.setString('connected_device_name', _connectedDeviceName);
+        await prefs.setBool('is_device_connected', _isDeviceConnected);
+        await prefs.setInt('audio_type', _audioType.index);
+      } else {
+        // Clear connection data
+        await prefs.remove('connected_device_id');
+        await prefs.remove('connected_device_name');
+        await prefs.setBool('is_device_connected', false);
+        await prefs.setInt('audio_type', BluetoothAudioType.none.index);
+      }
+    } catch (e) {
+      print('Error saving connection state: $e');
+    }
+  }
+
+// Public method to load connection state
+  Future<void> loadConnectionState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get stored connection information
+      final storedConnected = prefs.getBool('is_device_connected') ?? false;
+      final storedDeviceId = prefs.getString('connected_device_id');
+      final storedDeviceName =
+          prefs.getString('connected_device_name') ?? "No Device";
+      final storedAudioTypeIndex = prefs.getInt('audio_type') ?? 0;
+
+      // Only set these as initial values, we'll verify with system after
+      _connectedDeviceName = storedDeviceName;
+      _isDeviceConnected = storedConnected;
+      _audioType = BluetoothAudioType.values[storedAudioTypeIndex];
+
+      // If we have a stored ID, remember it (this helps with reconnection)
+      if (storedDeviceId != null) {
+        _connectedDevice = BluetoothDevice(
+          id: storedDeviceId,
+          name: storedDeviceName,
+          type: BluetoothDeviceType
+              .unknown, // We don't know the type from storage
+          audioType: BluetoothAudioType.values[storedAudioTypeIndex],
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('Error loading connection state: $e');
+    }
+  }
+
+  // Method to update connection from another class
+  Future<void> updateConnectionFromDevice(
+      BluetoothDevice device, BluetoothAudioType audioType) async {
+    _connectedDevice = device;
+    _isDeviceConnected = true;
+    _connectedDeviceName = device.name;
+    _audioType = audioType;
+    await saveConnectionState();
+    notifyListeners();
   }
 
   Future<void> forceAudioRouting() async {
@@ -242,6 +316,7 @@ class BluetoothProvider extends ChangeNotifier {
       _isDeviceConnected = false;
       notifyListeners();
     }
+    await saveConnectionState();
   }
 
   // Register a device
@@ -277,6 +352,7 @@ class BluetoothProvider extends ChangeNotifier {
       print('Error registering device: $e');
       rethrow;
     }
+    await saveConnectionState();
   }
 
   // Connect to a device
@@ -303,6 +379,7 @@ class BluetoothProvider extends ChangeNotifier {
       print('Error connecting to device: $e');
       rethrow;
     }
+    await saveConnectionState();
   }
 
   // Disconnect device
@@ -325,6 +402,7 @@ class BluetoothProvider extends ChangeNotifier {
       _isDeviceConnected = false;
       notifyListeners();
     }
+    await saveConnectionState();
   }
 
   // Deregister device
