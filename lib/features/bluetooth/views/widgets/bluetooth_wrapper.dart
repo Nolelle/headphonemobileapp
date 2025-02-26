@@ -131,40 +131,23 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
                     minimumSize: const Size(double.infinity, 48),
                   ),
                   onPressed: () async {
-                    setState(() {
-                      _isAttemptingConnection = true;
-                      _statusMessage = 'Opening Bluetooth settings...';
-                    });
-
                     try {
-                      // Use the system settings channel that's defined in MainActivity.java
+                      // Simply open the Bluetooth settings without additional logic
                       const MethodChannel settingsChannel =
                           MethodChannel('com.headphonemobileapp/settings');
                       await settingsChannel
                           .invokeMethod('openBluetoothSettings');
-
-                      setState(() {
-                        _statusMessage = 'Checking for Bluetooth devices...';
-                      });
-
-                      // Wait a moment for the user to potentially connect a device
-                      await Future.delayed(const Duration(seconds: 1));
-
-                      // Check connection multiple times
-                      for (int i = 0; i < 5; i++) {
-                        await bluetoothProvider.checkBluetoothConnection();
-                        if (bluetoothProvider.isDeviceConnected) break;
-                        await Future.delayed(const Duration(seconds: 1));
-                      }
                     } catch (e) {
                       print('Error opening Bluetooth settings: $e');
-                    }
 
-                    if (mounted) {
-                      setState(() {
-                        _isAttemptingConnection = false;
-                        _statusMessage = '';
-                      });
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                Text('Error opening Bluetooth settings: $e'),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
