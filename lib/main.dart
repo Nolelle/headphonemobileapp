@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
-import 'package:projects/features/bluetooth/views/widgets/bluetooth_wrapper.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'features/bluetooth/providers/bluetooth_provider.dart';
+import 'features/presets/providers/preset_provider.dart';
 import 'core/app.dart';
-import 'core/utils/json_loader.dart';
-import 'features/bluetooth/services/bluetooth_service.dart';
+import 'features/presets/models/preset.dart';
+import 'features/presets/repositories/preset_repository.dart';
 
 // Create lifecycle observer to detect when app comes to foreground
 class BluetoothLifecycleObserver extends WidgetsBindingObserver {
@@ -24,11 +25,18 @@ class BluetoothLifecycleObserver extends WidgetsBindingObserver {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final presetData = await loadJson();
+
+  // Determine if running on emulator (simplified approach)
+  final bool isEmulatorMode = await _isEmulator();
+
+  // Create repository and provider
+  final presetRepository = PresetRepository();
+  final presetProvider = PresetProvider(presetRepository);
+  await presetProvider.loadPresets();
 
   // Create provider first so we can use it for the observer
   final bluetoothProvider =
-      BluetoothProvider(bluetoothService: MyBluetoothService());
+      BluetoothProvider(isEmulatorTestMode: isEmulatorMode);
 
   // Register lifecycle observer
   final observer = BluetoothLifecycleObserver(bluetoothProvider);
@@ -37,18 +45,31 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: bluetoothProvider),
-        // Other providers...
+        ChangeNotifierProvider(
+          create: (context) => bluetoothProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => presetProvider,
+        ),
       ],
-      child: MaterialApp(
-        theme: ThemeData(
-          primaryColor: const Color.fromRGBO(133, 86, 169, 1.00),
-          scaffoldBackgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
-        ),
-        home: BluetoothWrapper(
-          child: MyApp(presetData: presetData),
-        ),
-      ),
+      child: MyApp(presetData: presetProvider.presets.values.toList()),
     ),
   );
+}
+
+// Helper function to determine if running on emulator
+Future<bool> _isEmulator() async {
+  try {
+    // This is a simplified approach - you might want to use a more robust method
+    // like device_info_plus package for production
+    final String androidModel =
+        await const MethodChannel('com.headphonemobileapp/settings')
+                .invokeMethod('getDeviceModel') ??
+            '';
+    return androidModel.toLowerCase().contains('emulator') ||
+        androidModel.toLowerCase().contains('sdk');
+  } catch (e) {
+    print('Error checking emulator status: $e');
+    return false;
+  }
 }

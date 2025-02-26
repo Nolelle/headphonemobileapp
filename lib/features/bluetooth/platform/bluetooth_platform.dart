@@ -96,6 +96,7 @@ class BluetoothPlatform {
       await platform.invokeMethod('stopScan');
     } on PlatformException catch (e) {
       print("Failed to stop scan: ${e.message}");
+      rethrow;
     }
   }
 

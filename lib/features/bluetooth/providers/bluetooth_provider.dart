@@ -112,32 +112,52 @@ class BluetoothProvider extends ChangeNotifier {
   }
 
   // Set bypass mode
-  void setBypassBluetoothCheck(bool value) {
-    _bypassBluetoothCheck = value;
+  void setBypassMode(bool bypass) {
+    _bypassBluetoothCheck = bypass;
     notifyListeners();
   }
 
   // Start scan for Bluetooth devices
   Future<void> startScan() async {
-    if (_isScanning) return;
+    if (_isEmulatorTestMode) {
+      // Mock data for emulator
+      _scanResults = [
+        BluetoothDevice(
+          id: "00:11:22:33:44:55",
+          name: "Mock LE Audio Device",
+          type: BluetoothDeviceType.le,
+          audioType: BluetoothAudioType.leAudio,
+        ),
+        BluetoothDevice(
+          id: "AA:BB:CC:DD:EE:FF",
+          name: "Mock Classic Device",
+          type: BluetoothDeviceType.classic,
+          audioType: BluetoothAudioType.classic,
+        ),
+      ];
+      notifyListeners();
+      return;
+    }
 
     try {
       _isScanning = true;
-      _scanResults.clear();
       notifyListeners();
 
+      // Start the scan on the platform side
       await BluetoothPlatform.startScan();
 
-      // Wait for the scan to complete, then get results
-      await Future.delayed(const Duration(seconds: 10));
-      await _updateScanResults();
+      // Wait for scan to complete (5 seconds)
+      await Future.delayed(const Duration(seconds: 5));
+
+      // Get the results
+      _scanResults = await BluetoothPlatform.getScannedDevices();
 
       _isScanning = false;
       notifyListeners();
     } catch (e) {
+      print('Error scanning for devices: $e');
       _isScanning = false;
       notifyListeners();
-      print('Error scanning for devices: $e');
       rethrow;
     }
   }

@@ -5,7 +5,8 @@ import '../repositories/preset_repository.dart';
 class PresetProvider with ChangeNotifier {
   final PresetRepository _repository;
   Map<String, Preset> _presets = {};
-  Map<String, bool> _dropdownStates = {}; // Tracks dropdown states for presets
+  final Map<String, bool> _dropdownStates =
+      {}; // Tracks dropdown states for presets
   String? _activePresetId;
   bool _isLoading = false;
   String? _error;
@@ -86,7 +87,8 @@ class PresetProvider with ChangeNotifier {
       notifyListeners();
 
       await _repository.deletePreset(id);
-      _dropdownStates.remove(id); // Remove dropdown state for the deleted preset
+      _dropdownStates
+          .remove(id); // Remove dropdown state for the deleted preset
       if (_activePresetId == id) {
         _activePresetId = null;
       }
@@ -120,7 +122,6 @@ class PresetProvider with ChangeNotifier {
     }
   }
 
-
   // Get preset by ID
   Preset? getPresetById(String id) => _presets[id];
 
@@ -128,5 +129,10 @@ class PresetProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Alias for fetchPresets to maintain compatibility
+  Future<void> loadPresets() async {
+    return fetchPresets();
   }
 }

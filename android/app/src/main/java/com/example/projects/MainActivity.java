@@ -10,8 +10,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
-import android.bluetooth.BluetoothLeAudio;
+// Remove both problematic imports
+// import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
+// import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -37,6 +38,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+// Import LE Audio classes conditionally for Android 12+
+// This is a workaround for the build error
+// These imports will only be used if the device is running Android 12+
+// @SuppressWarnings("unused")
+// private static class AndroidSVersionCheck {
+//     // This class is only used to conditionally import classes
+//     // It will never be instantiated
+//     static {
+//         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//             try {
+//                 Class.forName("android.bluetooth.BluetoothLeAudioCodecConfigMetadata");
+//                 Class.forName("android.bluetooth.BluetoothLeAudio");
+//             } catch (ClassNotFoundException e) {
+//                 // Classes not available, will be handled at runtime
+//             }
+//         }
+//     }
+// }
+
 public class MainActivity extends FlutterActivity {
     private static final String SETTINGS_CHANNEL = "com.headphonemobileapp/settings";
     private static final String BT_CHANNEL = "com.headphonemobileapp/bluetooth";
@@ -50,9 +70,27 @@ public class MainActivity extends FlutterActivity {
     private BluetoothDevice connectedDevice = null;
     
     // Audio-specific profile constants
-    private static final int LE_AUDIO_PROFILE = BluetoothProfile.LE_AUDIO;
     private static final int A2DP_PROFILE = BluetoothProfile.A2DP;
     private static final int HEADSET_PROFILE = BluetoothProfile.HEADSET;
+    // Define LE_AUDIO_PROFILE conditionally
+    private static final int LE_AUDIO_PROFILE;
+    
+    static {
+        // Initialize LE_AUDIO_PROFILE based on Android version
+        // BluetoothProfile.LE_AUDIO is only available on Android 12+
+        int leAudioProfile;
+        try {
+            // Try to access the LE_AUDIO constant if available
+            if (Build.VERSION.SDK_INT >= 31) { // Android 12 is API 31
+                leAudioProfile = 22; // This is the value of BluetoothProfile.LE_AUDIO on Android 12+
+            } else {
+                leAudioProfile = -1; // Not available
+            }
+        } catch (Throwable t) {
+            leAudioProfile = -1; // Not available or error
+        }
+        LE_AUDIO_PROFILE = leAudioProfile;
+    }
     
     // Track Bluetooth profile proxies
     private BluetoothProfile leAudioProxy = null;
@@ -80,6 +118,8 @@ public class MainActivity extends FlutterActivity {
                     if (call.method.equals("openBluetoothSettings")) {
                         openBluetoothSettings();
                         result.success(null);
+                    } else if (call.method.equals("getDeviceModel")) {
+                        result.success(getDeviceModel());
                     } else {
                         result.notImplemented();
                     }
@@ -149,22 +189,27 @@ public class MainActivity extends FlutterActivity {
     
     private void initAudioProxies() {
         // Initialize LE Audio proxy if available (Android 12+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            bluetoothAdapter.getProfileProxy(this, new BluetoothProfile.ServiceListener() {
-                @Override
-                public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                    if (profile == LE_AUDIO_PROFILE) {
-                        leAudioProxy = proxy;
+        if (Build.VERSION.SDK_INT >= 31 && LE_AUDIO_PROFILE > 0) { // Android 12 is API 31
+            try {
+                bluetoothAdapter.getProfileProxy(this, new BluetoothProfile.ServiceListener() {
+                    @Override
+                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                        if (profile == LE_AUDIO_PROFILE) {
+                            leAudioProxy = proxy;
+                        }
                     }
-                }
 
-                @Override
-                public void onServiceDisconnected(int profile) {
-                    if (profile == LE_AUDIO_PROFILE) {
-                        leAudioProxy = null;
+                    @Override
+                    public void onServiceDisconnected(int profile) {
+                        if (profile == LE_AUDIO_PROFILE) {
+                            leAudioProxy = null;
+                        }
                     }
-                }
-            }, LE_AUDIO_PROFILE);
+                }, LE_AUDIO_PROFILE);
+            } catch (Exception e) {
+                // LE Audio not supported on this device
+                System.out.println("LE Audio not supported: " + e.getMessage());
+            }
         }
         
         // Initialize A2DP proxy for classic Bluetooth audio
@@ -415,22 +460,29 @@ public class MainActivity extends FlutterActivity {
     
     // Check for LE Audio connection
     private boolean isLEAudioConnected() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Check for BLE audio devices
-            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-            
-            for (AudioDeviceInfo device : devices) {
-                if (device.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET || 
-                    device.getType() == AudioDeviceInfo.TYPE_BLE_SPEAKER) {
-                    return true;
+        if (Build.VERSION.SDK_INT >= 31) { // Android 12 is API 31
+            try {
+                // Check for BLE audio devices
+                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+                
+                for (AudioDeviceInfo device : devices) {
+                    // Constants for BLE audio device types (Android 12+)
+                    // AudioDeviceInfo.TYPE_BLE_HEADSET = 26
+                    // AudioDeviceInfo.TYPE_BLE_SPEAKER = 27
+                    if (device.getType() == 26 || device.getType() == 27) {
+                        return true;
+                    }
                 }
-            }
-            
-            // Additionally check via profile proxy if available
-            if (leAudioProxy != null) {
-                List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
-                return !leAudioDevices.isEmpty();
+                
+                // Additionally check via profile proxy if available
+                if (leAudioProxy != null && LE_AUDIO_PROFILE > 0) {
+                    List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
+                    return !leAudioDevices.isEmpty();
+                }
+            } catch (Exception e) {
+                // LE Audio API not available or error
+                System.out.println("Error checking LE Audio: " + e.getMessage());
             }
         }
         return false;
@@ -465,11 +517,16 @@ public class MainActivity extends FlutterActivity {
     private void forceAudioRoutingToBluetooth() {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && isLEAudioConnected()) {
-            // For LE Audio on Android 12+, the system should handle routing automatically
-            // We can't force routing directly, but we can ensure the audio focus
-            audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, 
-                                          AudioManager.AUDIOFOCUS_GAIN);
+        if (Build.VERSION.SDK_INT >= 31 && isLEAudioConnected()) { // Android 12 is API 31
+            try {
+                // For LE Audio on Android 12+, the system should handle routing automatically
+                // We can't force routing directly, but we can ensure the audio focus
+                audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, 
+                                              AudioManager.AUDIOFOCUS_GAIN);
+            } catch (Exception e) {
+                // LE Audio API not available or error
+                System.out.println("Error routing to LE Audio: " + e.getMessage());
+            }
         } else {
             // Traditional SCO approach for classic Bluetooth
             audioManager.startBluetoothSco();
@@ -500,5 +557,9 @@ public class MainActivity extends FlutterActivity {
         if (a2dpProxy != null && bluetoothAdapter != null) {
             bluetoothAdapter.closeProfileProxy(A2DP_PROFILE, a2dpProxy);
         }
+    }
+
+    private String getDeviceModel() {
+        return Build.MODEL;
     }
 }

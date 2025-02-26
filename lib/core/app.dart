@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
-import '../config/routes.dart';
-import '../config/theme.dart';
+import 'package:provider/provider.dart';
+import '../features/presets/models/preset.dart';
+import '../features/bluetooth/providers/bluetooth_provider.dart';
+import 'main_nav.dart';
 
 class MyApp extends StatelessWidget {
-  final Map<String, dynamic> presetData;
+  final List<Preset> presetData;
 
   const MyApp({super.key, required this.presetData});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: appTheme,
-      initialRoute: '/', // Use initialRoute instead of home
-      routes: appRoutes(presetData),
+      title: 'Headphone App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const MainNavigation(),
     );
   }
 }
