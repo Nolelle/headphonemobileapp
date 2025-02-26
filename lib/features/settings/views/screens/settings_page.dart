@@ -47,7 +47,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await _audioPlayer.setVolume(_volume);
 
       // Play Eminem track
-      await _audioPlayer.play(AssetSource('audio/eminiem.mp3'));
+      await _audioPlayer.play(AssetSource('audio/eminem.mp3'));
 
       setState(() {
         _isPlaying = true;
@@ -167,7 +167,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           onPressed: _playSound,
                           icon:
                               Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
-                          label: Text(_isPlaying ? 'Stop' : 'Play Eminem'),
+                          label: Text(_isPlaying ? 'Stop' : 'Play Eminem.mp3'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 const Color.fromRGBO(133, 86, 169, 1.00),
