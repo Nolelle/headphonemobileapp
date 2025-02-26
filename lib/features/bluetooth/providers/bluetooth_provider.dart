@@ -83,6 +83,22 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> forceAudioRouting() async {
+    if (_isEmulatorTestMode || _bypassBluetoothCheck) return;
+
+    try {
+      await BluetoothPlatform.forceAudioRoutingToBluetooth();
+
+      // Attempt to verify audio connection after forcing routing
+      await verifyAudioConnection();
+
+      print('Forced audio routing to Bluetooth device');
+    } catch (e) {
+      print('Error forcing audio routing: $e');
+      rethrow;
+    }
+  }
+
   // Load registered device from storage
   Future<void> _loadRegisteredDevice() async {
     try {
