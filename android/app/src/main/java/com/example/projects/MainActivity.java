@@ -454,15 +454,21 @@ public class MainActivity extends FlutterActivity {
 }
     
     // Open Bluetooth settings
+    // In MainActivity.java
     private void openBluetoothSettings() {
-        Intent intent = new Intent();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
-        } else {
-            intent.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-        }
-        startActivity(intent);
+    Intent intent = new Intent();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        intent.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
+    } else {
+        intent.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
     }
+    
+    // Add these flags to keep your app in the back stack
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    
+    startActivity(intent);
+}
     
     // Broadcast receiver for Bluetooth state changes
     private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
