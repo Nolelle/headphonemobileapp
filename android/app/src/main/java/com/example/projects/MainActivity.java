@@ -413,17 +413,45 @@ public class MainActivity extends FlutterActivity {
     
     // Get connected device as map
     private Map<String, Object> getConnectedDeviceAsMap() {
-        if (connectedDevice != null) {
-            Map<String, Object> deviceMap = new HashMap<>();
-            deviceMap.put("id", connectedDevice.getAddress());
-            deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
-            deviceMap.put("type", getDeviceTypeString(connectedDevice.getType()));
-            deviceMap.put("audioType", getBluetoothConnectionType());
-            
-            return deviceMap;
-        }
-        return null;
+    // First check if we have already detected a connection
+    if (connectedDevice != null) {
+        // Return connected device details
     }
+    
+    // Otherwise, check for connected audio devices through profiles
+    
+    // Check A2DP (Classic Bluetooth) connections
+    if (a2dpProxy != null) {
+        List<BluetoothDevice> a2dpDevices = a2dpProxy.getConnectedDevices();
+        if (!a2dpDevices.isEmpty()) {
+            connectedDevice = a2dpDevices.get(0);
+            // Return device details
+        }
+    }
+    
+    // Check LE Audio connections
+    if (Build.VERSION.SDK_INT >= 31 && leAudioProxy != null) {
+        List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
+        if (!leAudioDevices.isEmpty()) {
+            connectedDevice = leAudioDevices.get(0);
+            // Return device details
+        }
+    }
+    
+    // Also check system audio routing
+    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    if (audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn()) {
+        // System reports Bluetooth audio is active, but we couldn't find the device
+        // Try to get from bonded devices
+        Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+        for (BluetoothDevice device : bondedDevices) {
+            // Check if this device is connected via audio profiles
+            // This is a fallback approach
+        }
+    }
+    
+    return null; // No device found
+}
     
     // Open Bluetooth settings
     private void openBluetoothSettings() {

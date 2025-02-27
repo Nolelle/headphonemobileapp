@@ -55,6 +55,7 @@ void main() async {
   final observer = BluetoothLifecycleObserver(bluetoothProvider);
   WidgetsBinding.instance.addObserver(observer);
 
+  // Start the app
   runApp(
     MultiProvider(
       providers: [
@@ -68,6 +69,29 @@ void main() async {
       child: MyApp(presetData: presetProvider.presets.values.toList()),
     ),
   );
+
+  // Add a multiple-phase connection detection approach
+  // This helps catch devices connected before app launch
+
+  // Phase 1: Immediate check after app launch (already in BluetoothProvider._init())
+
+  // Phase 2: Short delay check (helps when system is still initializing Bluetooth services)
+  Future.delayed(const Duration(seconds: 2), () {
+    print("Phase 2 Bluetooth connection check");
+    bluetoothProvider.checkBluetoothConnection();
+  });
+
+  // Phase 3: Longer delay check (final attempt for slow-connecting devices)
+  Future.delayed(const Duration(seconds: 5), () {
+    print("Phase 3 Bluetooth connection check");
+    bluetoothProvider.checkBluetoothConnection();
+
+    // If connected, force audio routing to ensure proper setup
+    if (bluetoothProvider.isDeviceConnected) {
+      print("Connected device found, forcing audio routing");
+      bluetoothProvider.forceAudioRouting();
+    }
+  });
 }
 
 // Helper function to determine if running on emulator

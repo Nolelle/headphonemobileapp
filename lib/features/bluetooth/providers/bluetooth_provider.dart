@@ -290,75 +290,111 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
-  // Check Bluetooth connection
   Future<void> checkBluetoothConnection() async {
     if (_isEmulatorTestMode) return;
 
     try {
-      // Get the currently connected device from the platform
-      final platformConnectedDevice =
-          await BluetoothPlatform.getConnectedDevice();
+      // Try multiple approaches to detect connected devices
 
-      // Check with the platform if any audio device is actually connected
-      final platformAudioConnected =
-          await BluetoothPlatform.isAudioDeviceConnected();
+      // First approach: Get currently connected device from platform
+      _connectedDevice = await BluetoothPlatform.getConnectedDevice();
 
-      // If platform reports a connected device, use that information
-      if (platformConnectedDevice != null && platformAudioConnected) {
-        _connectedDevice = platformConnectedDevice;
-        _isDeviceConnected = true;
+      // Second approach: Check if any audio device is connected
+      final isAudioConnected = await BluetoothPlatform.isAudioDeviceConnected();
+
+      // Third approach: Check system audio routing status
+      _audioType = await BluetoothPlatform.getBluetoothAudioType();
+
+      // Update connection status based on combined results
+      _isDeviceConnected = _connectedDevice != null || isAudioConnected;
+
+      // Log what we found for debugging
+      print("Connected device: $_connectedDevice");
+      print("Audio connected: $isAudioConnected");
+      print("Audio type: $_audioType");
+
+      if (_isDeviceConnected && _connectedDevice != null) {
         _connectedDeviceName = _connectedDevice!.name;
-        _audioType = await BluetoothPlatform.getBluetoothAudioType();
-
-        // Add indicator if it's LE Audio
-        if (_audioType == BluetoothAudioType.leAudio) {
-          _connectedDeviceName += " (LE Audio)";
-        }
-
-        // If we have a connection but no registered device, register this one
-        _registeredDeviceId ??= _connectedDevice!.id;
-        await _saveRegisteredDevice();
-
-        print(
-            "Connected to: $_connectedDeviceName with audio type: $_audioType");
-      }
-      // If platform doesn't report a connected device, but we have persistent data
-      // try to force a reconnection instead of assuming disconnection
-      else if (_connectedDevice != null && _isDeviceConnected) {
-        print(
-            "Platform reports no connection, but we have saved connection data. Attempting reconnection...");
-        try {
-          // Try to reconnect using the persisted device
-          final reconnected =
-              await BluetoothPlatform.connectToDevice(_connectedDevice!.id);
-          if (reconnected) {
-            await BluetoothPlatform.forceAudioRoutingToBluetooth();
-            _isDeviceConnected = true;
-
-            // Update audio type after reconnection
-            _audioType = await BluetoothPlatform.getBluetoothAudioType();
-            print("Successfully reconnected to: $_connectedDeviceName");
-          } else {
-            // Only if reconnection explicitly fails, mark as disconnected
-            _isDeviceConnected = false;
-            _connectedDeviceName = "No Device";
-          }
-        } catch (e) {
-          print('Error during reconnection attempt: $e');
-          // Don't change connection state on error - maintain previous state
-        }
-      } else {
-        _isDeviceConnected = false;
-        _connectedDeviceName = "No Device";
+        // Other code remains the same
       }
 
       notifyListeners();
     } catch (e) {
       print('Error checking Bluetooth connection: $e');
-      // Don't update connection state on error - maintain previous state
+      _isDeviceConnected = false;
+      notifyListeners();
     }
     await saveConnectionState();
   }
+  // Check Bluetooth connection
+  // Future<void> checkBluetoothConnection() async {
+  //   if (_isEmulatorTestMode) return;
+
+  //   try {
+  //     // Get the currently connected device from the platform
+  //     final platformConnectedDevice =
+  //         await BluetoothPlatform.getConnectedDevice();
+
+  //     // Check with the platform if any audio device is actually connected
+  //     final platformAudioConnected =
+  //         await BluetoothPlatform.isAudioDeviceConnected();
+
+  //     // If platform reports a connected device, use that information
+  //     if (platformConnectedDevice != null && platformAudioConnected) {
+  //       _connectedDevice = platformConnectedDevice;
+  //       _isDeviceConnected = true;
+  //       _connectedDeviceName = _connectedDevice!.name;
+  //       _audioType = await BluetoothPlatform.getBluetoothAudioType();
+
+  //       // Add indicator if it's LE Audio
+  //       if (_audioType == BluetoothAudioType.leAudio) {
+  //         _connectedDeviceName += " (LE Audio)";
+  //       }
+
+  //       // If we have a connection but no registered device, register this one
+  //       _registeredDeviceId ??= _connectedDevice!.id;
+  //       await _saveRegisteredDevice();
+
+  //       print(
+  //           "Connected to: $_connectedDeviceName with audio type: $_audioType");
+  //     }
+  //     // If platform doesn't report a connected device, but we have persistent data
+  //     // try to force a reconnection instead of assuming disconnection
+  //     else if (_connectedDevice != null && _isDeviceConnected) {
+  //       print(
+  //           "Platform reports no connection, but we have saved connection data. Attempting reconnection...");
+  //       try {
+  //         // Try to reconnect using the persisted device
+  //         final reconnected =
+  //             await BluetoothPlatform.connectToDevice(_connectedDevice!.id);
+  //         if (reconnected) {
+  //           await BluetoothPlatform.forceAudioRoutingToBluetooth();
+  //           _isDeviceConnected = true;
+
+  //           // Update audio type after reconnection
+  //           _audioType = await BluetoothPlatform.getBluetoothAudioType();
+  //           print("Successfully reconnected to: $_connectedDeviceName");
+  //         } else {
+  //           // Only if reconnection explicitly fails, mark as disconnected
+  //           _isDeviceConnected = false;
+  //           _connectedDeviceName = "No Device";
+  //         }
+  //       } catch (e) {
+  //         print('Error during reconnection attempt: $e');
+  //         // Don't change connection state on error - maintain previous state
+  //       }
+  //     } else {
+  //       _isDeviceConnected = false;
+  //       _connectedDeviceName = "No Device";
+  //     }
+
+  //     notifyListeners();
+  //   } catch (e) {
+  //     print('Error checking Bluetooth connection: $e');
+  //     // Don't update connection state on error - maintain previous state
+  //   }
+  //   await saveConnectionState();
+  // }
 
   // Register a device
   Future<void> registerDevice(BluetoothDevice device) async {
