@@ -143,7 +143,7 @@ class _TestPageState extends State<TestPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                // Navigator.pop(context); // Close the dialog
                 _showProfileCreationDialog(context); // Show the profile creation dialog
               },
               child: const Text('OK'),
@@ -214,9 +214,6 @@ class _TestPageState extends State<TestPage> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close the dialog
-                    Navigator.pop(context); // Return to the Sound Test page
-                    // Navigator.pop(context); // A third one for some reason
                     debugPrint("Volume for frequencies:"
                         "\n-----------------------"
                         "\nLeft 250Hz: $L_user_250Hz_dB"
@@ -232,6 +229,10 @@ class _TestPageState extends State<TestPage> {
                         "\nRight 4000Hz: $R_user_4000Hz_dB"
                         "\nRight 8000Hz: $R_user_8000Hz_dB"
                         "");
+
+                    // Navigator.of(context, rootNavigator: true).pop(); // Close the profile creation dialog
+                    // Navigator.of(context, rootNavigator: true).pop(); // Close the test completion dialog
+                    Navigator.of(context).popUntil((route) => route.isFirst); // Go back to the first route
                   },
                   child: const Text('Save'),
                 ),
@@ -264,15 +265,15 @@ class _TestPageState extends State<TestPage> {
 
   double setCurrentEarTextSize(String selected_ear) {
     if (selected_ear == current_ear) {
-      return 175.0;
+      return 125.0;
     }
-    return 70.0;
+    return 45.0;
   }
   double setCurrentEarIconSize(String selected_ear) {
     if (selected_ear == current_ear) {
-      return 80.0;
+      return 60.0;
     }
-    return 32.0;
+    return 24.0;
   }
   IconData setCurrentEarIconDisplay(String selected_ear) {
     if (selected_ear == current_ear) {
@@ -331,7 +332,7 @@ class _TestPageState extends State<TestPage> {
   Future<void> tempIncrementVolume(AudioPlayer player, double durationInSeconds) async {
     final int steps = 100;
     final double stepDuration = durationInSeconds / steps;
-    final double volumeIncrement = 1.0 / steps;
+    final double volumeIncrement = 0.125 / steps;
 
     //we need to reset it every time we run this method
     current_volume = 0.0;
@@ -413,13 +414,13 @@ class _TestPageState extends State<TestPage> {
         child: Column(
           children: [
             const Padding(
-              padding: EdgeInsets.all(25),
+              padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12.5),
               child: Column(
                 children: [
                   Text(
                     "Click the button below when you hear the sound. This will record the volume at which you can hear the frequency.",
                     style: TextStyle(
-                        fontSize: 24
+                        fontSize: 20
                     ),
                   ),
                 ],
@@ -441,7 +442,7 @@ class _TestPageState extends State<TestPage> {
 
   Widget _buildEarIdentifier(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.all(50),
+        padding: const EdgeInsets.symmetric(horizontal: 50),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -595,13 +596,20 @@ class _TestPageState extends State<TestPage> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(50),
+            padding: const EdgeInsets.all(50),
             child: ElevatedButton(
                 onPressed: tempHandleHearingTestSequence,
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(25),
+                  padding: const EdgeInsets.symmetric(vertical: 18.75, horizontal: 25),
                 ),
-                child: Text("I can hear it!")
+                child: const Text(
+                  "I can hear it!",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
             ),
           )
         ]
