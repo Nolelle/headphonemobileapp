@@ -77,15 +77,11 @@ class _PresetPageState extends State<PresetPage> {
     );
 
     await widget.presetProvider.updatePreset(preset);
+  }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_nameController.text} Successfully Updated!'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
+  // Helper method to auto-save after each change
+  void _autoSave() {
+    _savePreset();
   }
 
   @override
@@ -101,19 +97,6 @@ class _PresetPageState extends State<PresetPage> {
             color: Colors.white,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: _savePreset,
-            child: const Text(
-              'Update',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: SingleChildScrollView(
@@ -122,16 +105,9 @@ class _PresetPageState extends State<PresetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Preset Name Section moved to top
               _buildPresetNameSection(),
-
-              // Overall Volume Section
               _buildOverallVolumeSection(),
-
-              // Sound Balance Section
               _buildSoundBalanceSection(),
-
-              // Sound Enhancement Section
               _buildSoundEnhancementSection(),
             ],
           ),
@@ -162,22 +138,21 @@ class _PresetPageState extends State<PresetPage> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme
-                      .of(context)
-                      .primaryColor,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
-                  color: Theme
-                      .of(context)
-                      .primaryColor,
+                  color: Theme.of(context).primaryColor,
                   width: 2.0,
                 ),
               ),
             ),
             style: const TextStyle(fontSize: 18.0),
+            onChanged: (_) {
+              _autoSave();
+            },
           ),
         ],
       ),
@@ -212,7 +187,10 @@ class _PresetPageState extends State<PresetPage> {
           ),
           Slider(
             value: db_valueOV,
-            onChanged: (value) => setState(() => db_valueOV = value),
+            onChanged: (value) {
+              setState(() => db_valueOV = value);
+              _autoSave();
+            },
             min: -10.0,
             max: 10.0,
             divisions: 18,
@@ -234,7 +212,6 @@ class _PresetPageState extends State<PresetPage> {
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          // Sound Balance header
           const Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Icon(
               Icons.earbuds_rounded,
@@ -250,7 +227,6 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ]),
 
-
           // Bass Sounds slider
           Container(
             child: Column(
@@ -264,7 +240,10 @@ class _PresetPageState extends State<PresetPage> {
                 ),
                 Slider(
                   value: db_valueSB_BS,
-                  onChanged: (value) => setState(() => db_valueSB_BS = value),
+                  onChanged: (value) {
+                    setState(() => db_valueSB_BS = value);
+                    _autoSave();
+                  },
                   min: -10.0,
                   max: 10.0,
                   divisions: 18,
@@ -281,21 +260,23 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ),
 
-
-          // Low-Mid Sounds slider
+          // Low Mid Sounds slider
           Container(
             child: Column(
               children: [
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Low-Mid Sounds'),
+                    Text('Low Mid Sounds'),
                     Text('Louder'),
                   ],
                 ),
                 Slider(
                   value: db_valueSB_LMS,
-                  onChanged: (value) => setState(() => db_valueSB_LMS = value),
+                  onChanged: (value) {
+                    setState(() => db_valueSB_LMS = value);
+                    _autoSave();
+                  },
                   min: -10.0,
                   max: 10.0,
                   divisions: 18,
@@ -304,7 +285,7 @@ class _PresetPageState extends State<PresetPage> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'GUH?!\n',
+                    'Enhances mid-low range sounds for more warmth\n',
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
                 ),
@@ -312,21 +293,23 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ),
 
-
-          // Mid-Range Sounds slider
+          // Mid Range Sounds slider
           Container(
             child: Column(
               children: [
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mid-Range Sounds'),
+                    Text('Mid Range Sounds'),
                     Text('Louder'),
                   ],
                 ),
                 Slider(
                   value: db_valueSB_MRS,
-                  onChanged: (value) => setState(() => db_valueSB_MRS = value),
+                  onChanged: (value) {
+                    setState(() => db_valueSB_MRS = value);
+                    _autoSave();
+                  },
                   min: -10.0,
                   max: 10.0,
                   divisions: 18,
@@ -335,7 +318,7 @@ class _PresetPageState extends State<PresetPage> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances main speech sounds and voices\n',
+                    'For enhancing vocals and other mid-range sounds\n',
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
                 ),
@@ -343,21 +326,23 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ),
 
-
-          // Mid-High Sounds slider
+          // Mid High Sounds slider
           Container(
             child: Column(
               children: [
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mid-High Sounds'),
+                    Text('Mid High Sounds'),
                     Text('Louder'),
                   ],
                 ),
                 Slider(
                   value: db_valueSB_MHS,
-                  onChanged: (value) => setState(() => db_valueSB_MHS = value),
+                  onChanged: (value) {
+                    setState(() => db_valueSB_MHS = value);
+                    _autoSave();
+                  },
                   min: -10.0,
                   max: 10.0,
                   divisions: 18,
@@ -366,14 +351,13 @@ class _PresetPageState extends State<PresetPage> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Guh!?\n',
+                    'Enhances clarity in high-mid range sounds\n',
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
                 ),
               ],
             ),
           ),
-
 
           // Treble Sounds slider
           Container(
@@ -388,7 +372,10 @@ class _PresetPageState extends State<PresetPage> {
                 ),
                 Slider(
                   value: db_valueSB_TS,
-                  onChanged: (value) => setState(() => db_valueSB_TS = value),
+                  onChanged: (value) {
+                    setState(() => db_valueSB_TS = value);
+                    _autoSave();
+                  },
                   min: -10.0,
                   max: 10.0,
                   divisions: 18,
@@ -397,7 +384,7 @@ class _PresetPageState extends State<PresetPage> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances clarity and crisp sounds like consonants\n',
+                    'For enhancing high frequencies like cymbals\n',
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
                 ),
@@ -414,7 +401,6 @@ class _PresetPageState extends State<PresetPage> {
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          // Sound Enhancement header
           const Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Icon(
               Icons.add_sharp,
@@ -455,8 +441,10 @@ class _PresetPageState extends State<PresetPage> {
               ),
               Switch(
                 value: reduce_background_noise,
-                onChanged: (value) =>
-                    setState(() => reduce_background_noise = value),
+                onChanged: (value) {
+                  setState(() => reduce_background_noise = value);
+                  _autoSave();
+                },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
                 activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
@@ -490,7 +478,10 @@ class _PresetPageState extends State<PresetPage> {
               ),
               Switch(
                 value: reduce_wind_noise,
-                onChanged: (value) => setState(() => reduce_wind_noise = value),
+                onChanged: (value) {
+                  setState(() => reduce_wind_noise = value);
+                  _autoSave();
+                },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
                 activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
@@ -524,8 +515,10 @@ class _PresetPageState extends State<PresetPage> {
               ),
               Switch(
                 value: soften_sudden_noise,
-                onChanged: (value) =>
-                    setState(() => soften_sudden_noise = value),
+                onChanged: (value) {
+                  setState(() => soften_sudden_noise = value);
+                  _autoSave();
+                },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
                 activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),

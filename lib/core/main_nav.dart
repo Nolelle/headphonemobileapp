@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
 import '../features/settings/views/settings_page.dart';
-import '../features/sound_test/views/sound_test_page.dart';
+import '../features/sound_test/views/screens/sound_test_page.dart';
 import '../features/presets/providers/preset_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +27,11 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _pages = [
-      const SoundTestPage(),
+      Consumer<SoundTestProvider>(
+        builder: (context, provider, _) => SoundTestPage(
+          soundTestProvider: provider,
+        ),
+      ),
       Consumer<PresetProvider>(
         builder: (context, provider, _) => PresetsListPage(
           presetProvider: provider,
@@ -72,9 +77,9 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.shifting,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: const Color.fromRGBO(82, 56, 110, 1.0),
+        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
         showSelectedLabels: true,
         showUnselectedLabels: true,
         elevation: 8,

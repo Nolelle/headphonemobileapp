@@ -19,33 +19,7 @@ class PresetsListPage extends StatefulWidget {
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
 
-  Future<bool> _showConfirmationDialog(
-      BuildContext context, String presetName) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Preset Activation'),
-          content:
-          Text('Do you want to send "$presetName" to your device?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: const Text('Send'),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
-    ) ??
-        false;
-  }
-
-  Future<bool> _showDeleteConfirmationDialog(
-      BuildContext context, String presetName) async {
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context, String presetName) async {
     return await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -91,27 +65,21 @@ class _PresetsListPageState extends State<PresetsListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ElevatedButton(
-                            onPressed: () async {
-                              final shouldActivate = await _showConfirmationDialog(
-                                  context, preset.name);
+                            onPressed: () {
+                              setState(() {
+                                activePresetId = preset.id;
+                              });
 
-                              if (shouldActivate) {
-                                setState(() {
-                                  activePresetId =
-                                      preset.id; // Show dropdown for this preset
-                                });
+                              provider.setActivePreset(preset.id);
 
-                                provider.setActivePreset(preset.id);
-
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          '${preset.name} Successfully Sent To Device!'),
-                                      duration: const Duration(seconds: 1),
-                                    ),
-                                  );
-                                }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        '${preset.name} Successfully Sent To Device!'),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -126,11 +94,9 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             child: Align(
                               alignment: Alignment.center,
                               child: Padding(
-                                padding:
-                                const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                                 child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       preset.name,
@@ -148,16 +114,12 @@ class _PresetsListPageState extends State<PresetsListPage> {
                               ),
                             ),
                           ),
-                          // Show dropdown only if this preset is active
                           if (activePresetId == preset.id)
-                            DropdownButton<String>(
-                              value: null, // No initial value for the dropdown
-                              hint: const Text('What does thou want to do :3'),
-                              onChanged: (String? value) async {
-                                if (value == null) return;
-
-                                switch (value) {
-                                  case 'edit':
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -168,34 +130,30 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                         ),
                                       ),
                                     );
-                                    break;
-                                  case 'delete':
+                                  },
+                                  child: const Text('Edit'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                                  ),
+                                  onPressed: () async {
                                     final shouldDelete = await _showDeleteConfirmationDialog(
                                         context, preset.name);
                                     if (shouldDelete) {
                                       provider.deletePreset(preset.id);
                                       setState(() {
-                                        activePresetId = null; // Hide dropdown
+                                        activePresetId = null;
                                       });
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text(
                                               '${preset.name} deleted successfully!'),
                                         ),
                                       );
                                     }
-                                    break;
-                                }
-                              },
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'edit',
-                                  child: Text('Edit'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'delete',
-                                  child: Text('Delete'),
+                                  },
+                                  child: const Text('Delete'),
                                 ),
                               ],
                             ),
