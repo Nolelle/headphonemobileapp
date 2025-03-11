@@ -126,17 +126,16 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                       .id; // Show dropdown for this preset
                                 });
 
-                                provider.setActivePreset(preset.id);
+                              provider.setActivePreset(preset.id);
 
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          '${preset.name} Successfully Sent To Device!'),
-                                      duration: const Duration(seconds: 1),
-                                    ),
-                                  );
-                                }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        '${preset.name} Successfully Sent To Device!'),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -150,11 +149,23 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             ),
                             child: Align(
                               alignment: Alignment.center,
-                              child: Text(
-                                preset.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      preset.name,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

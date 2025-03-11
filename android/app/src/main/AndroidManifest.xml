@@ -12,8 +12,9 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
 
+    package="edu.sait.boneplus"> <!-- Add this line with your app's package name -->
     <application
-        android:label="Headphone App"
+        android:label="Bone+"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

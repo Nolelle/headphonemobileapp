@@ -33,6 +33,7 @@ dependencies:
     sdk: flutter
   provider: ^6.0.0
   permission_handler: ^10.0.0
+  audioplayers: ^5.2.1  
   external_app_launcher: ^4.0.1
   url_launcher: ^6.1.12  
 
@@ -63,6 +64,13 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/audio/250Hz.wav
+    - assets/audio/500Hz.wav
+    - assets/audio/1000Hz.wav
+    - assets/audio/2000Hz.wav
+    - assets/audio/4000Hz.wav
+    - assets/audio/8000Hz.wav
 
   # To add assets to your application, add an assets section, like this:
   assets:

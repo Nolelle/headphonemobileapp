@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 import 'package:provider/provider.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
 import '../features/settings/views/screens/settings_page.dart';
-import '../features/sound_test/views/sound_test_page.dart';
+import '../features/sound_test/views/screens/sound_test_page.dart';
 import '../features/presets/providers/preset_provider.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
 import '../features/bluetooth/views/screens/bluetooth_settings_page.dart';
@@ -16,7 +17,7 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -33,7 +34,11 @@ class _MainNavigationState extends State<MainNavigation> {
     final presetProvider = Provider.of<PresetProvider>(context);
 
     final List<Widget> pages = [
-      const SoundTestPage(),
+      Consumer<SoundTestProvider>(
+        builder: (context, provider, _) => SoundTestPage(
+          soundTestProvider: provider,
+        ),
+      ),
       PresetsListPage(
         presetProvider: presetProvider,
       ),
@@ -58,11 +63,13 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
         ],
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: const Color.fromRGBO(82, 56, 110, 1.0),
+        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        elevation: 8,
       ),
     );
   }
