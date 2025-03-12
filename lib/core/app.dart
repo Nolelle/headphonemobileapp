@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../features/presets/models/preset.dart';
 import '../features/bluetooth/providers/bluetooth_provider.dart';
 import '../features/bluetooth/views/widgets/bluetooth_wrapper.dart';
+import '../features/settings/providers/theme_provider.dart';
+import '../config/theme.dart';
 import 'main_nav.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,15 +14,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Headphone App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const BluetoothWrapper(
-        child: MainNavigation(),
-      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final isDarkMode = themeProvider.isDarkMode;
+
+        // Create custom theme with explicit app bar theme
+        final customLightTheme = lightTheme.copyWith(
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color.fromRGBO(133, 86, 169, 1.00),
+            foregroundColor: Colors.white,
+            centerTitle: true,
+            elevation: 4.0,
+          ),
+        );
+
+        final customDarkTheme = darkTheme.copyWith(
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color.fromRGBO(93, 59, 129, 1.00),
+            foregroundColor: Colors.white,
+            centerTitle: true,
+            elevation: 4.0,
+          ),
+        );
+
+        return MaterialApp(
+          title: 'Headphone App',
+          theme: customLightTheme,
+          darkTheme: customDarkTheme,
+          themeMode: themeProvider.themeMode,
+          home: const BluetoothWrapper(
+            child: MainNavigation(),
+          ),
+        );
+      },
     );
   }
 }

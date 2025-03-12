@@ -51,12 +51,15 @@ class _SoundTestPageState extends State<SoundTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? Colors.white : Colors.black;
+    final Color iconColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Sound Test'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -124,24 +127,44 @@ class _SoundTestPageState extends State<SoundTestPage> {
                     child: const Text('Begin Sound Test'),
                   ),
                 ),
-                const Text(
+                Text(
                   'Some instructions before starting the test:',
-                  style: TextStyle(fontSize: 20),
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: textColor,
+                  ),
                 ),
-                const ListBody(
+                ListBody(
                   children: [
                     ListTile(
-                      leading: Icon(Icons.keyboard_arrow_right),
-                      title: Text('Sit in a quiet environment.'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.keyboard_arrow_right),
+                      leading: Icon(
+                        Icons.keyboard_arrow_right,
+                        color: iconColor,
+                      ),
                       title: Text(
-                          'Wear your headphones correctly and comfortably.'),
+                        'Sit in a quiet environment.',
+                        style: TextStyle(color: textColor),
+                      ),
                     ),
                     ListTile(
-                      leading: Icon(Icons.keyboard_arrow_right),
-                      title: Text('Press the button when you hear the sound.'),
+                      leading: Icon(
+                        Icons.keyboard_arrow_right,
+                        color: iconColor,
+                      ),
+                      title: Text(
+                        'Wear your headphones correctly and comfortably.',
+                        style: TextStyle(color: textColor),
+                      ),
+                    ),
+                    ListTile(
+                      leading: Icon(
+                        Icons.keyboard_arrow_right,
+                        color: iconColor,
+                      ),
+                      title: Text(
+                        'Press the button when you hear the sound.',
+                        style: TextStyle(color: textColor),
+                      ),
                     ),
                   ],
                 ),
@@ -155,9 +178,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Audio Profiles: $audioProfileCount/3',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: theme.textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -200,9 +223,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isActive
-                                      ? const Color.fromRGBO(93, 59, 129, 1.00)
-                                      : const Color.fromRGBO(
-                                          133, 86, 169, 1.00),
+                                      ? theme.colorScheme.secondary
+                                      : theme.primaryColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(5),
                                   ),

@@ -287,16 +287,20 @@ class _TestPageState extends State<TestPage> {
     return Icons.volume_off;
   }
 
-  Color determineCurrentSoundStageBGColor(int soundStage) {
+  Color determineCurrentSoundStageBGColor(int soundStage, ThemeData theme) {
     if (soundStage == current_sound_stage) {
-      return const Color.fromRGBO(255, 255, 255, 1.0);
+      return theme.brightness == Brightness.dark
+          ? Colors.white70
+          : Colors.white;
     }
-    return const Color.fromRGBO(133, 86, 169, 1.0);
+    return theme.primaryColor;
   }
 
-  Color determineCurrentSoundStageTextColor(int soundStage) {
+  Color determineCurrentSoundStageTextColor(int soundStage, ThemeData theme) {
     if (soundStage == current_sound_stage) {
-      return Colors.black54;
+      return theme.brightness == Brightness.dark
+          ? Colors.black87
+          : Colors.black54;
     }
     return Colors.white;
   }
@@ -381,9 +385,14 @@ class _TestPageState extends State<TestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? Colors.white : Colors.black;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        backgroundColor: theme.primaryColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -426,13 +435,17 @@ class _TestPageState extends State<TestPage> {
       body: Center(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12.5),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 25, vertical: 12.5),
               child: Column(
                 children: [
                   Text(
                     "Click the button below when you hear the sound. This will record the volume at which you can hear the frequency.",
-                    style: TextStyle(fontSize: 20),
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: textColor,
+                    ),
                   ),
                 ],
               ),
@@ -441,8 +454,8 @@ class _TestPageState extends State<TestPage> {
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildEarIdentifier(context),
-                _buildFrequencyStageSelection(context),
+                _buildEarIdentifier(context, textColor),
+                _buildFrequencyStageSelection(context, theme),
               ],
             )
           ],
@@ -451,7 +464,7 @@ class _TestPageState extends State<TestPage> {
     );
   }
 
-  Widget _buildEarIdentifier(BuildContext context) {
+  Widget _buildEarIdentifier(BuildContext context, Color textColor) {
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 50),
         child: Row(
@@ -463,12 +476,14 @@ class _TestPageState extends State<TestPage> {
                 Icon(
                   setCurrentEarIconDisplay("L"),
                   size: setCurrentEarIconSize("L"),
+                  color: textColor,
                 ),
                 Text(
                   "L",
                   style: TextStyle(
                       fontSize: setCurrentEarTextSize("L"),
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.bold,
+                      color: textColor),
                 ),
               ],
             ),
@@ -477,12 +492,14 @@ class _TestPageState extends State<TestPage> {
                 Icon(
                   setCurrentEarIconDisplay("R"),
                   size: setCurrentEarIconSize("R"),
+                  color: textColor,
                 ),
                 Text(
                   "R",
                   style: TextStyle(
                       fontSize: setCurrentEarTextSize("R"),
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.bold,
+                      color: textColor),
                 ),
               ],
             )
@@ -490,7 +507,7 @@ class _TestPageState extends State<TestPage> {
         ));
   }
 
-  Widget _buildFrequencyStageSelection(BuildContext context) {
+  Widget _buildFrequencyStageSelection(BuildContext context, ThemeData theme) {
     return Column(children: [
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 60),
@@ -502,13 +519,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(1),
+                color: determineCurrentSoundStageBGColor(1, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "1",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(1),
+                  color: determineCurrentSoundStageTextColor(1, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -519,13 +536,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(2),
+                color: determineCurrentSoundStageBGColor(2, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "2",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(2),
+                  color: determineCurrentSoundStageTextColor(2, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -536,13 +553,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(3),
+                color: determineCurrentSoundStageBGColor(3, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "3",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(3),
+                  color: determineCurrentSoundStageTextColor(3, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -553,13 +570,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(4),
+                color: determineCurrentSoundStageBGColor(4, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "4",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(4),
+                  color: determineCurrentSoundStageTextColor(4, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -570,13 +587,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(5),
+                color: determineCurrentSoundStageBGColor(5, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "5",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(5),
+                  color: determineCurrentSoundStageTextColor(5, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -587,13 +604,13 @@ class _TestPageState extends State<TestPage> {
               width: 35,
               alignment: Alignment.center, // Centers text
               decoration: BoxDecoration(
-                color: determineCurrentSoundStageBGColor(6),
+                color: determineCurrentSoundStageBGColor(6, theme),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 "6",
                 style: TextStyle(
-                  color: determineCurrentSoundStageTextColor(6),
+                  color: determineCurrentSoundStageTextColor(6, theme),
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
@@ -607,6 +624,7 @@ class _TestPageState extends State<TestPage> {
         child: ElevatedButton(
             onPressed: tempHandleHearingTestSequence,
             style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
               padding:
                   const EdgeInsets.symmetric(vertical: 18.75, horizontal: 25),
             ),

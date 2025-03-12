@@ -176,9 +176,13 @@ class _PresetPageState extends State<PresetPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? Colors.white : Colors.black;
+    final Color subtitleColor = isDarkMode ? Colors.white70 : Colors.black54;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
         title: const Text(
           'Edit Preset',
           style: TextStyle(
@@ -216,17 +220,17 @@ class _PresetPageState extends State<PresetPage> {
             ),
         ],
       ),
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Container(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPresetNameSection(),
-              _buildOverallVolumeSection(),
-              _buildSoundBalanceSection(),
-              _buildSoundEnhancementSection(),
+              _buildPresetNameSection(textColor),
+              _buildOverallVolumeSection(textColor, subtitleColor),
+              _buildSoundBalanceSection(textColor, subtitleColor),
+              _buildSoundEnhancementSection(textColor, subtitleColor),
             ],
           ),
         ),
@@ -234,17 +238,18 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildPresetNameSection() {
+  Widget _buildPresetNameSection(Color textColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 4.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Preset Name',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 8.0),
@@ -252,7 +257,7 @@ class _PresetPageState extends State<PresetPage> {
             controller: _nameController,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).cardTheme.color,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: BorderSide(
@@ -267,7 +272,7 @@ class _PresetPageState extends State<PresetPage> {
                 ),
               ),
             ),
-            style: const TextStyle(fontSize: 18.0),
+            style: TextStyle(fontSize: 18.0, color: textColor),
             onChanged: (_) {
               _autoSave(settingName: 'Preset name');
             },
@@ -277,15 +282,15 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildOverallVolumeSection() {
+  Widget _buildOverallVolumeSection(Color textColor, Color subtitleColor) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          const Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Icon(
               Icons.volume_up,
-              color: Colors.black,
+              color: textColor,
               size: 30,
             ),
             Text(
@@ -293,14 +298,15 @@ class _PresetPageState extends State<PresetPage> {
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
+                color: textColor,
               ),
             ),
           ]),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Softer'),
-              Text('Louder'),
+              Text('Softer', style: TextStyle(color: textColor)),
+              Text('Louder', style: TextStyle(color: textColor)),
             ],
           ),
           Slider(
@@ -318,6 +324,7 @@ class _PresetPageState extends State<PresetPage> {
             alignment: Alignment.center,
             child: Text(
               '${db_valueOV.toStringAsFixed(1)} dB',
+              style: TextStyle(color: textColor),
             ),
           ),
         ],
@@ -325,15 +332,15 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildSoundBalanceSection() {
+  Widget _buildSoundBalanceSection(Color textColor, Color subtitleColor) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          const Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Icon(
               Icons.earbuds_rounded,
-              color: Colors.black,
+              color: textColor,
               size: 30,
             ),
             Text(
@@ -341,6 +348,7 @@ class _PresetPageState extends State<PresetPage> {
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
+                color: textColor,
               ),
             ),
           ]),
@@ -349,22 +357,23 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Bass',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer'),
-                    Text('Louder'),
+                    Text('Softer', style: TextStyle(color: textColor)),
+                    Text('Louder', style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -382,13 +391,14 @@ class _PresetPageState extends State<PresetPage> {
                   alignment: Alignment.center,
                   child: Text(
                     '${db_valueSB_BS.toStringAsFixed(1)} dB',
+                    style: TextStyle(color: textColor),
                   ),
                 ),
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Enhances low frequencies like bass drums and deep voices',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -401,22 +411,23 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Mid',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer'),
-                    Text('Louder'),
+                    Text('Softer', style: TextStyle(color: textColor)),
+                    Text('Louder', style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -434,13 +445,14 @@ class _PresetPageState extends State<PresetPage> {
                   alignment: Alignment.center,
                   child: Text(
                     '${db_valueSB_MRS.toStringAsFixed(1)} dB',
+                    style: TextStyle(color: textColor),
                   ),
                 ),
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Enhances vocals and most speech frequencies',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -453,22 +465,23 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Treble',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer'),
-                    Text('Louder'),
+                    Text('Softer', style: TextStyle(color: textColor)),
+                    Text('Louder', style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -486,13 +499,14 @@ class _PresetPageState extends State<PresetPage> {
                   alignment: Alignment.center,
                   child: Text(
                     '${db_valueSB_TS.toStringAsFixed(1)} dB',
+                    style: TextStyle(color: textColor),
                   ),
                 ),
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
                     'Enhances high frequencies like cymbals and consonant sounds',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -504,15 +518,15 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildSoundEnhancementSection() {
+  Widget _buildSoundEnhancementSection(Color textColor, Color subtitleColor) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          const Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Icon(
               Icons.add_sharp,
-              color: Colors.black,
+              color: textColor,
               size: 30,
             ),
             Text(
@@ -520,6 +534,7 @@ class _PresetPageState extends State<PresetPage> {
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
+                color: textColor,
               ),
             ),
           ]),
@@ -527,7 +542,7 @@ class _PresetPageState extends State<PresetPage> {
           // Reduce Background Noise toggle
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -535,13 +550,14 @@ class _PresetPageState extends State<PresetPage> {
                       'Reduce Background Noise',
                       style: TextStyle(
                         fontSize: 20,
+                        color: textColor,
                       ),
                     ),
                     Text(
                       'Minimize constant background sounds',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: subtitleColor,
                       ),
                     ),
                   ],
@@ -555,7 +571,7 @@ class _PresetPageState extends State<PresetPage> {
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                activeTrackColor: Theme.of(context).primaryColor,
                 inactiveTrackColor: Colors.grey,
               ),
             ],
@@ -564,7 +580,7 @@ class _PresetPageState extends State<PresetPage> {
           // Reduce Wind Noise toggle
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -572,13 +588,14 @@ class _PresetPageState extends State<PresetPage> {
                       'Reduce Wind Noise',
                       style: TextStyle(
                         fontSize: 20,
+                        color: textColor,
                       ),
                     ),
                     Text(
                       'Helps in outdoor environments',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: subtitleColor,
                       ),
                     ),
                   ],
@@ -592,7 +609,7 @@ class _PresetPageState extends State<PresetPage> {
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                activeTrackColor: Theme.of(context).primaryColor,
                 inactiveTrackColor: Colors.grey,
               ),
             ],
@@ -601,7 +618,7 @@ class _PresetPageState extends State<PresetPage> {
           // Soften Sudden Sounds toggle
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -609,13 +626,14 @@ class _PresetPageState extends State<PresetPage> {
                       'Soften Sudden Sounds',
                       style: TextStyle(
                         fontSize: 20,
+                        color: textColor,
                       ),
                     ),
                     Text(
                       'Reduces unexpected loud noises',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: subtitleColor,
                       ),
                     ),
                   ],
@@ -629,7 +647,7 @@ class _PresetPageState extends State<PresetPage> {
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                activeTrackColor: Theme.of(context).primaryColor,
                 inactiveTrackColor: Colors.grey,
               ),
             ],

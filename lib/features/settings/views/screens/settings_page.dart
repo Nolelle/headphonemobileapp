@@ -1,5 +1,7 @@
 // lib/features/settings/views/screens/settings_page.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -9,17 +11,17 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _isDarkMode = false;
   String _currentLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -34,9 +36,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSettingItem(
                 icon: Icons.brightness_6,
                 title: 'App Theme',
-                subtitle: _isDarkMode ? 'Dark Mode' : 'Light Mode',
+                subtitle: isDarkMode ? 'Dark Mode' : 'Light Mode',
                 onTap: () {
-                  _showThemeConfirmationDialog();
+                  _showThemeConfirmationDialog(themeProvider);
                 },
               ),
 
@@ -83,7 +85,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.info_outline,
                 title: 'App Version',
                 subtitle: '1.0.0',
-                onTap: () {},
+                onTap: () {
+                  showAboutDialog(
+                    context: context,
+                    applicationName: 'Headphone App',
+                    applicationVersion: '1.0.0',
+                    applicationIcon: const FlutterLogo(),
+                    children: [
+                      const Text(
+                        'A mobile application for controlling headphone settings via Bluetooth.',
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -97,10 +111,10 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Color.fromRGBO(133, 86, 169, 1.00),
+          color: Theme.of(context).primaryColor,
         ),
       ),
     );
@@ -118,7 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: ListTile(
         leading: Icon(
           icon,
-          color: const Color.fromRGBO(133, 86, 169, 1.00),
+          color: Theme.of(context).primaryColor,
         ),
         title: Text(
           title,
@@ -169,8 +183,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showThemeConfirmationDialog() {
-    String selectedTheme = _isDarkMode ? 'Dark Mode' : 'Light Mode';
+  void _showThemeConfirmationDialog(ThemeProvider themeProvider) {
+    String selectedTheme =
+        themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode';
 
     showDialog(
       context: context,
@@ -215,19 +230,18 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   final bool newIsDarkMode = selectedTheme == 'Dark Mode';
-                  this.setState(() {
-                    _isDarkMode = newIsDarkMode;
-                  });
-                  Navigator.pop(context);
-                  // Theme implementation will be added later
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Theme changed to $selectedTheme'),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
+                  await themeProvider.setTheme(newIsDarkMode);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Theme changed to $selectedTheme'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
                 },
                 child: const Text('Apply'),
               ),

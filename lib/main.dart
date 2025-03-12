@@ -5,6 +5,7 @@ import 'features/bluetooth/providers/bluetooth_provider.dart';
 import 'features/presets/providers/preset_provider.dart';
 import 'features/sound_test/providers/sound_test_provider.dart';
 import 'features/sound_test/repositories/sound_test_repository.dart';
+import 'features/settings/providers/theme_provider.dart';
 import 'core/app.dart';
 import 'features/presets/models/preset.dart';
 import 'features/presets/repositories/preset_repository.dart';
@@ -54,6 +55,9 @@ void main() async {
   final soundTestProvider = SoundTestProvider(soundTestRepository);
   await soundTestProvider.fetchSoundTests();
 
+  // Create theme provider
+  final themeProvider = ThemeProvider();
+
   // Create provider first so we can use it for the observer
   final bluetoothProvider =
       BluetoothProvider(isEmulatorTestMode: isEmulatorMode);
@@ -74,6 +78,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => soundTestProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => themeProvider,
         ),
       ],
       child: MyApp(presetData: presetProvider.presets.values.toList()),

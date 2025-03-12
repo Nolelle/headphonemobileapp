@@ -50,12 +50,12 @@ class _PresetsListPageState extends State<PresetsListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Presets'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -65,11 +65,14 @@ class _PresetsListPageState extends State<PresetsListPage> {
                 final presets = provider.presets.values.toList();
 
                 if (presets.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No presets available. Create a new preset to get started.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
                     ),
                   );
                 }
@@ -106,8 +109,8 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isActive
-                                  ? const Color.fromRGBO(93, 59, 129, 1.00)
-                                  : const Color.fromRGBO(133, 86, 169, 1.00),
+                                  ? theme.colorScheme.secondary
+                                  : theme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5),
                               ),
@@ -154,8 +157,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromRGBO(
-                                        133, 86, 169, 1.00),
+                                    backgroundColor: theme.primaryColor,
                                   ),
                                   onPressed: () async {
                                     final shouldDelete =
@@ -194,9 +196,9 @@ class _PresetsListPageState extends State<PresetsListPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Presets: $presetCount/10',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
-                    color: Colors.black,
+                    color: theme.textTheme.bodyLarge?.color,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -206,7 +208,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        backgroundColor: theme.primaryColor,
         onPressed: () async {
           final presetCount = widget.presetProvider.presets.length;
           if (presetCount >= 10) {

@@ -36,6 +36,8 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final presetProvider = Provider.of<PresetProvider>(context);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     final List<Widget> pages = [
       Consumer<SoundTestProvider>(
@@ -53,29 +55,41 @@ class _MainNavigationState extends State<MainNavigation> {
 
     return Scaffold(
       body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.hearing),
-            label: 'Hearing Test',
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: isDarkMode
+                ? const Color.fromRGBO(93, 59, 129, 1.00)
+                : const Color.fromRGBO(133, 86, 169, 1.00),
+            selectedItemColor: Colors.white,
+            unselectedItemColor: isDarkMode
+                ? const Color.fromRGBO(180, 160, 200, 1.0)
+                : const Color.fromRGBO(82, 56, 110, 1.0),
+            elevation: 8.0,
+            type: BottomNavigationBarType.fixed,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.headphones),
-            label: 'Presets',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: const Color.fromRGBO(82, 56, 110, 1.0),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        elevation: 8,
+        ),
+        child: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.hearing),
+              label: 'Hearing Test',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.headphones),
+              label: 'Presets',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+        ),
       ),
     );
   }
