@@ -23,9 +23,7 @@ class _PresetPageState extends State<PresetPage> {
   late TextEditingController _nameController;
   double db_valueOV = 0.0;
   double db_valueSB_BS = 0.0;
-  double db_valueSB_LMS = 0.0;
   double db_valueSB_MRS = 0.0;
-  double db_valueSB_MHS = 0.0;
   double db_valueSB_TS = 0.0;
   bool reduce_background_noise = false;
   bool reduce_wind_noise = false;
@@ -51,9 +49,7 @@ class _PresetPageState extends State<PresetPage> {
       setState(() {
         db_valueOV = data['db_valueOV'] ?? 0.0;
         db_valueSB_BS = data['db_valueSB_BS'] ?? 0.0;
-        db_valueSB_LMS = data['db_valueSB_LMS'] ?? 0.0;
         db_valueSB_MRS = data['db_valueSB_MRS'] ?? 0.0;
-        db_valueSB_MHS = data['db_valueSB_MHS'] ?? 0.0;
         db_valueSB_TS = data['db_valueSB_TS'] ?? 0.0;
         reduce_background_noise = data['reduce_background_noise'] ?? false;
         reduce_wind_noise = data['reduce_wind_noise'] ?? false;
@@ -70,9 +66,7 @@ class _PresetPageState extends State<PresetPage> {
       presetData: {
         'db_valueOV': db_valueOV,
         'db_valueSB_BS': db_valueSB_BS,
-        'db_valueSB_LMS': db_valueSB_LMS,
         'db_valueSB_MRS': db_valueSB_MRS,
-        'db_valueSB_MHS': db_valueSB_MHS,
         'db_valueSB_TS': db_valueSB_TS,
         'reduce_background_noise': reduce_background_noise,
         'reduce_wind_noise': reduce_wind_noise,
@@ -254,10 +248,21 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Bass',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Bass Sounds'),
+                    Text('Softer'),
                     Text('Louder'),
                   ],
                 ),
@@ -272,46 +277,21 @@ class _PresetPageState extends State<PresetPage> {
                   divisions: 18,
                   label: '${db_valueSB_BS.toStringAsFixed(1)} dB',
                 ),
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'For enhancing low frequencies like bass drums\n',
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                    '${db_valueSB_BS.toStringAsFixed(1)} dB',
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Low Mid Sounds slider
-          Container(
-            child: Column(
-              children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Low Mid Sounds'),
-                    Text('Louder'),
-                  ],
-                ),
-                Slider(
-                  value: db_valueSB_LMS,
-                  onChanged: (value) {
-                    setState(() => db_valueSB_LMS = value);
-                    _autoSave();
-                  },
-                  min: -10.0,
-                  max: 10.0,
-                  divisions: 18,
-                  label: '${db_valueSB_LMS.toStringAsFixed(1)} dB',
                 ),
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances mid-low range sounds for more warmth\n',
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                    'Enhances low frequencies like bass drums and deep voices',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    textAlign: TextAlign.center,
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -320,10 +300,21 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Mid',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mid Range Sounds'),
+                    Text('Softer'),
                     Text('Louder'),
                   ],
                 ),
@@ -338,46 +329,21 @@ class _PresetPageState extends State<PresetPage> {
                   divisions: 18,
                   label: '${db_valueSB_MRS.toStringAsFixed(1)} dB',
                 ),
-                const Align(
+                Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'For enhancing vocals and other mid-range sounds\n',
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                    '${db_valueSB_MRS.toStringAsFixed(1)} dB',
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Mid High Sounds slider
-          Container(
-            child: Column(
-              children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Mid High Sounds'),
-                    Text('Louder'),
-                  ],
-                ),
-                Slider(
-                  value: db_valueSB_MHS,
-                  onChanged: (value) {
-                    setState(() => db_valueSB_MHS = value);
-                    _autoSave();
-                  },
-                  min: -10.0,
-                  max: 10.0,
-                  divisions: 18,
-                  label: '${db_valueSB_MHS.toStringAsFixed(1)} dB',
                 ),
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances clarity in high-mid range sounds\n',
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                    'Enhances vocals and most speech frequencies',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    textAlign: TextAlign.center,
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -386,10 +352,21 @@ class _PresetPageState extends State<PresetPage> {
           Container(
             child: Column(
               children: [
+                const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Treble',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Treble Sounds'),
+                    Text('Softer'),
                     Text('Louder'),
                   ],
                 ),
@@ -404,11 +381,18 @@ class _PresetPageState extends State<PresetPage> {
                   divisions: 18,
                   label: '${db_valueSB_TS.toStringAsFixed(1)} dB',
                 ),
+                Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${db_valueSB_TS.toStringAsFixed(1)} dB',
+                  ),
+                ),
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'For enhancing high frequencies like cymbals\n',
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                    'Enhances high frequencies like cymbals and consonant sounds',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -439,140 +423,115 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ]),
 
-          // Reduce Background Noise
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.shade300,
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
+          // Reduce Background Noise toggle
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Reduce Background Noise',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
-                      'Helps filter out constant background sounds',
+                      'Minimize constant background sounds',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-                Switch(
-                  value: reduce_background_noise,
-                  onChanged: (value) {
-                    setState(() => reduce_background_noise = value);
-                    _autoSave();
-                  },
-                  activeColor: Colors.white,
-                  inactiveThumbColor: Colors.white,
-                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                  inactiveTrackColor: Colors.grey,
-                ),
-              ],
-            ),
+              ),
+              Switch(
+                value: reduce_background_noise,
+                onChanged: (value) {
+                  setState(() => reduce_background_noise = value);
+                  _autoSave();
+                },
+                activeColor: Colors.white,
+                inactiveThumbColor: Colors.white,
+                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                inactiveTrackColor: Colors.grey,
+              ),
+            ],
           ),
 
-          // Reduce Wind Noise
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.shade300,
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
+          // Reduce Wind Noise toggle
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Reduce Wind Noise',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
-                      'Helps filter out wind interference',
+                      'Helps in outdoor environments',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-                Switch(
-                  value: reduce_wind_noise,
-                  onChanged: (value) {
-                    setState(() => reduce_wind_noise = value);
-                    _autoSave();
-                  },
-                  activeColor: Colors.white,
-                  inactiveThumbColor: Colors.white,
-                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                  inactiveTrackColor: Colors.grey,
-                ),
-              ],
-            ),
+              ),
+              Switch(
+                value: reduce_wind_noise,
+                onChanged: (value) {
+                  setState(() => reduce_wind_noise = value);
+                  _autoSave();
+                },
+                activeColor: Colors.white,
+                inactiveThumbColor: Colors.white,
+                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                inactiveTrackColor: Colors.grey,
+              ),
+            ],
           ),
 
-          // Soften Sudden Noise
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
+          // Soften Sudden Sounds toggle
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Soften Sudden Noise',
+                      'Soften Sudden Sounds',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
-                      'Reduces the impact of sudden loud sounds',
+                      'Reduces unexpected loud noises',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-                Switch(
-                  value: soften_sudden_noise,
-                  onChanged: (value) {
-                    setState(() => soften_sudden_noise = value);
-                    _autoSave();
-                  },
-                  activeColor: Colors.white,
-                  inactiveThumbColor: Colors.white,
-                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                  inactiveTrackColor: Colors.grey,
-                ),
-              ],
-            ),
+              ),
+              Switch(
+                value: soften_sudden_noise,
+                onChanged: (value) {
+                  setState(() => soften_sudden_noise = value);
+                  _autoSave();
+                },
+                activeColor: Colors.white,
+                inactiveThumbColor: Colors.white,
+                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                inactiveTrackColor: Colors.grey,
+              ),
+            ],
           ),
         ],
       ),

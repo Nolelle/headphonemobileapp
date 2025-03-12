@@ -119,8 +119,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       preset.name,
@@ -128,10 +127,6 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                         fontSize: 20,
                                         color: Colors.white,
                                       ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white,
                                     ),
                                   ],
                                 ),
