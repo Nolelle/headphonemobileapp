@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async'; // Add this import for Timer
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
 
@@ -29,6 +30,14 @@ class _PresetPageState extends State<PresetPage> {
   bool reduce_wind_noise = false;
   bool soften_sudden_noise = false;
 
+  // Status tracking
+  bool _isSaving = false;
+  Timer? _debounceTimer;
+  String? _lastSavedSetting;
+
+  // SnackBar controller
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _currentSnackBar;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +48,7 @@ class _PresetPageState extends State<PresetPage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -58,7 +68,14 @@ class _PresetPageState extends State<PresetPage> {
     }
   }
 
-  Future<void> _savePreset() async {
+  Future<void> _savePreset({String? settingName}) async {
+    // Update the last saved setting
+    _lastSavedSetting = settingName;
+
+    setState(() {
+      _isSaving = true;
+    });
+
     final preset = Preset(
       id: widget.presetId,
       name: _nameController.text,
@@ -74,22 +91,87 @@ class _PresetPageState extends State<PresetPage> {
       },
     );
 
-    await widget.presetProvider.updatePreset(preset);
+    try {
+      await widget.presetProvider.updatePreset(preset);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_nameController.text} Successfully Updated!'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      if (mounted) {
+        // Dismiss any existing SnackBar
+        _currentSnackBar?.close();
+
+        // Show a new SnackBar with the updated setting
+        String message = '${_nameController.text} Successfully Updated!';
+        if (settingName != null) {
+          message = '$settingName updated';
+        }
+
+        _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+            action: _isSaving
+                ? SnackBarAction(
+                    label: 'Dismiss',
+                    onPressed: () {
+                      _currentSnackBar?.close();
+                    },
+                  )
+                : null,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
-  // Helper method to auto-save after each change
-  void _autoSave() {
-    // Use a debounce to avoid too many saves
-    Future.microtask(() => _savePreset());
+  // Helper method to auto-save after each change with debouncing
+  void _autoSave({String? settingName}) {
+    // Cancel any existing timer
+    _debounceTimer?.cancel();
+
+    // Show saving indicator immediately
+    if (mounted) {
+      setState(() {
+        _isSaving = true;
+      });
+
+      // Dismiss any existing SnackBar and show "Updating..." message
+      _currentSnackBar?.close();
+      _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(settingName != null
+                  ? 'Updating $settingName...'
+                  : 'Updating...'),
+            ],
+          ),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+        ),
+      );
+    }
+
+    // Set a new timer
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _savePreset(settingName: settingName);
+    });
   }
 
   @override
@@ -108,12 +190,31 @@ class _PresetPageState extends State<PresetPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
+            // Cancel any pending auto-save
+            _debounceTimer?.cancel();
+
             // Save before navigating back
             _savePreset().then((_) {
               Navigator.of(context).pop();
             });
           },
         ),
+        actions: [
+          if (_isSaving)
+            const Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
       body: SingleChildScrollView(
@@ -168,7 +269,7 @@ class _PresetPageState extends State<PresetPage> {
             ),
             style: const TextStyle(fontSize: 18.0),
             onChanged: (_) {
-              _autoSave();
+              _autoSave(settingName: 'Preset name');
             },
           ),
         ],
@@ -206,7 +307,7 @@ class _PresetPageState extends State<PresetPage> {
             value: db_valueOV,
             onChanged: (value) {
               setState(() => db_valueOV = value);
-              _autoSave();
+              _autoSave(settingName: 'Overall Volume');
             },
             min: -10.0,
             max: 10.0,
@@ -270,7 +371,7 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_BS,
                   onChanged: (value) {
                     setState(() => db_valueSB_BS = value);
-                    _autoSave();
+                    _autoSave(settingName: 'Bass');
                   },
                   min: -10.0,
                   max: 10.0,
@@ -322,7 +423,7 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_MRS,
                   onChanged: (value) {
                     setState(() => db_valueSB_MRS = value);
-                    _autoSave();
+                    _autoSave(settingName: 'Mid');
                   },
                   min: -10.0,
                   max: 10.0,
@@ -374,7 +475,7 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_TS,
                   onChanged: (value) {
                     setState(() => db_valueSB_TS = value);
-                    _autoSave();
+                    _autoSave(settingName: 'Treble');
                   },
                   min: -10.0,
                   max: 10.0,
@@ -450,7 +551,7 @@ class _PresetPageState extends State<PresetPage> {
                 value: reduce_background_noise,
                 onChanged: (value) {
                   setState(() => reduce_background_noise = value);
-                  _autoSave();
+                  _autoSave(settingName: 'Background Noise Reduction');
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
@@ -487,7 +588,7 @@ class _PresetPageState extends State<PresetPage> {
                 value: reduce_wind_noise,
                 onChanged: (value) {
                   setState(() => reduce_wind_noise = value);
-                  _autoSave();
+                  _autoSave(settingName: 'Wind Noise Reduction');
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
@@ -524,7 +625,7 @@ class _PresetPageState extends State<PresetPage> {
                 value: soften_sudden_noise,
                 onChanged: (value) {
                   setState(() => soften_sudden_noise = value);
-                  _autoSave();
+                  _autoSave(settingName: 'Sudden Sound Softening');
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
