@@ -22,6 +22,7 @@ class PresetPage extends StatefulWidget {
 class _PresetPageState extends State<PresetPage> {
   // Preset values
   late TextEditingController _nameController;
+  late FocusNode _nameFieldFocusNode;
   double db_valueOV = 0.0;
   double db_valueSB_BS = 0.0;
   double db_valueSB_MRS = 0.0;
@@ -42,14 +43,25 @@ class _PresetPageState extends State<PresetPage> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.presetName);
+    _nameFieldFocusNode = FocusNode();
+    _nameFieldFocusNode.addListener(_onNameFieldFocusChange);
     _loadPresetData();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFieldFocusNode.removeListener(_onNameFieldFocusChange);
+    _nameFieldFocusNode.dispose();
     _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onNameFieldFocusChange() {
+    // Save when focus is lost
+    if (!_nameFieldFocusNode.hasFocus) {
+      _autoSave(settingName: 'Preset name');
+    }
   }
 
   void _loadPresetData() {
@@ -197,6 +209,11 @@ class _PresetPageState extends State<PresetPage> {
             // Cancel any pending auto-save
             _debounceTimer?.cancel();
 
+            // Ensure name field changes are saved if focus is still on the field
+            if (_nameFieldFocusNode.hasFocus) {
+              _autoSave(settingName: 'Preset name');
+            }
+
             // Save before navigating back
             _savePreset().then((_) {
               Navigator.of(context).pop();
@@ -255,6 +272,7 @@ class _PresetPageState extends State<PresetPage> {
           const SizedBox(height: 8.0),
           TextField(
             controller: _nameController,
+            focusNode: _nameFieldFocusNode,
             decoration: InputDecoration(
               filled: true,
               fillColor: Theme.of(context).cardTheme.color,
@@ -274,6 +292,10 @@ class _PresetPageState extends State<PresetPage> {
             ),
             style: TextStyle(fontSize: 18.0, color: textColor),
             onChanged: (_) {
+              // No auto-save on every keystroke
+            },
+            onSubmitted: (_) {
+              // Save when user presses enter/done
               _autoSave(settingName: 'Preset name');
             },
           ),
@@ -313,6 +335,8 @@ class _PresetPageState extends State<PresetPage> {
             value: db_valueOV,
             onChanged: (value) {
               setState(() => db_valueOV = value);
+            },
+            onChangeEnd: (value) {
               _autoSave(settingName: 'Overall Volume');
             },
             min: -10.0,
@@ -380,6 +404,8 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_BS,
                   onChanged: (value) {
                     setState(() => db_valueSB_BS = value);
+                  },
+                  onChangeEnd: (value) {
                     _autoSave(settingName: 'Bass');
                   },
                   min: -10.0,
@@ -434,6 +460,8 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_MRS,
                   onChanged: (value) {
                     setState(() => db_valueSB_MRS = value);
+                  },
+                  onChangeEnd: (value) {
                     _autoSave(settingName: 'Mid');
                   },
                   min: -10.0,
@@ -488,6 +516,8 @@ class _PresetPageState extends State<PresetPage> {
                   value: db_valueSB_TS,
                   onChanged: (value) {
                     setState(() => db_valueSB_TS = value);
+                  },
+                  onChangeEnd: (value) {
                     _autoSave(settingName: 'Treble');
                   },
                   min: -10.0,
