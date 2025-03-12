@@ -7,10 +7,17 @@ The project follows a feature-first architecture with clean separation of concer
 ```
 lib/
 ├── config/                    # App-wide configuration
-│   ├── theme.dart            # Custom theme and styling definitions
-│   └── routes.dart           # Application routing configuration
+│   └── theme.dart            # Custom theme and styling definitions (light/dark themes)
+│
+├── core/                     # Core application components
+│   ├── app.dart             # Main app configuration
+│   └── main_nav.dart        # Main navigation component
 │
 ├── features/                  # Feature modules
+│   ├── bluetooth/           # Bluetooth connectivity feature
+│   │   ├── providers/       # Bluetooth state management
+│   │   └── views/           # Bluetooth UI components
+│   │
 │   ├── presets/              # Core preset management feature
 │   │   ├── models/           # Data models
 │   │   │   └── preset.dart
@@ -27,6 +34,8 @@ lib/
 │   │   ├── models/          # Settings data models
 │   │   ├── repositories/    # Settings data access
 │   │   ├── providers/       # Settings state management
+│   │   │   ├── theme_provider.dart  # Manages app theme (dark/light mode)
+│   │   │   └── language_provider.dart  # Manages app language
 │   │   └── views/          # Settings UI components
 │   │       └── screens/
 │   │           └── settings_page.dart
@@ -39,12 +48,11 @@ lib/
 │           └── screens/
 │               └── sound_test_page.dart
 │
-├── shared/                  # Shared utilities and widgets
-│   ├── widgets/            # Common UI components
-│   │   ├── error_display.dart
-│   │   └── loading_overlay.dart
-│   └── utils/              # Helper functions
-│       └── json_loader.dart
+├── l10n/                    # Localization resources
+│   ├── app_localizations.dart  # Localization manager
+│   └── translations/        # Translation files
+│       ├── en.dart          # English translations
+│       └── fr.dart          # French translations
 │
 └── main.dart               # Application entry point
 ```
@@ -70,13 +78,57 @@ The application follows these key architectural principles:
    - SharedPreferences for local storage
    - JSON-based data structure for flexibility
    - Efficient preset management system
+   - Persists user preferences (theme, language)
+
+5. **Internationalization**:
+   - Supports multiple languages (English, French)
+   - Custom localization system
+   - Language switching with persistent preferences
+
+6. **Theming**:
+   - Supports light and dark themes
+   - Consistent UI across theme changes
+   - Persists theme preferences
+
+## Key Features
+
+### Preset Management
+
+- Create, edit, and delete audio presets
+- Adjust volume, sound balance, and enhancement settings
+- Real-time feedback with optimized notifications
+- Intelligent auto-save functionality
+
+### Theme Support
+
+- Light and dark mode themes
+- Consistent UI elements across themes
+- Persistent theme preferences
+
+### Multilingual Support
+
+- English and French language options
+- Complete translations for all UI elements
+- Persistent language preferences
+
+### Bluetooth Connectivity
+
+- Connect to Bluetooth headphone devices
+- Send preset configurations to connected devices
+- Monitor connection status
+
+### Sound Testing
+
+- Perform hearing tests
+- Generate personalized audio profiles
+- Create presets based on test results
 
 ## Setup and Development
 
 ### Prerequisites
 
-- Flutter SDK (2.5.0 or higher)
-- Dart SDK (2.14.0 or higher)
+- Flutter SDK (3.5.0 or higher)
+- Dart SDK (3.0.0 or higher)
 - Android Studio or VS Code with Flutter extensions
 - iOS development setup (for iOS deployment)
 
@@ -123,7 +175,17 @@ The application follows these key architectural principles:
    - Use StateNotifier for immutable state
    - Maintain unidirectional data flow
 
-4. **Testing**:
+4. **Localization**:
+   - Add new strings to both language files
+   - Use the AppLocalizations.translate() method for all user-facing strings
+   - Test UI in all supported languages
+
+5. **Theming**:
+   - Use Theme.of(context) to access theme properties
+   - Test UI in both light and dark modes
+   - Ensure sufficient contrast in all themes
+
+6. **Testing**:
    - Write unit tests for business logic
    - Create widget tests for UI components
    - Implement integration tests for features
@@ -164,6 +226,8 @@ For detailed technical documentation about specific components:
 - [Data Models](docs/data-models.md)
 - [UI Components](docs/ui-components.md)
 - [Testing Guide](docs/testing.md)
+- [Localization](docs/localization.md)
+- [Theming](docs/theming.md)
 
 ## Acknowledgments
 
