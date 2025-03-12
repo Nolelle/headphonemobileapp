@@ -60,6 +60,7 @@ class _PresetPageState extends State<PresetPage> {
   void _onNameFieldFocusChange() {
     // Save when focus is lost
     if (!_nameFieldFocusNode.hasFocus) {
+      // Always save when focus is lost
       _autoSave(settingName: 'Preset name');
     }
   }
@@ -78,6 +79,24 @@ class _PresetPageState extends State<PresetPage> {
         soften_sudden_noise = data['soften_sudden_noise'] ?? false;
       });
     }
+  }
+
+  // Check if any values have changed compared to the original preset
+  bool _hasChanges() {
+    final preset = widget.presetProvider.presets[widget.presetId];
+    if (preset == null) return false;
+
+    final data = preset.presetData;
+
+    // Compare current values with original values from the preset
+    return db_valueOV != (data['db_valueOV'] ?? 0.0) ||
+        db_valueSB_BS != (data['db_valueSB_BS'] ?? 0.0) ||
+        db_valueSB_MRS != (data['db_valueSB_MRS'] ?? 0.0) ||
+        db_valueSB_TS != (data['db_valueSB_TS'] ?? 0.0) ||
+        reduce_background_noise != (data['reduce_background_noise'] ?? false) ||
+        reduce_wind_noise != (data['reduce_wind_noise'] ?? false) ||
+        soften_sudden_noise != (data['soften_sudden_noise'] ?? false) ||
+        _nameController.text != preset.name;
   }
 
   Future<void> _savePreset({String? settingName}) async {
@@ -211,13 +230,49 @@ class _PresetPageState extends State<PresetPage> {
 
             // Ensure name field changes are saved if focus is still on the field
             if (_nameFieldFocusNode.hasFocus) {
-              _autoSave(settingName: 'Preset name');
+              _nameFieldFocusNode.unfocus();
+              // Let the focus listener handle saving if needed
             }
 
-            // Save before navigating back
-            _savePreset().then((_) {
+            // Only save and show notification if changes were made
+            if (_hasChanges()) {
+              // Use a different message for the back button case
+              setState(() {
+                _isSaving = true;
+              });
+
+              final preset = Preset(
+                id: widget.presetId,
+                name: _nameController.text,
+                dateCreated: DateTime.now(),
+                presetData: {
+                  'db_valueOV': db_valueOV,
+                  'db_valueSB_BS': db_valueSB_BS,
+                  'db_valueSB_MRS': db_valueSB_MRS,
+                  'db_valueSB_TS': db_valueSB_TS,
+                  'reduce_background_noise': reduce_background_noise,
+                  'reduce_wind_noise': reduce_wind_noise,
+                  'soften_sudden_noise': soften_sudden_noise,
+                },
+              );
+
+              widget.presetProvider.updatePreset(preset).then((_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('${_nameController.text} Successfully Updated!'),
+                      duration: const Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+                Navigator.of(context).pop();
+              });
+            } else {
+              // No changes, just navigate back without saving or showing notification
               Navigator.of(context).pop();
-            });
+            }
           },
         ),
         actions: [
@@ -337,6 +392,7 @@ class _PresetPageState extends State<PresetPage> {
               setState(() => db_valueOV = value);
             },
             onChangeEnd: (value) {
+              // Always save when slider is released
               _autoSave(settingName: 'Overall Volume');
             },
             min: -10.0,
@@ -597,6 +653,7 @@ class _PresetPageState extends State<PresetPage> {
                 value: reduce_background_noise,
                 onChanged: (value) {
                   setState(() => reduce_background_noise = value);
+                  // Always save when switch is toggled
                   _autoSave(settingName: 'Background Noise Reduction');
                 },
                 activeColor: Colors.white,
