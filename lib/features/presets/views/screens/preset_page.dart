@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async'; // Add this import for Timer
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class PresetPage extends StatefulWidget {
   final String presetId;
@@ -61,7 +62,8 @@ class _PresetPageState extends State<PresetPage> {
     // Save when focus is lost
     if (!_nameFieldFocusNode.hasFocus) {
       // Always save when focus is lost
-      _autoSave(settingName: 'Preset name');
+      _autoSave(
+          settingName: AppLocalizations.of(context).translate('preset_name'));
     }
   }
 
@@ -130,9 +132,11 @@ class _PresetPageState extends State<PresetPage> {
         _currentSnackBar?.close();
 
         // Show a new SnackBar with the updated setting
-        String message = '${_nameController.text} Successfully Updated!';
+        String message =
+            '${_nameController.text} ${AppLocalizations.of(context).translate('successfully_updated')}';
         if (settingName != null) {
-          message = '$settingName updated';
+          message =
+              '$settingName ${AppLocalizations.of(context).translate('updated')}';
         }
 
         _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
@@ -188,8 +192,8 @@ class _PresetPageState extends State<PresetPage> {
               ),
               const SizedBox(width: 10),
               Text(settingName != null
-                  ? 'Updating $settingName...'
-                  : 'Updating...'),
+                  ? '${AppLocalizations.of(context).translate('updating')} $settingName...'
+                  : AppLocalizations.of(context).translate('updating')),
             ],
           ),
           duration: const Duration(seconds: 1),
@@ -211,12 +215,13 @@ class _PresetPageState extends State<PresetPage> {
     final bool isDarkMode = theme.brightness == Brightness.dark;
     final Color textColor = isDarkMode ? Colors.white : Colors.black;
     final Color subtitleColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final appLocalizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Edit Preset',
-          style: TextStyle(
+        title: Text(
+          appLocalizations.translate('edit_preset'),
+          style: const TextStyle(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -260,8 +265,8 @@ class _PresetPageState extends State<PresetPage> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          Text('${_nameController.text} Successfully Updated!'),
+                      content: Text(
+                          '${_nameController.text} ${appLocalizations.translate('successfully_updated')}'),
                       duration: const Duration(seconds: 1),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -299,10 +304,13 @@ class _PresetPageState extends State<PresetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPresetNameSection(textColor),
-              _buildOverallVolumeSection(textColor, subtitleColor),
-              _buildSoundBalanceSection(textColor, subtitleColor),
-              _buildSoundEnhancementSection(textColor, subtitleColor),
+              _buildPresetNameSection(textColor, appLocalizations),
+              _buildOverallVolumeSection(
+                  textColor, subtitleColor, appLocalizations),
+              _buildSoundBalanceSection(
+                  textColor, subtitleColor, appLocalizations),
+              _buildSoundEnhancementSection(
+                  textColor, subtitleColor, appLocalizations),
             ],
           ),
         ),
@@ -310,14 +318,15 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildPresetNameSection(Color textColor) {
+  Widget _buildPresetNameSection(
+      Color textColor, AppLocalizations appLocalizations) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 4.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Preset Name',
+            appLocalizations.translate('preset_name'),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
@@ -351,7 +360,7 @@ class _PresetPageState extends State<PresetPage> {
             },
             onSubmitted: (_) {
               // Save when user presses enter/done
-              _autoSave(settingName: 'Preset name');
+              _autoSave(settingName: appLocalizations.translate('preset_name'));
             },
           ),
         ],
@@ -359,7 +368,8 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildOverallVolumeSection(Color textColor, Color subtitleColor) {
+  Widget _buildOverallVolumeSection(
+      Color textColor, Color subtitleColor, AppLocalizations appLocalizations) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
@@ -371,7 +381,7 @@ class _PresetPageState extends State<PresetPage> {
               size: 30,
             ),
             Text(
-              ' Overall Volume',
+              ' ${appLocalizations.translate('overall_volume')}',
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
@@ -382,8 +392,10 @@ class _PresetPageState extends State<PresetPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Softer', style: TextStyle(color: textColor)),
-              Text('Louder', style: TextStyle(color: textColor)),
+              Text(appLocalizations.translate('softer'),
+                  style: TextStyle(color: textColor)),
+              Text(appLocalizations.translate('louder'),
+                  style: TextStyle(color: textColor)),
             ],
           ),
           Slider(
@@ -393,7 +405,8 @@ class _PresetPageState extends State<PresetPage> {
             },
             onChangeEnd: (value) {
               // Always save when slider is released
-              _autoSave(settingName: 'Overall Volume');
+              _autoSave(
+                  settingName: appLocalizations.translate('overall_volume'));
             },
             min: -10.0,
             max: 10.0,
@@ -412,7 +425,8 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildSoundBalanceSection(Color textColor, Color subtitleColor) {
+  Widget _buildSoundBalanceSection(
+      Color textColor, Color subtitleColor, AppLocalizations appLocalizations) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
@@ -424,7 +438,7 @@ class _PresetPageState extends State<PresetPage> {
               size: 30,
             ),
             Text(
-              ' Sound Balance',
+              ' ${appLocalizations.translate('sound_balance')}',
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
@@ -440,7 +454,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Bass',
+                    appLocalizations.translate('bass'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -452,8 +466,10 @@ class _PresetPageState extends State<PresetPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer', style: TextStyle(color: textColor)),
-                    Text('Louder', style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('softer'),
+                        style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('louder'),
+                        style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -462,7 +478,7 @@ class _PresetPageState extends State<PresetPage> {
                     setState(() => db_valueSB_BS = value);
                   },
                   onChangeEnd: (value) {
-                    _autoSave(settingName: 'Bass');
+                    _autoSave(settingName: appLocalizations.translate('bass'));
                   },
                   min: -10.0,
                   max: 10.0,
@@ -479,7 +495,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances low frequencies like bass drums and deep voices',
+                    appLocalizations.translate('bass_description'),
                     style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
@@ -496,7 +512,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Mid',
+                    appLocalizations.translate('mid'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -508,8 +524,10 @@ class _PresetPageState extends State<PresetPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer', style: TextStyle(color: textColor)),
-                    Text('Louder', style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('softer'),
+                        style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('louder'),
+                        style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -518,7 +536,7 @@ class _PresetPageState extends State<PresetPage> {
                     setState(() => db_valueSB_MRS = value);
                   },
                   onChangeEnd: (value) {
-                    _autoSave(settingName: 'Mid');
+                    _autoSave(settingName: appLocalizations.translate('mid'));
                   },
                   min: -10.0,
                   max: 10.0,
@@ -535,7 +553,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances vocals and most speech frequencies',
+                    appLocalizations.translate('mid_description'),
                     style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
@@ -552,7 +570,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Treble',
+                    appLocalizations.translate('treble'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -564,8 +582,10 @@ class _PresetPageState extends State<PresetPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Softer', style: TextStyle(color: textColor)),
-                    Text('Louder', style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('softer'),
+                        style: TextStyle(color: textColor)),
+                    Text(appLocalizations.translate('louder'),
+                        style: TextStyle(color: textColor)),
                   ],
                 ),
                 Slider(
@@ -574,7 +594,8 @@ class _PresetPageState extends State<PresetPage> {
                     setState(() => db_valueSB_TS = value);
                   },
                   onChangeEnd: (value) {
-                    _autoSave(settingName: 'Treble');
+                    _autoSave(
+                        settingName: appLocalizations.translate('treble'));
                   },
                   min: -10.0,
                   max: 10.0,
@@ -591,7 +612,7 @@ class _PresetPageState extends State<PresetPage> {
                 Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances high frequencies like cymbals and consonant sounds',
+                    appLocalizations.translate('treble_description'),
                     style: TextStyle(fontSize: 12, color: subtitleColor),
                     textAlign: TextAlign.center,
                   ),
@@ -604,7 +625,8 @@ class _PresetPageState extends State<PresetPage> {
     );
   }
 
-  Widget _buildSoundEnhancementSection(Color textColor, Color subtitleColor) {
+  Widget _buildSoundEnhancementSection(
+      Color textColor, Color subtitleColor, AppLocalizations appLocalizations) {
     return Container(
       padding: const EdgeInsets.all(4),
       child: Column(
@@ -616,7 +638,7 @@ class _PresetPageState extends State<PresetPage> {
               size: 30,
             ),
             Text(
-              ' Sound Enhancement',
+              ' ${appLocalizations.translate('sound_enhancement')}',
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.w500,
@@ -633,14 +655,15 @@ class _PresetPageState extends State<PresetPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Reduce Background Noise',
+                      appLocalizations.translate('reduce_background_noise'),
                       style: TextStyle(
                         fontSize: 20,
                         color: textColor,
                       ),
                     ),
                     Text(
-                      'Minimize constant background sounds',
+                      appLocalizations
+                          .translate('reduce_background_noise_description'),
                       style: TextStyle(
                         fontSize: 14,
                         color: subtitleColor,
@@ -654,7 +677,9 @@ class _PresetPageState extends State<PresetPage> {
                 onChanged: (value) {
                   setState(() => reduce_background_noise = value);
                   // Always save when switch is toggled
-                  _autoSave(settingName: 'Background Noise Reduction');
+                  _autoSave(
+                      settingName: appLocalizations
+                          .translate('reduce_background_noise'));
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
@@ -672,14 +697,15 @@ class _PresetPageState extends State<PresetPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Reduce Wind Noise',
+                      appLocalizations.translate('reduce_wind_noise'),
                       style: TextStyle(
                         fontSize: 20,
                         color: textColor,
                       ),
                     ),
                     Text(
-                      'Helps in outdoor environments',
+                      appLocalizations
+                          .translate('reduce_wind_noise_description'),
                       style: TextStyle(
                         fontSize: 14,
                         color: subtitleColor,
@@ -692,7 +718,9 @@ class _PresetPageState extends State<PresetPage> {
                 value: reduce_wind_noise,
                 onChanged: (value) {
                   setState(() => reduce_wind_noise = value);
-                  _autoSave(settingName: 'Wind Noise Reduction');
+                  _autoSave(
+                      settingName:
+                          appLocalizations.translate('reduce_wind_noise'));
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,
@@ -710,14 +738,15 @@ class _PresetPageState extends State<PresetPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Soften Sudden Sounds',
+                      appLocalizations.translate('soften_sudden_sounds'),
                       style: TextStyle(
                         fontSize: 20,
                         color: textColor,
                       ),
                     ),
                     Text(
-                      'Reduces unexpected loud noises',
+                      appLocalizations
+                          .translate('soften_sudden_sounds_description'),
                       style: TextStyle(
                         fontSize: 14,
                         color: subtitleColor,
@@ -730,7 +759,9 @@ class _PresetPageState extends State<PresetPage> {
                 value: soften_sudden_noise,
                 onChanged: (value) {
                   setState(() => soften_sudden_noise = value);
-                  _autoSave(settingName: 'Sudden Sound Softening');
+                  _autoSave(
+                      settingName:
+                          appLocalizations.translate('soften_sudden_sounds'));
                 },
                 activeColor: Colors.white,
                 inactiveThumbColor: Colors.white,

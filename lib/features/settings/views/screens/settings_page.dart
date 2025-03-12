@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -11,17 +13,17 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String _currentLanguage = 'English';
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
+    final appLocalizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(appLocalizations.translate('settings')),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -30,70 +32,68 @@ class _SettingsPageState extends State<SettingsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // App Settings Section
-              _buildSectionHeader('App Settings'),
+              _buildSectionHeader(appLocalizations.translate('app_settings')),
 
               // Theme Toggle
               _buildSettingItem(
                 icon: Icons.brightness_6,
-                title: 'App Theme',
-                subtitle: isDarkMode ? 'Dark Mode' : 'Light Mode',
+                title: appLocalizations.translate('app_theme'),
+                subtitle: isDarkMode
+                    ? appLocalizations.translate('dark_mode')
+                    : appLocalizations.translate('light_mode'),
                 onTap: () {
-                  _showThemeConfirmationDialog(themeProvider);
+                  _showThemeConfirmationDialog(themeProvider, appLocalizations);
                 },
               ),
 
               // Language Selection
               _buildSettingItem(
                 icon: Icons.language,
-                title: 'Language',
-                subtitle: _currentLanguage,
+                title: appLocalizations.translate('language'),
+                subtitle: languageProvider.getLanguageName(),
                 onTap: () {
-                  _showLanguageDialog();
+                  _showLanguageDialog(languageProvider, appLocalizations);
                 },
               ),
 
               const SizedBox(height: 24),
 
               // FAQ Section
-              _buildSectionHeader('Frequently Asked Questions'),
+              _buildSectionHeader(appLocalizations.translate('faq')),
               _buildFaqItem(
-                question: 'How do I clean and maintain my headphones?',
-                answer:
-                    'Regular cleaning is essential. Use a soft, dry cloth to wipe the exterior daily, and follow the specific cleaning instructions provided in the app. We also recommend scheduling professional cleanings every few months.',
+                question: appLocalizations.translate('faq_clean'),
+                answer: appLocalizations.translate('faq_clean_answer'),
               ),
               _buildFaqItem(
-                question: 'How can I adjust the settings on my headphones?',
-                answer:
-                    'You can adjust your headphone settings through the app. This includes changing the volume, selecting different listening programs. Just go to the equalizer and change according to your environment.',
+                question: appLocalizations.translate('faq_adjust'),
+                answer: appLocalizations.translate('faq_adjust_answer'),
               ),
               _buildFaqItem(
-                question: 'How can I perform a sound test?',
-                answer:
-                    'The sound test is extremely easy to complete. A sound will be played at different frequencies. And the sound keep getting louder overtime. You have to click the button as soon as you hear the sound. You have to do this for every frequency. You responses will be recorded a preset will be made according to that. You can then use that preset in your headphones.',
+                question: appLocalizations.translate('faq_test'),
+                answer: appLocalizations.translate('faq_test_answer'),
               ),
               _buildFaqItem(
-                question: 'Can I do more than one test?',
-                answer:
-                    'Yes of course! You can do as many Tests as you want, conducting every test creates a new preset in the app, you can then use that preset in your headphones. With this feature, you can use different presets for different environments such as listening to music, or sitting in transit vehicles.',
+                question: appLocalizations.translate('faq_multiple'),
+                answer: appLocalizations.translate('faq_multiple_answer'),
               ),
 
               const SizedBox(height: 24),
 
               // App Info
-              _buildSectionHeader('About'),
+              _buildSectionHeader(appLocalizations.translate('about')),
               _buildSettingItem(
                 icon: Icons.info_outline,
-                title: 'App Version',
+                title: appLocalizations.translate('app_version'),
                 subtitle: '1.0.0',
                 onTap: () {
                   showAboutDialog(
                     context: context,
-                    applicationName: 'Headphone App',
+                    applicationName: appLocalizations.translate('app_name'),
                     applicationVersion: '1.0.0',
                     applicationIcon: const FlutterLogo(),
                     children: [
-                      const Text(
-                        'A mobile application for controlling headphone settings via Bluetooth.',
+                      Text(
+                        appLocalizations.translate('app_description'),
                       ),
                     ],
                   );
@@ -183,23 +183,24 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showThemeConfirmationDialog(ThemeProvider themeProvider) {
+  void _showThemeConfirmationDialog(
+      ThemeProvider themeProvider, AppLocalizations appLocalizations) {
     String selectedTheme =
-        themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode';
+        themeProvider.isDarkMode ? 'dark_mode' : 'light_mode';
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Select Theme'),
+            title: Text(appLocalizations.translate('select_theme')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  title: const Text('Light Mode'),
+                  title: Text(appLocalizations.translate('light_mode')),
                   leading: Radio<String>(
-                    value: 'Light Mode',
+                    value: 'light_mode',
                     groupValue: selectedTheme,
                     onChanged: (String? value) {
                       setState(() {
@@ -209,9 +210,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('Dark Mode'),
+                  title: Text(appLocalizations.translate('dark_mode')),
                   leading: Radio<String>(
-                    value: 'Dark Mode',
+                    value: 'dark_mode',
                     groupValue: selectedTheme,
                     onChanged: (String? value) {
                       setState(() {
@@ -227,23 +228,25 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text('Cancel'),
+                child: Text(appLocalizations.translate('cancel')),
               ),
               TextButton(
                 onPressed: () async {
-                  final bool newIsDarkMode = selectedTheme == 'Dark Mode';
+                  final bool newIsDarkMode = selectedTheme == 'dark_mode';
                   await themeProvider.setTheme(newIsDarkMode);
                   if (context.mounted) {
                     Navigator.pop(context);
+                    final themeName = appLocalizations.translate(selectedTheme);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Theme changed to $selectedTheme'),
+                        content: Text(
+                            '${appLocalizations.translate('theme_changed')} $themeName'),
                         duration: const Duration(seconds: 1),
                       ),
                     );
                   }
                 },
-                child: const Text('Apply'),
+                child: Text(appLocalizations.translate('apply')),
               ),
             ],
           );
@@ -252,22 +255,23 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showLanguageDialog() {
-    String selectedLanguage = _currentLanguage;
+  void _showLanguageDialog(
+      LanguageProvider languageProvider, AppLocalizations appLocalizations) {
+    String selectedLanguage = languageProvider.currentLocale.languageCode;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Select Language'),
+            title: Text(appLocalizations.translate('select_language')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  title: const Text('English'),
+                  title: Text(appLocalizations.translate('english')),
                   leading: Radio<String>(
-                    value: 'English',
+                    value: 'en',
                     groupValue: selectedLanguage,
                     onChanged: (String? value) {
                       setState(() {
@@ -277,9 +281,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('French'),
+                  title: Text(appLocalizations.translate('french')),
                   leading: Radio<String>(
-                    value: 'French',
+                    value: 'fr',
                     groupValue: selectedLanguage,
                     onChanged: (String? value) {
                       setState(() {
@@ -295,23 +299,24 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text('Cancel'),
+                child: Text(appLocalizations.translate('cancel')),
               ),
               TextButton(
-                onPressed: () {
-                  this.setState(() {
-                    _currentLanguage = selectedLanguage;
-                  });
-                  Navigator.pop(context);
-                  // Language implementation will be added later
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Language changed to $selectedLanguage'),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
+                onPressed: () async {
+                  await languageProvider.setLanguage(selectedLanguage);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    final languageName = languageProvider.getLanguageName();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            '${appLocalizations.translate('language_changed')} $languageName'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
                 },
-                child: const Text('Apply'),
+                child: Text(appLocalizations.translate('apply')),
               ),
             ],
           );

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import '../features/presets/models/preset.dart';
 import '../features/bluetooth/providers/bluetooth_provider.dart';
 import '../features/bluetooth/views/widgets/bluetooth_wrapper.dart';
 import '../features/settings/providers/theme_provider.dart';
+import '../features/settings/providers/language_provider.dart';
 import '../config/theme.dart';
+import '../l10n/app_localizations.dart';
 import 'main_nav.dart';
 
 class MyApp extends StatelessWidget {
@@ -14,8 +17,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, LanguageProvider>(
+      builder: (context, themeProvider, languageProvider, child) {
         final isDarkMode = themeProvider.isDarkMode;
 
         // Create custom theme with explicit app bar theme
@@ -42,6 +45,17 @@ class MyApp extends StatelessWidget {
           theme: customLightTheme,
           darkTheme: customDarkTheme,
           themeMode: themeProvider.themeMode,
+          locale: languageProvider.currentLocale,
+          supportedLocales: const [
+            Locale('en', ''), // English
+            Locale('fr', ''), // French
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           home: const BluetoothWrapper(
             child: MainNavigation(),
           ),

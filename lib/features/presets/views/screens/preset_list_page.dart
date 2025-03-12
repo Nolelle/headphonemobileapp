@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -26,19 +27,21 @@ class _PresetsListPageState extends State<PresetsListPage> {
 
   Future<bool> _showDeleteConfirmationDialog(
       BuildContext context, String presetName) async {
+    final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Delete'),
-              content: Text('Are you sure you want to delete "$presetName"?'),
+              title: Text(appLocalizations.translate('confirm_delete')),
+              content: Text(
+                  '${appLocalizations.translate('confirm_delete_message')} "$presetName"?'),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Cancel'),
+                  child: Text(appLocalizations.translate('cancel')),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
                 TextButton(
-                  child: const Text('Delete'),
+                  child: Text(appLocalizations.translate('delete')),
                   onPressed: () => Navigator.of(context).pop(true),
                 ),
               ],
@@ -51,11 +54,12 @@ class _PresetsListPageState extends State<PresetsListPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final appLocalizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Presets'),
+        title: Text(appLocalizations.translate('nav_presets')),
       ),
       body: Column(
         children: [
@@ -67,7 +71,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                 if (presets.isEmpty) {
                   return Center(
                     child: Text(
-                      'No presets available. Create a new preset to get started.',
+                      appLocalizations.translate('no_presets'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
@@ -101,7 +105,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        '${preset.name} Successfully Sent To Device!'),
+                                        '${preset.name} ${appLocalizations.translate('sent_to_device')}'),
                                     duration: const Duration(seconds: 1),
                                   ),
                                 );
@@ -153,7 +157,8 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                       ),
                                     );
                                   },
-                                  child: const Text('Edit'),
+                                  child:
+                                      Text(appLocalizations.translate('edit')),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
@@ -172,12 +177,13 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                           .showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                              '${preset.name} deleted successfully!'),
+                                              '${preset.name} ${appLocalizations.translate('deleted_successfully')}'),
                                         ),
                                       );
                                     }
                                   },
-                                  child: const Text('Delete'),
+                                  child: Text(
+                                      appLocalizations.translate('delete')),
                                 ),
                               ],
                             ),
@@ -195,7 +201,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
               return Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Presets: $presetCount/10',
+                  '${appLocalizations.translate('presets_count')} $presetCount/10',
                   style: TextStyle(
                     fontSize: 18,
                     color: theme.textTheme.bodyLarge?.color,
@@ -213,8 +219,8 @@ class _PresetsListPageState extends State<PresetsListPage> {
           final presetCount = widget.presetProvider.presets.length;
           if (presetCount >= 10) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('You can only have a maximum of 10 presets!'),
+              SnackBar(
+                content: Text(appLocalizations.translate('max_presets')),
               ),
             );
             return;

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'features/bluetooth/providers/bluetooth_provider.dart';
 import 'features/presets/providers/preset_provider.dart';
 import 'features/sound_test/providers/sound_test_provider.dart';
 import 'features/sound_test/repositories/sound_test_repository.dart';
 import 'features/settings/providers/theme_provider.dart';
+import 'features/settings/providers/language_provider.dart';
 import 'core/app.dart';
 import 'features/presets/models/preset.dart';
 import 'features/presets/repositories/preset_repository.dart';
+import 'l10n/app_localizations.dart';
 
 // Create lifecycle observer to detect when app comes to foreground
 class BluetoothLifecycleObserver extends WidgetsBindingObserver {
@@ -58,6 +61,10 @@ void main() async {
   // Create theme provider
   final themeProvider = ThemeProvider();
 
+  // Create language provider
+  final languageProvider = LanguageProvider();
+  await languageProvider.loadLanguage();
+
   // Create provider first so we can use it for the observer
   final bluetoothProvider =
       BluetoothProvider(isEmulatorTestMode: isEmulatorMode);
@@ -81,6 +88,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => themeProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => languageProvider,
         ),
       ],
       child: MyApp(presetData: presetProvider.presets.values.toList()),
