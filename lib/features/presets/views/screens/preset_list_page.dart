@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
-import '../../../bluetooth/providers/bluetooth_provider.dart';
 import '../../models/preset.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -25,46 +25,23 @@ class _PresetsListPageState extends State<PresetsListPage> {
     super.initState();
   }
 
-  Future<bool> _showConfirmationDialog(
-      BuildContext context, String presetName) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Confirm Preset Activation'),
-              content:
-                  Text('Do you want to send "$presetName" to your device?'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-                TextButton(
-                  child: const Text('Send'),
-                  onPressed: () => Navigator.of(context).pop(true),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
-
   Future<bool> _showDeleteConfirmationDialog(
       BuildContext context, String presetName) async {
+    final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Delete'),
-              content: Text('Are you sure you want to delete "$presetName"?'),
+              title: Text(appLocalizations.translate('confirm_delete')),
+              content: Text(
+                  '${appLocalizations.translate('confirm_delete_message')} "$presetName"?'),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Cancel'),
+                  child: Text(appLocalizations.translate('cancel')),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
                 TextButton(
-                  child: const Text('Delete'),
+                  child: Text(appLocalizations.translate('delete')),
                   onPressed: () => Navigator.of(context).pop(true),
                 ),
               ],
@@ -76,14 +53,13 @@ class _PresetsListPageState extends State<PresetsListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bluetoothProvider = Provider.of<BluetoothProvider>(context);
+    final ThemeData theme = Theme.of(context);
+    final appLocalizations = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Presets'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        foregroundColor: Colors.white,
+        title: Text(appLocalizations.translate('nav_presets')),
       ),
       body: Column(
         children: [
@@ -93,11 +69,14 @@ class _PresetsListPageState extends State<PresetsListPage> {
                 final presets = provider.presets.values.toList();
 
                 if (presets.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No presets available. Create a new preset to get started.',
+                      appLocalizations.translate('no_presets'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
                     ),
                   );
                 }
@@ -115,16 +94,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ElevatedButton(
-                            onPressed: () async {
-                              final shouldActivate =
-                                  await _showConfirmationDialog(
-                                      context, preset.name);
-
-                              if (shouldActivate) {
-                                setState(() {
-                                  activePresetId = preset
-                                      .id; // Show dropdown for this preset
-                                });
+                            onPressed: () {
+                              setState(() {
+                                activePresetId = preset.id;
+                              });
 
                               provider.setActivePreset(preset.id);
 
@@ -132,7 +105,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        '${preset.name} Successfully Sent To Device!'),
+                                        '${preset.name} ${appLocalizations.translate('sent_to_device')}'),
                                     duration: const Duration(seconds: 1),
                                   ),
                                 );
@@ -140,8 +113,8 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isActive
-                                  ? const Color.fromRGBO(93, 59, 129, 1.00)
-                                  : const Color.fromRGBO(133, 86, 169, 1.00),
+                                  ? theme.colorScheme.secondary
+                                  : theme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5),
                               ),
@@ -150,9 +123,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             child: Align(
                               alignment: Alignment.center,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       preset.name,
@@ -161,65 +135,57 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                         color: Colors.white,
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white,
-                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                          if (provider.dropdownStates[preset.id] ?? false)
-                            Container(
-                              padding: const EdgeInsets.all(8.0),
-                              color: Colors.grey[200],
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Display preset data from presetData map
-                                  Text(
-                                      'Bass: ${preset.presetData['db_valueSB_BS'] ?? 0.0}'),
-                                  Text(
-                                      'Treble: ${preset.presetData['db_valueSB_TS'] ?? 0.0}'),
-                                  Text(
-                                      'Mid: ${preset.presetData['db_valueSB_MRS'] ?? 0.0}'),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => PresetPage(
-                                                presetId: preset.id,
-                                                presetName: preset.name,
-                                                presetProvider:
-                                                    widget.presetProvider,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('Edit'),
+                          if (activePresetId == preset.id)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PresetPage(
+                                          presetId: preset.id,
+                                          presetName: preset.name,
+                                          presetProvider: widget.presetProvider,
+                                        ),
                                       ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          final shouldDelete =
-                                              await _showDeleteConfirmationDialog(
-                                                  context, preset.name);
-                                          if (shouldDelete) {
-                                            await provider
-                                                .deletePreset(preset.id);
-                                          }
-                                        },
-                                        child: const Text('Delete'),
-                                      ),
-                                    ],
+                                    );
+                                  },
+                                  child:
+                                      Text(appLocalizations.translate('edit')),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.primaryColor,
                                   ),
-                                ],
-                              ),
+                                  onPressed: () async {
+                                    final shouldDelete =
+                                        await _showDeleteConfirmationDialog(
+                                            context, preset.name);
+                                    if (shouldDelete) {
+                                      provider.deletePreset(preset.id);
+                                      setState(() {
+                                        activePresetId = null;
+                                      });
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              '${preset.name} ${appLocalizations.translate('deleted_successfully')}'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                      appLocalizations.translate('delete')),
+                                ),
+                              ],
                             ),
                         ],
                       ),
@@ -229,26 +195,70 @@ class _PresetsListPageState extends State<PresetsListPage> {
               },
             ),
           ),
+          Consumer<PresetProvider>(
+            builder: (context, provider, child) {
+              final presetCount = provider.presets.length;
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  '${appLocalizations.translate('presets_count')} $presetCount/10',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: theme.textTheme.bodyLarge?.color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Create a new preset with default values
-          final newId = 'preset_${DateTime.now().millisecondsSinceEpoch}';
-          const newPresetName = 'New Preset';
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PresetPage(
-                presetId: newId,
-                presetName: newPresetName,
-                presetProvider: widget.presetProvider,
+        backgroundColor: theme.primaryColor,
+        onPressed: () async {
+          final presetCount = widget.presetProvider.presets.length;
+          if (presetCount >= 10) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(appLocalizations.translate('max_presets')),
               ),
-            ),
+            );
+            return;
+          }
+
+          final newId = 'preset_${DateTime.now().millisecondsSinceEpoch}';
+          final newPreset = Preset(
+            id: newId,
+            name: 'New Preset',
+            dateCreated: DateTime.now(),
+            presetData: {
+              'db_valueOV': 0.0,
+              'db_valueSB_BS': 0.0,
+              'db_valueSB_LMS': 0.0,
+              'db_valueSB_MRS': 0.0,
+              'db_valueSB_MHS': 0.0,
+              'db_valueSB_TS': 0.0,
+              'reduce_background_noise': false,
+              'reduce_wind_noise': false,
+              'soften_sudden_noise': false,
+            },
           );
+
+          await widget.presetProvider.createPreset(newPreset);
+
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PresetPage(
+                  presetId: newId,
+                  presetName: 'New Preset',
+                  presetProvider: widget.presetProvider,
+                ),
+              ),
+            );
+          }
         },
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

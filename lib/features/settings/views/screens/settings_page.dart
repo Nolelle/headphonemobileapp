@@ -1,9 +1,9 @@
 // lib/features/settings/views/screens/settings_page.dart
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
-import '../../../bluetooth/providers/bluetooth_provider.dart';
-import '../../../bluetooth/views/screens/bluetooth_settings_page.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -13,63 +13,17 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _isPlaying = false;
-  double _volume = 0.5;
-
-  @override
-  void initState() {
-    super.initState();
-    _audioPlayer.onPlayerComplete.listen((event) {
-      setState(() {
-        _isPlaying = false;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  Future<void> _playSound() async {
-    if (_isPlaying) {
-      await _audioPlayer.stop();
-      setState(() {
-        _isPlaying = false;
-      });
-      return;
-    }
-
-    try {
-      // Set volume
-      await _audioPlayer.setVolume(_volume);
-
-      // Play Eminem track
-      await _audioPlayer.play(AssetSource('audio/eminem.mp3'));
-
-      setState(() {
-        _isPlaying = true;
-      });
-    } catch (e) {
-      print('Error playing sound: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error playing sound: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bluetoothProvider = Provider.of<BluetoothProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    final appLocalizations = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-        foregroundColor: Colors.white,
+        title: Text(appLocalizations.translate('settings')),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -77,165 +31,297 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Bluetooth connection status
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bluetooth Connection',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            bluetoothProvider.isDeviceConnected
-                                ? Icons.bluetooth_connected
-                                : Icons.bluetooth_disabled,
-                            color: bluetoothProvider.isDeviceConnected
-                                ? Colors.blue
-                                : Colors.grey,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            bluetoothProvider.isDeviceConnected
-                                ? 'Connected to: ${bluetoothProvider.connectedDeviceName}'
-                                : 'No device connected',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              // App Settings Section
+              _buildSectionHeader(appLocalizations.translate('app_settings')),
+
+              // Theme Toggle
+              _buildSettingItem(
+                icon: Icons.brightness_6,
+                title: appLocalizations.translate('app_theme'),
+                subtitle: isDarkMode
+                    ? appLocalizations.translate('dark_mode')
+                    : appLocalizations.translate('light_mode'),
+                onTap: () {
+                  _showThemeConfirmationDialog(themeProvider, appLocalizations);
+                },
+              ),
+
+              // Language Selection
+              _buildSettingItem(
+                icon: Icons.language,
+                title: appLocalizations.translate('language'),
+                subtitle: languageProvider.getLanguageName(),
+                onTap: () {
+                  _showLanguageDialog(languageProvider, appLocalizations);
+                },
               ),
 
               const SizedBox(height: 24),
 
-              // Audio Test Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Audio Test',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Use this tool to verify audio is properly routing to your connected headphones.',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Volume slider
-                      Row(
-                        children: [
-                          const Icon(Icons.volume_down),
-                          Expanded(
-                            child: Slider(
-                              value: _volume,
-                              onChanged: (value) {
-                                setState(() {
-                                  _volume = value;
-                                  _audioPlayer.setVolume(_volume);
-                                });
-                              },
-                              min: 0.0,
-                              max: 1.0,
-                            ),
-                          ),
-                          const Icon(Icons.volume_up),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Play button
-                      Center(
-                        child: ElevatedButton.icon(
-                          onPressed: _playSound,
-                          icon:
-                              Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
-                          label: Text(_isPlaying ? 'Stop' : 'Play Eminem.mp3'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromRGBO(133, 86, 169, 1.00),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Force audio routing button
-                      if (bluetoothProvider.isDeviceConnected)
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () async {
-                              try {
-                                await bluetoothProvider.forceAudioRouting();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Forced audio routing to Bluetooth device'),
-                                  ),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: $e'),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.bluetooth_audio),
-                            label: const Text('Force Audio Routing'),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+              // FAQ Section
+              _buildSectionHeader(appLocalizations.translate('faq')),
+              _buildFaqItem(
+                question: appLocalizations.translate('faq_clean'),
+                answer: appLocalizations.translate('faq_clean_answer'),
+              ),
+              _buildFaqItem(
+                question: appLocalizations.translate('faq_adjust'),
+                answer: appLocalizations.translate('faq_adjust_answer'),
+              ),
+              _buildFaqItem(
+                question: appLocalizations.translate('faq_test'),
+                answer: appLocalizations.translate('faq_test_answer'),
+              ),
+              _buildFaqItem(
+                question: appLocalizations.translate('faq_multiple'),
+                answer: appLocalizations.translate('faq_multiple_answer'),
               ),
 
               const SizedBox(height: 24),
 
-              // Bluetooth settings button
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BluetoothSettingsPage(),
-                    ),
+              // App Info
+              _buildSectionHeader(appLocalizations.translate('about')),
+              _buildSettingItem(
+                icon: Icons.info_outline,
+                title: appLocalizations.translate('app_version'),
+                subtitle: '1.0.0',
+                onTap: () {
+                  showAboutDialog(
+                    context: context,
+                    applicationName: appLocalizations.translate('app_name'),
+                    applicationVersion: '1.0.0',
+                    applicationIcon: const FlutterLogo(),
+                    children: [
+                      Text(
+                        appLocalizations.translate('app_description'),
+                      ),
+                    ],
                   );
                 },
-                icon: const Icon(Icons.settings_bluetooth),
-                label: const Text('Bluetooth Settings'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).primaryColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: Theme.of(context).primaryColor,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget _buildFaqItem({
+    required String question,
+    required String answer,
+  }) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 12.0),
+      child: ExpansionTile(
+        title: Text(
+          'Q. $question',
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ans:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(answer),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showThemeConfirmationDialog(
+      ThemeProvider themeProvider, AppLocalizations appLocalizations) {
+    String selectedTheme =
+        themeProvider.isDarkMode ? 'dark_mode' : 'light_mode';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text(appLocalizations.translate('select_theme')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Text(appLocalizations.translate('light_mode')),
+                  leading: Radio<String>(
+                    value: 'light_mode',
+                    groupValue: selectedTheme,
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedTheme = value!;
+                      });
+                    },
+                  ),
+                ),
+                ListTile(
+                  title: Text(appLocalizations.translate('dark_mode')),
+                  leading: Radio<String>(
+                    value: 'dark_mode',
+                    groupValue: selectedTheme,
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedTheme = value!;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(appLocalizations.translate('cancel')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final bool newIsDarkMode = selectedTheme == 'dark_mode';
+                  await themeProvider.setTheme(newIsDarkMode);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    final themeName = appLocalizations.translate(selectedTheme);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            '${appLocalizations.translate('theme_changed')} $themeName'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                child: Text(appLocalizations.translate('apply')),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _showLanguageDialog(
+      LanguageProvider languageProvider, AppLocalizations appLocalizations) {
+    String selectedLanguage = languageProvider.currentLocale.languageCode;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text(appLocalizations.translate('select_language')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Text(appLocalizations.translate('english')),
+                  leading: Radio<String>(
+                    value: 'en',
+                    groupValue: selectedLanguage,
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedLanguage = value!;
+                      });
+                    },
+                  ),
+                ),
+                ListTile(
+                  title: Text(appLocalizations.translate('french')),
+                  leading: Radio<String>(
+                    value: 'fr',
+                    groupValue: selectedLanguage,
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedLanguage = value!;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(appLocalizations.translate('cancel')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await languageProvider.setLanguage(selectedLanguage);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    final languageName = languageProvider.getLanguageName();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            '${appLocalizations.translate('language_changed')} $languageName'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                child: Text(appLocalizations.translate('apply')),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 }

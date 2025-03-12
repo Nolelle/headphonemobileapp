@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 import 'package:provider/provider.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
 import '../features/settings/views/screens/settings_page.dart';
 import '../features/sound_test/views/screens/sound_test_page.dart';
 import '../features/presets/providers/preset_provider.dart';
-import 'package:external_app_launcher/external_app_launcher.dart';
-import '../features/bluetooth/views/screens/bluetooth_settings_page.dart';
+import '../features/sound_test/providers/sound_test_provider.dart';
 import '../features/bluetooth/providers/bluetooth_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -17,7 +16,7 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  final int _selectedIndex = 0;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -29,9 +28,16 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final presetProvider = Provider.of<PresetProvider>(context);
+    final appLocalizations = AppLocalizations.of(context);
 
     final List<Widget> pages = [
       Consumer<SoundTestProvider>(
@@ -39,8 +45,10 @@ class _MainNavigationState extends State<MainNavigation> {
           soundTestProvider: provider,
         ),
       ),
-      PresetsListPage(
-        presetProvider: presetProvider,
+      Consumer<PresetProvider>(
+        builder: (context, provider, _) => PresetsListPage(
+          presetProvider: provider,
+        ),
       ),
       const SettingsPage(),
     ];
@@ -48,28 +56,25 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.hearing),
-            label: 'Hearing Test',
+            icon: const Icon(Icons.hearing),
+            label: appLocalizations.translate('nav_hearing_test'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.headphones),
-            label: 'Presets',
+            icon: const Icon(Icons.headphones),
+            label: appLocalizations.translate('nav_presets'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings),
+            label: appLocalizations.translate('nav_settings'),
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: const Color.fromRGBO(82, 56, 110, 1.0),
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        type: BottomNavigationBarType.fixed,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        elevation: 8,
       ),
     );
   }
