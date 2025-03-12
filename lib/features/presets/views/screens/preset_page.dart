@@ -51,7 +51,9 @@ class _PresetPageState extends State<PresetPage> {
       setState(() {
         db_valueOV = data['db_valueOV'] ?? 0.0;
         db_valueSB_BS = data['db_valueSB_BS'] ?? 0.0;
+        db_valueSB_LMS = data['db_valueSB_LMS'] ?? 0.0;
         db_valueSB_MRS = data['db_valueSB_MRS'] ?? 0.0;
+        db_valueSB_MHS = data['db_valueSB_MHS'] ?? 0.0;
         db_valueSB_TS = data['db_valueSB_TS'] ?? 0.0;
         reduce_background_noise = data['reduce_background_noise'] ?? false;
         reduce_wind_noise = data['reduce_wind_noise'] ?? false;
@@ -68,7 +70,9 @@ class _PresetPageState extends State<PresetPage> {
       presetData: {
         'db_valueOV': db_valueOV,
         'db_valueSB_BS': db_valueSB_BS,
+        'db_valueSB_LMS': db_valueSB_LMS,
         'db_valueSB_MRS': db_valueSB_MRS,
+        'db_valueSB_MHS': db_valueSB_MHS,
         'db_valueSB_TS': db_valueSB_TS,
         'reduce_background_noise': reduce_background_noise,
         'reduce_wind_noise': reduce_wind_noise,
@@ -77,11 +81,21 @@ class _PresetPageState extends State<PresetPage> {
     );
 
     await widget.presetProvider.updatePreset(preset);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_nameController.text} Successfully Updated!'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   // Helper method to auto-save after each change
   void _autoSave() {
-    _savePreset();
+    // Use a debounce to avoid too many saves
+    Future.microtask(() => _savePreset());
   }
 
   @override
@@ -96,6 +110,15 @@ class _PresetPageState extends State<PresetPage> {
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Save before navigating back
+            _savePreset().then((_) {
+              Navigator.of(context).pop();
+            });
+          },
         ),
       ),
       backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
@@ -252,7 +275,7 @@ class _PresetPageState extends State<PresetPage> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Enhances deep sounds like background noise and speech fundamentals\n',
+                    'For enhancing low frequencies like bass drums\n',
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
                 ),
@@ -416,115 +439,140 @@ class _PresetPageState extends State<PresetPage> {
             ),
           ]),
 
-          // Reduce Background Noise toggle
-          Row(
-            children: [
-              const Expanded(
-                child: Column(
+          // Reduce Background Noise
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 1.0,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Reduce Background Noise',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      'Minimize constant background sounds',
+                      'Helps filter out constant background sounds',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Switch(
-                value: reduce_background_noise,
-                onChanged: (value) {
-                  setState(() => reduce_background_noise = value);
-                  _autoSave();
-                },
-                activeColor: Colors.white,
-                inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                inactiveTrackColor: Colors.grey,
-              ),
-            ],
+                Switch(
+                  value: reduce_background_noise,
+                  onChanged: (value) {
+                    setState(() => reduce_background_noise = value);
+                    _autoSave();
+                  },
+                  activeColor: Colors.white,
+                  inactiveThumbColor: Colors.white,
+                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                  inactiveTrackColor: Colors.grey,
+                ),
+              ],
+            ),
           ),
 
-          // Reduce Wind Noise toggle
-          Row(
-            children: [
-              const Expanded(
-                child: Column(
+          // Reduce Wind Noise
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 1.0,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Reduce Wind Noise',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      'Helps in outdoor environments',
+                      'Helps filter out wind interference',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Switch(
-                value: reduce_wind_noise,
-                onChanged: (value) {
-                  setState(() => reduce_wind_noise = value);
-                  _autoSave();
-                },
-                activeColor: Colors.white,
-                inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                inactiveTrackColor: Colors.grey,
-              ),
-            ],
+                Switch(
+                  value: reduce_wind_noise,
+                  onChanged: (value) {
+                    setState(() => reduce_wind_noise = value);
+                    _autoSave();
+                  },
+                  activeColor: Colors.white,
+                  inactiveThumbColor: Colors.white,
+                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                  inactiveTrackColor: Colors.grey,
+                ),
+              ],
+            ),
           ),
 
-          // Soften Sudden Sounds toggle
-          Row(
-            children: [
-              const Expanded(
-                child: Column(
+          // Soften Sudden Noise
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Soften Sudden Sounds',
+                      'Soften Sudden Noise',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      'Reduces unexpected loud noises',
+                      'Reduces the impact of sudden loud sounds',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Switch(
-                value: soften_sudden_noise,
-                onChanged: (value) {
-                  setState(() => soften_sudden_noise = value);
-                  _autoSave();
-                },
-                activeColor: Colors.white,
-                inactiveThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
-                inactiveTrackColor: Colors.grey,
-              ),
-            ],
+                Switch(
+                  value: soften_sudden_noise,
+                  onChanged: (value) {
+                    setState(() => soften_sudden_noise = value);
+                    _autoSave();
+                  },
+                  activeColor: Colors.white,
+                  inactiveThumbColor: Colors.white,
+                  activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                  inactiveTrackColor: Colors.grey,
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 import 'package:provider/provider.dart';
 import '../features/presets/views/screens/preset_list_page.dart';
 import '../features/settings/views/screens/settings_page.dart';
 import '../features/sound_test/views/screens/sound_test_page.dart';
 import '../features/presets/providers/preset_provider.dart';
-import 'package:external_app_launcher/external_app_launcher.dart';
-import '../features/bluetooth/views/screens/bluetooth_settings_page.dart';
+import '../features/sound_test/providers/sound_test_provider.dart';
 import '../features/bluetooth/providers/bluetooth_provider.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -17,7 +15,7 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  final int _selectedIndex = 0;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -26,6 +24,12 @@ class _MainNavigationState extends State<MainNavigation> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<BluetoothProvider>(context, listen: false);
       provider.checkBluetoothConnection();
+    });
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
@@ -39,8 +43,10 @@ class _MainNavigationState extends State<MainNavigation> {
           soundTestProvider: provider,
         ),
       ),
-      PresetsListPage(
-        presetProvider: presetProvider,
+      Consumer<PresetProvider>(
+        builder: (context, provider, _) => PresetsListPage(
+          presetProvider: provider,
+        ),
       ),
       const SettingsPage(),
     ];
