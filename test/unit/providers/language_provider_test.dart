@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projects/features/settings/providers/language_provider.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('LanguageProvider Tests', () {
     late LanguageProvider provider;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       provider = LanguageProvider();
     });
 
@@ -15,23 +17,20 @@ void main() {
       expect(provider.currentLocale.languageCode, 'en');
     });
 
-    test('getLanguageName should return correct language name', () {
+    test('getLanguageName should return correct language name', () async {
       // Default is English
       expect(provider.getLanguageName(), 'English');
 
       // Set to French
-      provider.setLanguage('fr');
+      await provider.setLanguage('fr');
       expect(provider.getLanguageName(), 'Français');
 
       // Set back to English
-      provider.setLanguage('en');
+      await provider.setLanguage('en');
       expect(provider.getLanguageName(), 'English');
     });
 
     test('setLanguage should update currentLocale', () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
-
       // Act
       await provider.setLanguage('fr');
 
@@ -44,6 +43,7 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'language_code': 'fr',
       });
+      provider = LanguageProvider(); // Recreate provider with new mock values
 
       // Act
       await provider.loadLanguage();
@@ -54,9 +54,6 @@ void main() {
 
     test('loadLanguage should default to English if no preference is saved',
         () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
-
       // Act
       await provider.loadLanguage();
 
@@ -65,9 +62,6 @@ void main() {
     });
 
     test('setLanguage should save preference to SharedPreferences', () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
-
       // Act
       await provider.setLanguage('fr');
 

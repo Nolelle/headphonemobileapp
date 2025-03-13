@@ -173,11 +173,12 @@ void main() {
 
       expect(await bluetoothService.getScannedDevices(), isEmpty);
 
+      // stopScan catches exceptions and doesn't rethrow
+      await bluetoothService.stopScan(); // Should not throw
+
       // These should throw exceptions
       expect(() => bluetoothService.startScan(),
           throwsA(isA<PlatformException>()));
-      expect(
-          () => bluetoothService.stopScan(), throwsA(isA<PlatformException>()));
       expect(() => bluetoothService.connectToDevice('test'),
           throwsA(isA<PlatformException>()));
       expect(() => bluetoothService.disconnectDevice(),

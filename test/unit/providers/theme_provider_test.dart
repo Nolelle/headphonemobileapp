@@ -4,21 +4,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projects/features/settings/providers/theme_provider.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ThemeProvider Tests', () {
     late ThemeProvider provider;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       provider = ThemeProvider();
     });
 
-    test('initial theme should be light mode', () {
+    test('initial theme should be light mode', () async {
+      // Wait for the provider to load preferences
+      await Future.delayed(Duration.zero);
       expect(provider.isDarkMode, false);
       expect(provider.themeMode, ThemeMode.light);
     });
 
     test('toggleTheme should switch between light and dark mode', () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
+      // Wait for the provider to load preferences
+      await Future.delayed(Duration.zero);
       expect(provider.isDarkMode, false); // Initially light mode
 
       // Act - toggle to dark mode
@@ -37,8 +42,8 @@ void main() {
     });
 
     test('setTheme should update theme mode', () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
+      // Wait for the provider to load preferences
+      await Future.delayed(Duration.zero);
 
       // Act - set to dark mode
       await provider.setTheme(true);
@@ -57,8 +62,9 @@ void main() {
 
     test('setTheme should not notify listeners if theme is not changed',
         () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
+      // Wait for the provider to load preferences
+      await Future.delayed(Duration.zero);
+
       bool notified = false;
       provider.addListener(() {
         notified = true;
@@ -72,8 +78,8 @@ void main() {
     });
 
     test('theme preference should be saved to SharedPreferences', () async {
-      // Arrange
-      SharedPreferences.setMockInitialValues({});
+      // Wait for the provider to load preferences
+      await Future.delayed(Duration.zero);
 
       // Act - set to dark mode
       await provider.setTheme(true);
@@ -87,12 +93,12 @@ void main() {
     });
 
     test('loadThemePreference should load saved theme preference', () async {
-      // Arrange
+      // Set up mock preferences with dark mode
       SharedPreferences.setMockInitialValues({
         'theme_preference': true,
       });
 
-      // Act - create a new provider which will load the preference
+      // Create a new provider which will load the preference
       final newProvider = ThemeProvider();
 
       // Wait for the async operation to complete
