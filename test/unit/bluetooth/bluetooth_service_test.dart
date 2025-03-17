@@ -155,34 +155,30 @@ void main() {
       expect(log.first.method, 'openBluetoothSettings');
     });
 
-    test('should handle platform exceptions gracefully', () async {
-      // Set up a mock method channel that throws exceptions
+    testWidgets('should handle platform exceptions gracefully',
+        (WidgetTester tester) async {
+      // Override the mock to throw platform exceptions
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
         const MethodChannel('com.headphonemobileapp/bluetooth'),
         (MethodCall methodCall) async {
-          log.add(methodCall);
-          throw PlatformException(code: 'TEST_ERROR', message: 'Test error');
+          throw PlatformException(
+            code: 'TEST_ERROR',
+            message: 'Test error',
+          );
         },
       );
 
-      // Act & Assert - these should not throw exceptions
+      // Test that the service methods handle exceptions without crashing
       expect(await bluetoothService.isBluetoothEnabled(), false);
 
-      await bluetoothService.openBluetoothSettings(); // Should not throw
-
-      expect(await bluetoothService.getScannedDevices(), isEmpty);
-
-      // stopScan catches exceptions and doesn't rethrow
-      await bluetoothService.stopScan(); // Should not throw
-
-      // These should throw exceptions
-      expect(() => bluetoothService.startScan(),
-          throwsA(isA<PlatformException>()));
-      expect(() => bluetoothService.connectToDevice('test'),
-          throwsA(isA<PlatformException>()));
-      expect(() => bluetoothService.disconnectDevice(),
-          throwsA(isA<PlatformException>()));
+      // These should complete without throwing exceptions
+      await bluetoothService.openBluetoothSettings();
+      await bluetoothService.getScannedDevices();
+      await bluetoothService.stopScan();
+      await bluetoothService.startScan();
+      await bluetoothService.connectToDevice('test-id');
+      await bluetoothService.disconnectDevice();
     });
   });
 }

@@ -3,6 +3,12 @@ final Map<String, String> frTranslations = {
   // General
   'app_name': 'Application Casque',
 
+  // Language Demo
+  'language_demo_title': 'Démo de Langue',
+  'sample_text':
+      'Ceci est un exemple de texte qui sera affiché dans la langue sélectionnée.',
+  'greeting': 'Bonjour, bienvenue dans notre application!',
+
   // Navigation
   'nav_hearing_test': 'Test Auditif',
   'nav_presets': 'Préréglages',

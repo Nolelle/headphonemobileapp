@@ -3,6 +3,12 @@ final Map<String, String> enTranslations = {
   // General
   'app_name': 'Headphone App',
 
+  // Language Demo
+  'language_demo_title': 'Language Demo',
+  'sample_text':
+      'This is a sample text that will be displayed in the selected language.',
+  'greeting': 'Hello, welcome to our app!',
+
   // Navigation
   'nav_hearing_test': 'Hearing Test',
   'nav_presets': 'Presets',

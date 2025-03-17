@@ -1,91 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projects/features/presets/views/screens/preset_list_page.dart';
 import 'package:projects/features/presets/providers/preset_provider.dart';
 import 'package:projects/features/presets/repositories/preset_repository.dart';
-import 'package:projects/l10n/app_localizations.dart';
 import 'package:projects/features/settings/providers/language_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
-// Mock AppLocalizations for testing
-class MockAppLocalizations extends AppLocalizations {
-  MockAppLocalizations() : super(const Locale('en'));
-
-  @override
-  String translate(String key) {
-    final Map<String, String> translations = {
-      'no_presets': 'No presets available. Create a new preset to get started.',
-      'edit_preset': 'Edit Preset',
-      'edit': 'Edit',
-      'delete': 'Delete',
-      'confirm_delete': 'Confirm Delete',
-      'confirm_delete_message': 'Are you sure you want to delete',
-    };
-    return translations[key] ?? key;
-  }
-}
-
-class MockLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
-  @override
-  bool isSupported(Locale locale) => true;
-
-  @override
-  Future<AppLocalizations> load(Locale locale) async => MockAppLocalizations();
-
-  @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
-      false;
-}
+import 'test_helper.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Set up mock method channels for plugins
-  setUp(() {
-    // Mock Bluetooth plugin
-    const MethodChannel bluetoothChannel =
-        MethodChannel('com.headphonemobileapp/bluetooth');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      bluetoothChannel,
-      (MethodCall methodCall) async {
-        switch (methodCall.method) {
-          case 'isBluetoothEnabled':
-            return true;
-          case 'getScannedDevices':
-            return [];
-          case 'startScan':
-          case 'stopScan':
-          case 'connectToDevice':
-          case 'disconnectDevice':
-            return null;
-          default:
-            return null;
-        }
-      },
-    );
-
-    // Mock Settings plugin
-    const MethodChannel settingsChannel =
-        MethodChannel('com.headphonemobileapp/settings');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      settingsChannel,
-      (MethodCall methodCall) async {
-        switch (methodCall.method) {
-          case 'getDeviceModel':
-            return 'Test Device';
-          default:
-            return null;
-        }
-      },
-    );
-  });
+  // Set up mock method channels
+  setupMockMethodChannels();
 
   group('Preset Flow Integration Tests', () {
     setUp(() async {
@@ -115,21 +43,10 @@ void main() {
               value: languageProvider,
             ),
           ],
-          child: MaterialApp(
-            home: PresetsListPage(
+          child: createTestableWidget(
+            child: PresetsListPage(
               presetProvider: presetProvider,
             ),
-            localizationsDelegates: [
-              MockLocalizationsDelegate(), // Use our mock localization
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [
-              Locale('en', ''),
-              Locale('fr', ''),
-            ],
-            locale: const Locale('en', ''), // Force English for tests
           ),
         ),
       );
@@ -157,8 +74,13 @@ void main() {
       await tester.drag(slider, const Offset(50.0, 0.0));
       await tester.pumpAndSettle();
 
-      // Toggle background noise reduction
-      await tester.tap(find.byType(Switch).first);
+      // Toggle background noise reduction - use a more reliable approach
+      // Find the Switch by its semantic label or parent widget instead
+      final switchFinder = find.byType(Switch).first;
+
+      // Get the center of the switch to ensure we tap in the right place
+      final switchCenter = tester.getCenter(switchFinder);
+      await tester.tapAt(switchCenter);
       await tester.pumpAndSettle();
 
       // Go back to presets list

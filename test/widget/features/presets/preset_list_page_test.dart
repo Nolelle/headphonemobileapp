@@ -155,10 +155,13 @@ void main() {
       await tester.pumpWidget(createTestableWidget(
         PresetsListPage(presetProvider: mockPresetProvider),
       ));
-      await tester.pumpAndSettle();
 
-      // Dump the widget tree to see what's actually there
-      debugDumpApp();
+      // First pump to build the widget
+      await tester.pump();
+
+      // Find and tap the preset button to set it as active
+      await tester.tap(find.text('Test Preset 1'));
+      await tester.pump();
 
       // Assert - look for text on buttons instead of icons
       expect(find.text('Test Preset 1'), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../widgets/language_demo.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -55,6 +56,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   _showLanguageDialog(languageProvider, appLocalizations);
                 },
               ),
+
+              // Language Demo Widget
+              const SizedBox(height: 16),
+              const LanguageDemo(),
 
               const SizedBox(height: 24),
 
