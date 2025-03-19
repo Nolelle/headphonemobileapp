@@ -26,6 +26,72 @@ void main() {
       expect(provider.error, isNull);
     });
 
+    test('provider state management during operations', () async {
+      // Arrange
+      final validSoundTest = SoundTest(
+        id: 'test_id',
+        name: 'Test Profile',
+        dateCreated: DateTime.now(),
+        soundTestData: {'L_user_250Hz_dB': 50.0},
+        icon: Icons.hearing,
+      );
+
+      // Setup successful repository response
+      when(mockRepository.addSoundTest(validSoundTest))
+          .thenAnswer((_) async {});
+      when(mockRepository.getAllSoundTests())
+          .thenAnswer((_) async => {'test_id': validSoundTest});
+
+      // Act - Successful operation
+      // Create a state tracker for testing loading state changes
+      bool wasEverLoading = false;
+      listener() {
+        if (provider.isLoading) {
+          wasEverLoading = true;
+        }
+      }
+
+      provider.addListener(listener);
+
+      await provider.createSoundTest(validSoundTest);
+
+      // Assert - Successful operation
+      expect(wasEverLoading,
+          true); // Should have been true at some point during operation
+      expect(provider.isLoading, false); // Should be false after completion
+      expect(provider.error, null); // Should be null after successful operation
+
+      // Reset mock to prepare for error case
+      reset(mockRepository);
+
+      // Reset listener state
+      wasEverLoading = false;
+      provider.removeListener(listener);
+
+      // Setup new listener
+      provider.addListener(listener);
+
+      // Setup error in repository
+      Exception testException = Exception('Test repository error');
+      when(mockRepository.addSoundTest(validSoundTest))
+          .thenThrow(testException);
+
+      // Act - Failed operation
+      await provider.createSoundTest(validSoundTest);
+
+      // Assert - Failed operation only checks that the error state is correct
+      // Just verify that the method was called (not the exact count)
+      verify(mockRepository.addSoundTest(any)).called(greaterThan(0));
+      expect(
+          provider.error,
+          contains(
+              'Failed to create sound test')); // Should contain error message
+
+      // Test error clearing
+      provider.clearError();
+      expect(provider.error, null);
+    });
+
     test('fetchSoundTests should update soundTests state', () async {
       // Arrange
       final mockSoundTests = {
@@ -67,7 +133,7 @@ void main() {
       );
 
       when(mockRepository.addSoundTest(newSoundTest)).thenAnswer((_) async {
-        return null;
+        return;
       });
       when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {
             'test3': newSoundTest,
@@ -101,20 +167,29 @@ void main() {
         soundTestData: {'frequency': 1000, 'volume': 0.8},
       );
 
+      final Map<String, SoundTest> finalSoundTests = {
+        'test1': updatedSoundTest
+      };
+
+      // Setup for first call to getAllSoundTests (initial tests)
       when(mockRepository.getAllSoundTests())
-          .thenAnswer((_) async => initialSoundTests)
-          .thenAnswer((_) async => {
-                'test1': updatedSoundTest,
-              });
-
-      when(mockRepository.updateSoundTest(updatedSoundTest))
-          .thenAnswer((_) async {
-        return null;
-      });
-
-      await provider.fetchSoundTests(); // Load initial data
+          .thenAnswer((_) async => initialSoundTests);
 
       // Act
+      await provider.fetchSoundTests(); // Load initial data
+
+      // Reset the mock to set up for second call
+      reset(mockRepository);
+
+      // Setup for updateSoundTest call
+      when(mockRepository.updateSoundTest(updatedSoundTest))
+          .thenAnswer((_) async {});
+
+      // Setup for second call to getAllSoundTests after update
+      when(mockRepository.getAllSoundTests())
+          .thenAnswer((_) async => finalSoundTests);
+
+      // Act - update test
       await provider.updateSoundTest(updatedSoundTest);
 
       // Assert
@@ -138,17 +213,24 @@ void main() {
 
       const soundTestId = 'test1';
 
+      // Setup for first call to getAllSoundTests (initial tests)
       when(mockRepository.getAllSoundTests())
-          .thenAnswer((_) async => initialSoundTests)
-          .thenAnswer((_) async => {});
-
-      when(mockRepository.deleteSoundTest(soundTestId)).thenAnswer((_) async {
-        return null;
-      });
-
-      await provider.fetchSoundTests(); // Load initial data
+          .thenAnswer((_) async => initialSoundTests);
 
       // Act
+      await provider.fetchSoundTests(); // Load initial data
+
+      // Reset the mock to set up for second call
+      reset(mockRepository);
+
+      // Setup for deleteSoundTest call
+      when(mockRepository.deleteSoundTest(soundTestId))
+          .thenAnswer((_) async {});
+
+      // Setup for second call to getAllSoundTests after deletion
+      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {});
+
+      // Act - delete test
       await provider.deleteSoundTest(soundTestId);
 
       // Assert
