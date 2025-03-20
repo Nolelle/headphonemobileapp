@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
+import 'package:projects/features/sound_test/views/screens/test_page.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:provider/provider.dart';
-import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 
 @GenerateMocks([AudioPlayer, SoundTestProvider])
 import 'ear_switching_test.mocks.dart';
@@ -104,184 +105,93 @@ class _EarSwitchWidgetState extends State<EarSwitchWidget> {
 
 void main() {
   group('Ear Switching Tests', () {
-    late MockAudioPlayer mockPlayer;
     late MockSoundTestProvider mockProvider;
 
     setUp(() {
-      mockPlayer = MockAudioPlayer();
       mockProvider = MockSoundTestProvider();
     });
 
-    testWidgets('should display ear switching UI correctly',
+    testWidgets('ear switching should change from left to right ear',
         (WidgetTester tester) async {
-      // Build ear switching widget
+      // Create the widget under test
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<SoundTestProvider>.value(
-              value: mockProvider,
-              child: EarSwitchWidget(
-                player: mockPlayer,
-                initialBalance: 0.0, // Start with both ears
-                onBalanceChanged: (_) {},
-              ),
-            ),
+          home: TestPage(
+            soundTestId: 'test123',
+            soundTestName: 'Test Sound Test',
+            soundTestProvider: mockProvider,
           ),
         ),
       );
 
-      // Verify initial state shows both ears
-      expect(find.text('Current Ear: Both'), findsOneWidget);
-      expect(find.text('Left Ear'), findsOneWidget);
-      expect(find.text('Both Ears'), findsOneWidget);
-      expect(find.text('Right Ear'), findsOneWidget);
+      // Get the state (we need to use State<TestPage> since _TestPageState is private)
+      final state = tester.state<State<TestPage>>(find.byType(TestPage));
+
+      // Set initial state using reflection since we can't access private state directly
+      state.setState(() {
+        // These fields are public in the state class
+        (state as dynamic).current_ear = 'L';
+        (state as dynamic).current_sound_stage = 6; // Last stage for left ear
+        // Ensure ear_balance is initialized properly
+        (state as dynamic).ear_balance = -1.0;
+      });
+
+      // Rebuild the widget with the modified state
+      await tester.pump();
+
+      // Act - Call updateCurrentEar method to trigger ear switching
+      (state as dynamic).updateCurrentEar();
+
+      // Rebuild again to reflect changes
+      await tester.pump();
+
+      // Assert - use dynamic casts to access state variables
+      expect((state as dynamic).current_ear, equals('R'));
+      expect((state as dynamic).ear_balance, equals(1.0)); // Full right balance
+      expect((state as dynamic).current_sound_stage,
+          equals(0)); // Reset to first stage
     });
 
-    testWidgets('should switch to left ear when left ear button is tapped',
+    testWidgets(
+        'ear switching should show completion dialog when right ear tests are done',
         (WidgetTester tester) async {
-      // Arrange
-      double capturedBalance = 0.0;
-      when(mockPlayer.setBalance(any)).thenAnswer((_) async => 1);
-
-      // Build widget
+      // Create the widget under test
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<SoundTestProvider>.value(
-              value: mockProvider,
-              child: EarSwitchWidget(
-                player: mockPlayer,
-                initialBalance: 0.0,
-                onBalanceChanged: (balance) {
-                  capturedBalance = balance;
-                },
-              ),
-            ),
+          home: TestPage(
+            soundTestId: 'test123',
+            soundTestName: 'Test Sound Test',
+            soundTestProvider: mockProvider,
           ),
         ),
       );
 
-      // Act - tap left ear button
-      await tester.tap(find.text('Left Ear'));
+      // Get the state
+      final state = tester.state<State<TestPage>>(find.byType(TestPage));
+
+      // Set initial state for right ear's last stage
+      state.setState(() {
+        (state as dynamic).current_ear = 'R';
+        (state as dynamic).current_sound_stage = 6; // Last stage for right ear
+        // Ensure ear_balance is initialized properly
+        (state as dynamic).ear_balance = 1.0;
+      });
+
+      // Rebuild the widget with the modified state
+      await tester.pump();
+
+      // Act - Call updateCurrentEar to trigger test completion
+      (state as dynamic).updateCurrentEar();
+
+      // Rebuild to show the dialog
       await tester.pumpAndSettle();
 
-      // Assert
-      expect(find.text('Current Ear: Left'), findsOneWidget);
-      verify(mockPlayer.setBalance(-1.0)).called(greaterThan(0));
-      expect(capturedBalance, -1.0);
-    });
-
-    testWidgets('should switch to right ear when right ear button is tapped',
-        (WidgetTester tester) async {
-      // Arrange
-      double capturedBalance = 0.0;
-      when(mockPlayer.setBalance(any)).thenAnswer((_) async => 1);
-
-      // Build widget
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<SoundTestProvider>.value(
-              value: mockProvider,
-              child: EarSwitchWidget(
-                player: mockPlayer,
-                initialBalance: 0.0,
-                onBalanceChanged: (balance) {
-                  capturedBalance = balance;
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Act - tap right ear button
-      await tester.tap(find.text('Right Ear'));
-      await tester.pumpAndSettle();
-
-      // Assert
-      expect(find.text('Current Ear: Right'), findsOneWidget);
-      verify(mockPlayer.setBalance(1.0)).called(greaterThan(0));
-      expect(capturedBalance, 1.0);
-    });
-
-    testWidgets('should switch back to both ears from left ear',
-        (WidgetTester tester) async {
-      // Arrange
-      double capturedBalance = -1.0; // Start with left ear
-      when(mockPlayer.setBalance(any)).thenAnswer((_) async => 1);
-
-      // Build widget
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<SoundTestProvider>.value(
-              value: mockProvider,
-              child: EarSwitchWidget(
-                player: mockPlayer,
-                initialBalance: -1.0, // Start with left ear
-                onBalanceChanged: (balance) {
-                  capturedBalance = balance;
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Verify we start with left ear
-      expect(find.text('Current Ear: Left'), findsOneWidget);
-
-      // Act - tap both ears button
-      await tester.tap(find.text('Both Ears'));
-      await tester.pumpAndSettle();
-
-      // Assert
-      expect(find.text('Current Ear: Both'), findsOneWidget);
-      verify(mockPlayer.setBalance(0.0)).called(greaterThan(0));
-      expect(capturedBalance, 0.0);
-    });
-
-    testWidgets('should highlight the active ear button',
-        (WidgetTester tester) async {
-      // Mock player setup
-      when(mockPlayer.setBalance(any)).thenAnswer((_) async => 1);
-
-      // Build widget with left ear selected
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<SoundTestProvider>.value(
-              value: mockProvider,
-              child: EarSwitchWidget(
-                player: mockPlayer,
-                initialBalance: -1.0, // Start with left ear
-                onBalanceChanged: (_) {},
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Verify the left ear button is highlighted initially
-      final leftButton = tester.widget<ElevatedButton>(
-          find.widgetWithText(ElevatedButton, 'Left Ear'));
-      expect(
-        (leftButton.style?.backgroundColor as WidgetStatePropertyAll?)?.value,
-        Colors.blue,
-      );
-
-      // Switch to right ear
-      await tester.tap(find.text('Right Ear'));
-      await tester.pumpAndSettle();
-
-      // Verify the right ear button is now highlighted
-      final rightButton = tester.widget<ElevatedButton>(
-          find.widgetWithText(ElevatedButton, 'Right Ear'));
-      expect(
-        (rightButton.style?.backgroundColor as WidgetStatePropertyAll?)?.value,
-        Colors.blue,
-      );
+      // Assert - Test completion dialog should be shown
+      expect(find.text('Test Completed'), findsOneWidget);
+      expect(find.text('The test has been recorded successfully.'),
+          findsOneWidget);
+      expect((state as dynamic).ear_balance,
+          equals(0.0)); // Balance returned to center
     });
   });
 }
