@@ -10,7 +10,12 @@ import 'package:flutter/foundation.dart';
 class MyBluetoothService {
   // Start scanning for devices
   Future<void> startScan() async {
-    await BluetoothPlatform.startScan();
+    try {
+      await BluetoothPlatform.startScan();
+    } catch (e) {
+      print("Failed to start scan: $e");
+      // Don't rethrow to handle gracefully
+    }
   }
 
   // Stop scanning
@@ -19,12 +24,18 @@ class MyBluetoothService {
       await BluetoothPlatform.stopScan();
     } catch (e) {
       print("Error stopping scan: $e");
+      // Don't rethrow to handle gracefully
     }
   }
 
   // Check if Bluetooth is enabled
   Future<bool> isBluetoothEnabled() async {
-    return await BluetoothPlatform.isBluetoothEnabled();
+    try {
+      return await BluetoothPlatform.isBluetoothEnabled();
+    } catch (e) {
+      print("Failed to check if Bluetooth is enabled: $e");
+      return false; // Default to false on error
+    }
   }
 
   // Open Bluetooth settings
@@ -33,19 +44,35 @@ class MyBluetoothService {
       await BluetoothPlatform.platform.invokeMethod('openBluetoothSettings');
     } catch (e) {
       print("Error opening Bluetooth settings: $e");
+      // Don't rethrow to handle gracefully
     }
   }
 
   Future<bool> connectToDevice(String deviceId) async {
-    return await BluetoothPlatform.connectToDevice(deviceId);
+    try {
+      return await BluetoothPlatform.connectToDevice(deviceId);
+    } catch (e) {
+      print("Failed to connect to device: $e");
+      return false; // Default to false on error
+    }
   }
 
   Future<void> disconnectDevice() async {
-    await BluetoothPlatform.disconnectDevice();
+    try {
+      await BluetoothPlatform.disconnectDevice();
+    } catch (e) {
+      print("Failed to disconnect device: $e");
+      // Don't rethrow to handle gracefully
+    }
   }
 
   // Get scanned devices
   Future<List<BluetoothDevice>> getScannedDevices() async {
-    return await BluetoothPlatform.getScannedDevices();
+    try {
+      return await BluetoothPlatform.getScannedDevices();
+    } catch (e) {
+      print("Failed to get scanned devices: $e");
+      return []; // Return empty list on error
+    }
   }
 }
