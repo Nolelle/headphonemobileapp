@@ -17,10 +17,10 @@ class SoundTestProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  SoundTest? get activeSoundTest =>
-      _activeSoundTestId != null ? _soundTests[_activeSoundTestId] : null;
+  SoundTest? get activeSoundTest => _activeSoundTestId != null
+      ? _soundTests[_activeSoundTestId]
+      : null;
 
-  // Fetch all sound tests
   Future<void> fetchSoundTests() async {
     try {
       _isLoading = true;
@@ -28,15 +28,16 @@ class SoundTestProvider with ChangeNotifier {
       notifyListeners();
 
       _soundTests = await _repository.getAllSoundTests();
+      notifyListeners();
     } catch (e) {
       _error = 'Failed to load sound tests: $e';
+      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Create new sound test
   Future<void> createSoundTest(SoundTest soundTest) async {
     try {
       _isLoading = true;
@@ -51,7 +52,6 @@ class SoundTestProvider with ChangeNotifier {
     }
   }
 
-  //while for presets, its meant to update the existing one, itll work the same way, its just you cant change it afterwards, might change that tho
   Future<void> updateSoundTest(SoundTest soundTest) async {
     try {
       _isLoading = true;
@@ -59,32 +59,40 @@ class SoundTestProvider with ChangeNotifier {
       notifyListeners();
 
       await _repository.updateSoundTest(soundTest);
-      await fetchSoundTests();
+      _soundTests[soundTest.id] = soundTest;
+
+      if (_activeSoundTestId == null || _activeSoundTestId == soundTest.id) {
+        _activeSoundTestId = soundTest.id;
+      }
+      notifyListeners();
     } catch (e) {
       _error = 'Failed to update sound test: $e';
+      notifyListeners();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Delete sound test
-  Future<void> deleteSoundTest(String id) async {
+  Future<void> resetSoundTest(String id) async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      await _repository.deleteSoundTest(id);
-      if (_activeSoundTestId == id) {
-        _activeSoundTestId = null;
-      }
-      await fetchSoundTests();
+      final soundTest = SoundTest.defaultTest(id);
+      await _repository.updateSoundTest(soundTest);
+      _soundTests[id] = soundTest;
+      notifyListeners();
     } catch (e) {
-      _error = 'Failed to delete sound test: $e';
+      _error = 'Failed to reset sound test: $e';
+      notifyListeners();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Set active sound test
   void setActiveSoundTest(String id) {
     if (_soundTests.containsKey(id)) {
       _activeSoundTestId = id;
@@ -92,7 +100,6 @@ class SoundTestProvider with ChangeNotifier {
     }
   }
 
-  // Clear active sound test
   void clearActiveSoundTest() {
     _activeSoundTestId = null;
     notifyListeners();

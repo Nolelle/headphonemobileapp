@@ -7,13 +7,11 @@ import '../../models/sound_test.dart';
 
 class TestPage extends StatefulWidget {
   final String soundTestId;
-  final String soundTestName;
   final SoundTestProvider soundTestProvider;
 
   const TestPage({
     super.key,
     required this.soundTestId,
-    required this.soundTestName,
     required this.soundTestProvider,
   });
 
@@ -22,7 +20,6 @@ class TestPage extends StatefulWidget {
 }
 
 class _TestPageState extends State<TestPage> {
-  late TextEditingController _nameController;
   late IconData chosen_icon = Icons.home;
   double L_band_1_dB = 0.0;
   double L_band_2_dB = 0.0;
@@ -37,10 +34,10 @@ class _TestPageState extends State<TestPage> {
   double R_band_5_dB = 0.0;
 
   String current_ear = "";
-  double ear_balance = 0.0; //-1.0 for left, 0.0 for both, 1.0 for right
+  double ear_balance = 0.0;
   int current_sound_stage = 0;
 
-  late double current_volume = 0.50; //actually, we're just converting it instead
+  late double current_volume = 0.50;
   final double MAX_VOLUME = 1.0;
   final double MIN_VOLUME = 0.01;
   final int TIMER_DURATION = 10;
@@ -53,7 +50,26 @@ class _TestPageState extends State<TestPage> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.soundTestName);
+    _loadExistingTestData();
+  }
+
+  void _loadExistingTestData() {
+    final soundTest = widget.soundTestProvider.getSoundTestById(widget.soundTestId);
+    if (soundTest != null) {
+      setState(() {
+        L_band_1_dB = soundTest.soundTestData['L_band_1_dB'] ?? 0.0;
+        L_band_2_dB = soundTest.soundTestData['L_band_2_dB'] ?? 0.0;
+        L_band_3_dB = soundTest.soundTestData['L_band_3_dB'] ?? 0.0;
+        L_band_4_dB = soundTest.soundTestData['L_band_4_dB'] ?? 0.0;
+        L_band_5_dB = soundTest.soundTestData['L_band_5_dB'] ?? 0.0;
+
+        R_band_1_dB = soundTest.soundTestData['R_band_1_dB'] ?? 0.0;
+        R_band_2_dB = soundTest.soundTestData['R_band_2_dB'] ?? 0.0;
+        R_band_3_dB = soundTest.soundTestData['R_band_3_dB'] ?? 0.0;
+        R_band_4_dB = soundTest.soundTestData['R_band_4_dB'] ?? 0.0;
+        R_band_5_dB = soundTest.soundTestData['R_band_5_dB'] ?? 0.0;
+      });
+    }
   }
 
   @override
@@ -91,8 +107,7 @@ class _TestPageState extends State<TestPage> {
           L_band_5_dB = captured_volume;
           break;
       }
-    }
-    else if (current_ear == "R") {
+    } else if (current_ear == "R") {
       switch (current_sound_stage) {
         case 1:
           R_band_1_dB = captured_volume;
@@ -111,7 +126,9 @@ class _TestPageState extends State<TestPage> {
           break;
       }
     }
+    _saveSoundTest();
   }
+
   void updateCurrentEar() {
     setState(() {
       if (current_ear == "" && current_sound_stage == 1) {
@@ -137,9 +154,24 @@ class _TestPageState extends State<TestPage> {
           content: const Text('The test has been recorded successfully.'),
           actions: [
             TextButton(
-              onPressed: () {
-                // Navigator.pop(context); // Close the dialog
-                _showProfileCreationDialog(context); // Show the profile creation dialog
+              onPressed: () async {
+                await _saveSoundTest();
+                debugPrint("Volume for frequencies:"
+                    "\n-----------------------"
+                    "\nLeft band 1: $L_band_1_dB"
+                    "\nLeft band 2: $L_band_2_dB"
+                    "\nLeft band 3: $L_band_3_dB"
+                    "\nLeft band 4: $L_band_4_dB"
+                    "\nLeft band 5: $L_band_5_dB"
+                    "\nRight band 1: $R_band_1_dB"
+                    "\nRight band 2: $R_band_2_dB"
+                    "\nRight band 3: $R_band_3_dB"
+                    "\nRight band 4: $R_band_4_dB"
+                    "\nRight band 5: $R_band_5_dB"
+                    "");
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
               },
               child: const Text('OK'),
             ),
@@ -148,96 +180,9 @@ class _TestPageState extends State<TestPage> {
       },
     );
   }
-  void _showProfileCreationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Name Your Profile'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Audio Profile Name',
-                      hintText: 'Enter a name for your audio profile',
-                    ),
-                    onChanged: (_) {
-                      chosen_icon = Icons.home;
-                      _saveSoundTest();
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('Choose an Icon:'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.home),
-                        onPressed: () {
-                          setState(() {
-                            chosen_icon = Icons.home;
-                            _saveSoundTest();
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.music_note),
-                        onPressed: () {
-                          setState(() {
-                            chosen_icon = Icons.music_note;
-                            _saveSoundTest();
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.hearing),
-                        onPressed: () {
-                          setState(() {
-                            chosen_icon = Icons.hearing;
-                            _saveSoundTest();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    debugPrint("Volume for frequencies:"
-                        "\n-----------------------"
-                        "\nLeft band 1: $L_band_1_dB"
-                        "\nLeft band 2: $L_band_2_dB"
-                        "\nLeft band 3: $L_band_3_dB"
-                        "\nLeft band 4: $L_band_4_dB"
-                        "\nLeft band 5: $L_band_5_dB"
-                        "\nRight band 1: $R_band_1_dB"
-                        "\nRight band 2: $R_band_2_dB"
-                        "\nRight band 3: $R_band_3_dB"
-                        "\nRight band 4: $R_band_4_dB"
-                        "\nRight band 5: $R_band_5_dB"
-                        "");
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   Future<void> _saveSoundTest() async {
     final soundTest = SoundTest(
       id: widget.soundTestId,
-      name: _nameController.text,
       dateCreated: DateTime.now(),
       soundTestData: {
         'L_band_1_dB': L_band_1_dB,
@@ -251,36 +196,38 @@ class _TestPageState extends State<TestPage> {
         'R_band_4_dB': R_band_4_dB,
         'R_band_5_dB': R_band_5_dB,
       },
-      icon: chosen_icon,
     );
 
     await widget.soundTestProvider.updateSoundTest(soundTest);
   }
-
   double setCurrentEarTextSize(String selected_ear) {
     if (selected_ear == current_ear) {
       return 125.0;
     }
     return 45.0;
   }
+
   double setCurrentEarIconSize(String selected_ear) {
     if (selected_ear == current_ear) {
       return 60.0;
     }
     return 24.0;
   }
+
   IconData setCurrentEarIconDisplay(String selected_ear) {
     if (selected_ear == current_ear) {
       return Icons.volume_up;
     }
     return Icons.volume_off;
   }
+
   Color determineCurrentSoundStageBGColor(int sound_stage) {
     if (sound_stage == current_sound_stage) {
       return Color.fromRGBO(255, 255, 255, 1.0);
     }
     return Color.fromRGBO(133, 86, 169, 1.0);
   }
+
   Color determineCurrentSoundStageTextColor(int sound_stage) {
     if (sound_stage == current_sound_stage) {
       return Colors.black54;
@@ -288,7 +235,6 @@ class _TestPageState extends State<TestPage> {
     return Colors.white;
   }
 
-  //TODO
   final AudioPlayer frequency_player = AudioPlayer();
   final String _band_1_audio = "audio/250Hz.wav";
   final String _band_2_audio = "audio/500Hz.wav";
@@ -356,6 +302,7 @@ class _TestPageState extends State<TestPage> {
     debugPrint("\"I can hear it!\" was pressed.");
     return yes_hear_button_pressed;
   }
+
   void setYesHearButtonPressed(bool state) {
     yes_hear_button_pressed = state;
     getYesHearButtonPressed();
@@ -365,6 +312,7 @@ class _TestPageState extends State<TestPage> {
     debugPrint("\"I can not hear it!\" was pressed.");
     return no_hear_button_pressed;
   }
+
   void setNoHearButtonPressed(bool state) {
     no_hear_button_pressed = state;
     getNoHearButtonPressed();
@@ -374,8 +322,7 @@ class _TestPageState extends State<TestPage> {
     if (no_hear_button_pressed == true) {
       if (yes_hear_button_pressed == false && no_hear_button_pressed == true) {
         incrementFrequencyVolume(frequency_player);
-      }
-      else if (yes_hear_button_pressed == true) {
+      } else if (yes_hear_button_pressed == true) {
         updateFrequency_dB_Value();
         setState(() {
           current_sound_stage++;
@@ -385,8 +332,7 @@ class _TestPageState extends State<TestPage> {
         updateCurrentEar();
         setCurrentVolume(1.00);
       }
-    }
-    else if (yes_hear_button_pressed == true) {
+    } else if (yes_hear_button_pressed == true) {
       if (current_volume == MIN_VOLUME) {
         updateFrequency_dB_Value();
         setState(() {
@@ -396,8 +342,7 @@ class _TestPageState extends State<TestPage> {
         yes_hear_button_pressed = false;
         updateCurrentEar();
         setCurrentVolume(1.00);
-      }
-      else {
+      } else {
         decrementFrequencyVolume(frequency_player);
         yes_hear_button_pressed = false;
       }
@@ -407,17 +352,31 @@ class _TestPageState extends State<TestPage> {
 
   void handleStartTest() {
     setState(() {
-      start_pressed = true; // Set the flag to indicate the test has started
+      start_pressed = true;
       debugPrint("Begin hearing test");
     });
     initializeTestSequence();
   }
 
   void initializeTestSequence() {
-    current_ear = "L";
-    ear_balance = -1.0;
-    current_sound_stage = 1;
-    current_volume = 1.00;
+    setState(() {
+      L_band_1_dB = 0.0;
+      L_band_2_dB = 0.0;
+      L_band_3_dB = 0.0;
+      L_band_4_dB = 0.0;
+      L_band_5_dB = 0.0;
+
+      R_band_1_dB = 0.0;
+      R_band_2_dB = 0.0;
+      R_band_3_dB = 0.0;
+      R_band_4_dB = 0.0;
+      R_band_5_dB = 0.0;
+
+      current_ear = "L";
+      ear_balance = -1.0;
+      current_sound_stage = 1;
+      current_volume = 1.00;
+    });
 
     playFrequency(ear_balance);
   }
@@ -438,15 +397,21 @@ class _TestPageState extends State<TestPage> {
                   content: const Text("Are you sure you want to cancel the test?"),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(), // Close dialog
+                      onPressed: () => Navigator.of(context).pop(),
                       child: const Text("No"),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        //stop audio
                         frequency_player.stop();
                         frequency_player.setReleaseMode(ReleaseMode.release);
-                        Navigator.of(context).pop(); // Close dialog
-                        Navigator.of(context).pop(); // Go back to the previous screen
+
+                        final resetTest = SoundTest.defaultTest(widget.soundTestId);
+                        await widget.soundTestProvider.updateSoundTest(resetTest);
+
+                        if (context.mounted) {
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        }
                       },
                       child: const Text("Yes"),
                     ),
@@ -474,20 +439,17 @@ class _TestPageState extends State<TestPage> {
                 children: [
                   Text(
                     "Click the button below when you hear the sound. This will record the volume at which you can hear the frequency.",
-                    style: TextStyle(
-                        fontSize: 20
-                    ),
+                    style: TextStyle(fontSize: 20),
                   ),
                 ],
               ),
             ),
-            // Actual hearing test part
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildEarIdentifier(context),
                 _buildFrequencyStageSelection(context),
-                start_pressed ? _build_dB_AndButtons(context) : _buildStartButton(context), // Conditionally render buttons
+                start_pressed ? _build_dB_AndButtons(context) : _buildStartButton(context),
               ],
             ),
           ],
@@ -498,140 +460,140 @@ class _TestPageState extends State<TestPage> {
 
   Widget _buildEarIdentifier(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 50),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  setCurrentEarIconDisplay("L"),
-                  size: setCurrentEarIconSize("L"),
+      padding: const EdgeInsets.symmetric(horizontal: 50),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(
+                setCurrentEarIconDisplay("L"),
+                size: setCurrentEarIconSize("L"),
+              ),
+              Text(
+                "L",
+                style: TextStyle(
+                  fontSize: setCurrentEarTextSize("L"),
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
-                  "L",
-                  style: TextStyle(
-                      fontSize: setCurrentEarTextSize("L"),
-                      fontWeight: FontWeight.bold
-                  ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                setCurrentEarIconDisplay("R"),
+                size: setCurrentEarIconSize("R"),
+              ),
+              Text(
+                "R",
+                style: TextStyle(
+                  fontSize: setCurrentEarTextSize("R"),
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-            Row(
-              children: [
-                Icon(
-                  setCurrentEarIconDisplay("R"),
-                  size: setCurrentEarIconSize("R"),
-                ),
-                Text(
-                  "R",
-                  style: TextStyle(
-                      fontSize: setCurrentEarTextSize("R"),
-                      fontWeight: FontWeight.bold
-                  ),
-                ),
-              ],
-            )
-          ],
-        )
+              ),
+            ],
+          )
+        ],
+      ),
     );
   }
 
   Widget _buildFrequencyStageSelection(BuildContext context) {
     return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 60),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  height: 35,
-                  width: 35,
-                  alignment: Alignment.center, // Centers text
-                  decoration: BoxDecoration(
-                    color: determineCurrentSoundStageBGColor(1),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "1",
-                    style: TextStyle(
-                      color: determineCurrentSoundStageTextColor(1),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Container(
-                  height: 35,
-                  width: 35,
-                  alignment: Alignment.center, // Centers text
-                  decoration: BoxDecoration(
-                    color: determineCurrentSoundStageBGColor(2),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "2",
-                    style: TextStyle(
-                      color: determineCurrentSoundStageTextColor(2),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Container(
-                  height: 35,
-                  width: 35,
-                  alignment: Alignment.center, // Centers text
-                  decoration: BoxDecoration(
-                    color: determineCurrentSoundStageBGColor(3),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "3",
-                    style: TextStyle(
-                      color: determineCurrentSoundStageTextColor(3),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Container(
-                  height: 35,
-                  width: 35,
-                  alignment: Alignment.center, // Centers text
-                  decoration: BoxDecoration(
-                    color: determineCurrentSoundStageBGColor(4),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "4",
-                    style: TextStyle(
-                      color: determineCurrentSoundStageTextColor(4),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Container(
-                  height: 35,
-                  width: 35,
-                  alignment: Alignment.center, // Centers text
-                  decoration: BoxDecoration(
-                    color: determineCurrentSoundStageBGColor(5),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "5",
-                    style: TextStyle(
-                      color: determineCurrentSoundStageTextColor(5),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
+      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 60),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            height: 35,
+            width: 35,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: determineCurrentSoundStageBGColor(1),
+              borderRadius: BorderRadius.circular(999),
             ),
-          );
+            child: Text(
+              "1",
+              style: TextStyle(
+                color: determineCurrentSoundStageTextColor(1),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            height: 35,
+            width: 35,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: determineCurrentSoundStageBGColor(2),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              "2",
+              style: TextStyle(
+                color: determineCurrentSoundStageTextColor(2),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            height: 35,
+            width: 35,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: determineCurrentSoundStageBGColor(3),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              "3",
+              style: TextStyle(
+                color: determineCurrentSoundStageTextColor(3),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            height: 35,
+            width: 35,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: determineCurrentSoundStageBGColor(4),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              "4",
+              style: TextStyle(
+                color: determineCurrentSoundStageTextColor(4),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            height: 35,
+            width: 35,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: determineCurrentSoundStageBGColor(5),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              "5",
+              style: TextStyle(
+                color: determineCurrentSoundStageTextColor(5),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStartButton(BuildContext context) {
@@ -644,7 +606,7 @@ class _TestPageState extends State<TestPage> {
           ElevatedButton(
             onPressed: () {
               handleStartTest();
-            }, // Call handleStartTest without parentheses
+            },
             child: const Text("Begin Test"),
           ),
         ],
@@ -659,11 +621,11 @@ class _TestPageState extends State<TestPage> {
         Padding(
           padding: EdgeInsets.all(10),
           child: Container(
-            width: 100, // Set a fixed width for the background
-            padding: EdgeInsets.all(8), // Add padding to create thickness around the text
+            width: 100,
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Color.fromRGBO(133, 86, 169, 1.0), // Set the background color
-              borderRadius: BorderRadius.circular(12), // Add rounded corners
+              color: Color.fromRGBO(133, 86, 169, 1.0),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               "${convertVolumePercentTo_dB(current_volume).toInt()} dB",
@@ -672,9 +634,9 @@ class _TestPageState extends State<TestPage> {
                 color: Colors.white,
                 fontSize: 20,
               ),
-              textAlign: TextAlign.center, // Center the text within the container
+              textAlign: TextAlign.center,
             ),
-          )
+          ),
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 25),
