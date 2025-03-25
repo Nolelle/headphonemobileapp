@@ -1,40 +1,60 @@
-import 'package:flutter/material.dart';
-
 class SoundTest {
   final String id;
-  final String name;
   final DateTime dateCreated;
-  final Map<String, dynamic> soundTestData;
-  //this is for customization and identification purposes only we can remove this if needed
-  final IconData icon; // Add this field
+  final Map<String, double> soundTestData;
 
   const SoundTest({
     required this.id,
-    required this.name,
     required this.dateCreated,
     required this.soundTestData,
-    //this is for customization and identification purposes only we can remove this if needed
-    this.icon = Icons.home, // Default icon
   });
 
-  // Convert SoundTest to JSON Map
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
       'soundTestData': soundTestData,
       'dateCreated': dateCreated.toIso8601String(),
-      'icon': icon.codePoint, // Save the icon as a code point
     };
   }
 
-  // Create SoundTest from JSON Map
-  factory SoundTest.fromJson(String presetId, Map<String, dynamic> json) {
+  factory SoundTest.fromJson(String id, Map<String, dynamic> json) {
+    final rawData = json['soundTestData'] as Map<String, dynamic>;
+    final soundTestData = <String, double>{};
+
+    // Explicit conversion for each field
+    soundTestData['L_band_1_dB'] = (rawData['L_band_1_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['L_band_2_dB'] = (rawData['L_band_2_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['L_band_3_dB'] = (rawData['L_band_3_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['L_band_4_dB'] = (rawData['L_band_4_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['L_band_5_dB'] = (rawData['L_band_5_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['R_band_1_dB'] = (rawData['R_band_1_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['R_band_2_dB'] = (rawData['R_band_2_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['R_band_3_dB'] = (rawData['R_band_3_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['R_band_4_dB'] = (rawData['R_band_4_dB'] as num?)?.toDouble() ?? 0.0;
+    soundTestData['R_band_5_dB'] = (rawData['R_band_5_dB'] as num?)?.toDouble() ?? 0.0;
+
     return SoundTest(
-      id: presetId,
-      name: json['name'] as String,
+      id: id,
       dateCreated: DateTime.parse(json['dateCreated'] as String),
-      soundTestData: Map<String, dynamic>.from(json['soundTestData'] as Map),
-      icon: IconData(json['icon'] as int, fontFamily: 'MaterialIcons'), // Load the icon
+      soundTestData: soundTestData,
+    );
+  }
+
+  factory SoundTest.defaultTest(String id) {
+    return SoundTest(
+      id: id,
+      dateCreated: DateTime.now(),
+      soundTestData: {
+        'L_band_1_dB': 0.0,
+        'L_band_2_dB': 0.0,
+        'L_band_3_dB': 0.0,
+        'L_band_4_dB': 0.0,
+        'L_band_5_dB': 0.0,
+        'R_band_1_dB': 0.0,
+        'R_band_2_dB': 0.0,
+        'R_band_3_dB': 0.0,
+        'R_band_4_dB': 0.0,
+        'R_band_5_dB': 0.0,
+      },
     );
   }
 }
