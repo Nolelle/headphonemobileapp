@@ -196,46 +196,32 @@ class _TestPageState extends State<TestPage> {
   }
 
   void _showTestCompletionDialog(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            'Test Completed',
-            style: TextStyle(
-              fontSize: (screenWidth * 0.05).clamp(18.0, 24.0),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            'Your hearing test has been completed successfully! Press OK to view your results on the audiogram.',
-            style: TextStyle(
-              fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
-            ),
-          ),
-          contentPadding: EdgeInsets.fromLTRB(screenWidth * 0.06,
-              screenWidth * 0.04, screenWidth * 0.06, screenWidth * 0.02),
-          actionsPadding: EdgeInsets.all(screenWidth * 0.03),
+          title: const Text('Test Complete'),
+          content:
+              const Text('Your hearing test has been completed and saved.'),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Return to previous screen
+                // First pop the dialog
+                Navigator.of(context).pop();
+                // Then pop the test page to return to sound test page
+                Navigator.of(context).pop();
+                // Show a success toast on the sound test page
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test results saved successfully'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
+              child: const Text('OK'),
             ),
           ],
         );
@@ -435,6 +421,9 @@ class _TestPageState extends State<TestPage> {
         incrementFrequencyVolume(frequency_player);
       } else if (yes_hear_button_pressed == true) {
         updateFrequency_dB_Value();
+        _showCustomToast(
+            context,
+            'Value recorded for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz');
         setState(() {
           current_sound_stage++;
         });
@@ -446,6 +435,9 @@ class _TestPageState extends State<TestPage> {
     } else if (yes_hear_button_pressed == true) {
       if (current_volume == MIN_VOLUME) {
         updateFrequency_dB_Value();
+        _showCustomToast(
+            context,
+            'Value recorded for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz');
         setState(() {
           current_sound_stage++;
         });
@@ -601,13 +593,21 @@ class _TestPageState extends State<TestPage> {
                                 horizontal: screenWidth * 0.06,
                                 vertical: screenHeight * 0.02),
                             child: Text(
-                              'Please wear headphones and find a quiet place for this test. '
-                              'You will hear a series of tones and need to indicate whether you can hear them or not.',
+                              'Find a quiet place for this test.\n\n'
+                              'How the test works:\n'
+                              '1. You will hear tones in each ear at different frequencies\n'
+                              '2. Press "I can hear it!" when you first hear a sound\n'
+                              '3. The volume will decrease and you should keep pressing "I can hear it!" until you can\'t hear it anymore\n'
+                              '4. When you can\'t hear the sound anymore, press "I cannot hear it!"\n'
+                              '5. If you press "I cannot hear it!" and then hear it again, press "I can hear it!"\n'
+                              '6. This will record your hearing threshold for that frequency\n'
+                              '7. The test will automatically move to the next frequency\n'
+                              '8. This process repeats for all frequencies in both ears',
                               style: TextStyle(
-                                fontSize: screenWidth > 600 ? 20.0 : 16.0,
+                                fontSize: screenWidth > 600 ? 18.0 : 14.0,
                                 color: textColor,
                               ),
-                              textAlign: TextAlign.center,
+                              textAlign: TextAlign.left,
                             ),
                           ),
                         ),
