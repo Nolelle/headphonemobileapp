@@ -20,9 +20,7 @@ class SoundTest {
       'soundTestData': soundTestData,
       'dateCreated': dateCreated.toIso8601String(),
       'name': name,
-      'iconCodePoint': icon?.codePoint,
-      'iconFontFamily': icon?.fontFamily,
-      'iconFontPackage': icon?.fontPackage,
+      // Using constant icon (Icons.hearing) to avoid tree-shaking issues with non-constant IconData
     };
   }
 
@@ -52,22 +50,12 @@ class SoundTest {
     soundTestData['R_band_5_dB'] =
         (rawData['R_band_5_dB'] as num?)?.toDouble() ?? 0.0;
 
-    // Handle icon data
-    IconData? icon;
-    if (json['iconCodePoint'] != null) {
-      icon = IconData(
-        json['iconCodePoint'] as int,
-        fontFamily: json['iconFontFamily'] as String?,
-        fontPackage: json['iconFontPackage'] as String?,
-      );
-    }
-
     return SoundTest(
       id: id,
       name: json['name'] as String? ?? 'Audio Profile',
       dateCreated: DateTime.parse(json['dateCreated'] as String),
       soundTestData: soundTestData,
-      icon: icon,
+      icon: Icons.hearing,
     );
   }
 
@@ -88,6 +76,7 @@ class SoundTest {
         'R_band_4_dB': 0.0,
         'R_band_5_dB': 0.0,
       },
+      icon: Icons.hearing,
     );
   }
 }

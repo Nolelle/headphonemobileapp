@@ -32,9 +32,6 @@ class _TestPageState extends State<TestPage> {
   bool no_hear_button_pressed = false;
   double ear_balance = 0.0;
 
-  // Declare with correct type
-  IconData? chosen_icon = Icons.music_note;
-
   // Test measurements for left and right ear frequencies
   double L_user_250Hz_dB = 0.0;
   double L_user_500Hz_dB = 0.0;
@@ -82,10 +79,6 @@ class _TestPageState extends State<TestPage> {
         R_user_2000Hz_dB = soundTest.soundTestData['R_user_2000Hz_dB'] ?? 0.0;
         R_user_4000Hz_dB = soundTest.soundTestData['R_user_4000Hz_dB'] ?? 0.0;
         R_user_8000Hz_dB = soundTest.soundTestData['R_user_8000Hz_dB'] ?? 0.0;
-
-        if (soundTest.icon != null) {
-          chosen_icon = soundTest.icon;
-        }
       });
     }
   }
@@ -152,7 +145,7 @@ class _TestPageState extends State<TestPage> {
           break;
       }
     }
-    _saveSoundTest(chosen_icon);
+    _saveSoundTest();
   }
 
   void updateCurrentEar() {
@@ -174,6 +167,7 @@ class _TestPageState extends State<TestPage> {
   void _showTestCompletionDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Test Completed'),
@@ -182,8 +176,8 @@ class _TestPageState extends State<TestPage> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
-                _showProfileCreationDialog(
-                    context); // Show the profile creation dialog
+                Navigator.of(context)
+                    .pop(true); // Return true to indicate test completion
               },
               child: const Text('OK'),
             ),
@@ -193,106 +187,24 @@ class _TestPageState extends State<TestPage> {
     );
   }
 
-  void _showProfileCreationDialog(BuildContext context) {
-    IconData selectedIcon =
-        chosen_icon ?? Icons.music_note; // Use current icon or default
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Name Your Profile'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Audio Profile Name',
-                      hintText: 'Enter a name for your audio profile',
-                    ),
-                    onChanged: (_) {
-                      // No immediate save on text change
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('Choose an Icon:'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.home),
-                        onPressed: () {
-                          setState(() {
-                            selectedIcon = Icons.home;
-                            chosen_icon = selectedIcon;
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.music_note),
-                        onPressed: () {
-                          setState(() {
-                            selectedIcon = Icons.music_note;
-                            chosen_icon = selectedIcon;
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.hearing),
-                        onPressed: () {
-                          setState(() {
-                            selectedIcon = Icons.hearing;
-                            chosen_icon = selectedIcon;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    _saveSoundTest(selectedIcon);
-
-                    debugPrint("Volume for frequencies:"
-                        "\n-----------------------"
-                        "\nLeft 250Hz: $L_user_250Hz_dB"
-                        "\nLeft 500Hz: $L_user_500Hz_dB"
-                        "\nLeft 1000Hz: $L_user_1000Hz_dB"
-                        "\nLeft 2000Hz: $L_user_2000Hz_dB"
-                        "\nLeft 4000Hz: $L_user_4000Hz_dB"
-                        "\nLeft 8000Hz: $L_user_8000Hz_dB"
-                        "\nRight 250Hz: $R_user_250Hz_dB"
-                        "\nRight 500Hz: $R_user_500Hz_dB"
-                        "\nRight 1000Hz: $R_user_1000Hz_dB"
-                        "\nRight 2000Hz: $R_user_2000Hz_dB"
-                        "\nRight 4000Hz: $R_user_4000Hz_dB"
-                        "\nRight 8000Hz: $R_user_8000Hz_dB"
-                        "");
-
-                    Navigator.of(context).popUntil(
-                        (route) => route.isFirst); // Go back to the first route
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  void _showSaveConfirmationDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Test values saved successfully'),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
-  Future<void> _saveSoundTest(IconData? chosenIcon) async {
+  Future<void> _saveSoundTest() async {
     final soundTest = SoundTest(
       id: widget.soundTestId,
       dateCreated: DateTime.now(),
-      name: _nameController.text.isNotEmpty
-          ? _nameController.text
-          : (widget.soundTestName ?? 'Audio Profile'),
+      name: widget.soundTestName ?? 'Audio Profile',
       soundTestData: {
         'L_user_250Hz_dB': L_user_250Hz_dB,
         'L_user_500Hz_dB': L_user_500Hz_dB,
@@ -307,10 +219,13 @@ class _TestPageState extends State<TestPage> {
         'R_user_4000Hz_dB': R_user_4000Hz_dB,
         'R_user_8000Hz_dB': R_user_8000Hz_dB,
       },
-      icon: chosenIcon,
+      icon: Icons.hearing,
     );
 
     await widget.soundTestProvider.updateSoundTest(soundTest);
+    if (mounted) {
+      _showSaveConfirmationDialog(context);
+    }
   }
 
   double setCurrentEarTextSize(String selectedEar) {
@@ -762,15 +677,18 @@ class _TestPageState extends State<TestPage> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 18.75, horizontal: 25),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
+              minimumSize: const Size(240, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text(
-              "Begin Test",
+              "Begin Hearing Test",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

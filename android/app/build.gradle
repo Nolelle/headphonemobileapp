@@ -43,6 +43,21 @@ android {
         checkReleaseBuilds false
         abortOnError false
     }
+    
+    // Fix for unit test dependencies and circular dependency issues
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+        }
+    }
+}
+
+// Fix for InvalidUserCodeException
+tasks.matching { task -> 
+    task.name.startsWith('compile') && task.name.endsWith('UnitTestKotlin') 
+}.configureEach { task ->
+    task.enabled = gradle.startParameter.taskNames.any { name -> name.toLowerCase().contains('test') }
 }
 
 flutter {
