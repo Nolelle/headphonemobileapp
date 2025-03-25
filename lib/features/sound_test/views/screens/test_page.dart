@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../providers/sound_test_provider.dart';
 import '../../models/sound_test.dart';
 
@@ -46,14 +47,41 @@ class _TestPageState extends State<TestPage> {
   double R_user_2000Hz_dB = 0.0;
   double R_user_4000Hz_dB = 0.0;
 
+  // Updated constants for proper dB SPL mapping
+  final double MAX_DB_SPL = 85.0; // Maximum volume in dB SPL
+  final double MIN_DB_SPL = 30.0; // Minimum volume in dB SPL
+  final double INITIAL_DB_SPL = 65.0; // Starting volume in dB SPL
+  final double STEP_DOWN_DB = 10.0; // Step down size in dB
+  final double STEP_UP_DB = 5.0; // Step up size in dB
+
   final double MAX_VOLUME = 1.0;
   final double MIN_VOLUME = 0.01;
   final int TIMER_DURATION = 10;
+
+  // Test state tracking
+  bool is_finding_threshold = false;
+  double last_heard_db = 0.0;
+  int consecutive_not_heard = 0;
+
+  bool is_sound_playing = false;
+
+  final AudioPlayer frequency_player = AudioPlayer();
+  final String _250Hz_audio = "audio/250Hz.wav";
+  final String _500Hz_audio = "audio/500Hz.wav";
+  final String _1000Hz_audio = "audio/1000Hz.wav";
+  final String _2000Hz_audio = "audio/2000Hz.wav";
+  final String _4000Hz_audio = "audio/4000Hz.wav";
+
+  bool _isBluetoothConnected = false;
+  final MethodChannel _bluetoothChannel =
+      const MethodChannel('com.example.headphones/bluetooth');
 
   @override
   void initState() {
     super.initState();
     _loadExistingTestData();
+    _checkBluetoothConnection();
+    _initializeAudio();
 
     if (widget.soundTestName != null) {
       _nameController.text = widget.soundTestName!;
@@ -80,23 +108,62 @@ class _TestPageState extends State<TestPage> {
     }
   }
 
+  Future<void> _initializeAudio() async {
+    try {
+      // Configure audio session for external playback
+      // Use mediaPlayer mode which is better for Bluetooth devices
+      await frequency_player.setPlayerMode(PlayerMode.mediaPlayer);
+
+      debugPrint("Audio player initialized with mediaPlayer mode");
+
+      // Force release any previously playing audio
+      await frequency_player.stop();
+      await frequency_player.release();
+
+      // Set up error handling using onPlayerStateChanged
+      frequency_player.onPlayerStateChanged.listen((state) {
+        debugPrint("Audio player state changed: $state");
+        if (state == PlayerState.completed && is_sound_playing) {
+          // If we're supposed to be playing but the sound completed, restart it
+          playFrequency(ear_balance);
+        }
+      });
+    } catch (e) {
+      debugPrint("Error initializing audio: $e");
+      if (mounted) {
+        _showCustomToast(context,
+            'Error setting up audio. Please check your earphones connection.');
+      }
+    }
+  }
+
   @override
   void dispose() {
+    try {
+      stopSound();
+      frequency_player.dispose();
+    } catch (e) {
+      debugPrint("Error disposing audio player: $e");
+    }
     _nameController.dispose();
-    frequency_player.dispose();
     super.dispose();
   }
 
-  double convertVolumePercentTo_dB(double volume) {
-    // Convert from percentage to dB SPL
-    double dbSplVolume = 20 * log(volume);
-    debugPrint("Volume in dB SPL: $dbSplVolume");
-    return dbSplVolume;
+  double convertDBSPLToVolume(double dbSPL) {
+    // Convert dB SPL to a volume value between 0 and 1
+    // Using the formula: volume = 10^((dbSPL - MAX_DB_SPL)/20)
+    return pow(10, (dbSPL - MAX_DB_SPL) / 20).toDouble().clamp(0.0, 1.0);
+  }
+
+  double convertVolumeToDBSPL(double volume) {
+    // Convert volume (0-1) to dB SPL
+    // Using the formula: dbSPL = 20 * log10(volume) + MAX_DB_SPL
+    return (20 * log(volume) / ln10 + MAX_DB_SPL).clamp(MIN_DB_SPL, MAX_DB_SPL);
   }
 
   void updateFrequency_dB_Value() {
     double capturedVolume = current_volume;
-    double dbValue = convertVolumePercentTo_dB(capturedVolume);
+    double dbValue = convertVolumeToDBSPL(capturedVolume);
 
     if (current_ear == "L") {
       switch (current_sound_stage) {
@@ -332,42 +399,92 @@ class _TestPageState extends State<TestPage> {
     return Colors.white;
   }
 
-  final AudioPlayer frequency_player = AudioPlayer();
-  final String _250Hz_audio = "audio/250Hz.wav";
-  final String _500Hz_audio = "audio/500Hz.wav";
-  final String _1000Hz_audio = "audio/1000Hz.wav";
-  final String _2000Hz_audio = "audio/2000Hz.wav";
-  final String _4000Hz_audio = "audio/4000Hz.wav";
-
   Future<void> playFrequency(double balance) async {
-    await frequency_player.stop();
-    String currentFrequency = "";
+    try {
+      debugPrint("AUDIO DEBUG: Starting playFrequency with balance: $balance");
 
-    switch (current_sound_stage) {
-      case 1:
-        currentFrequency = _250Hz_audio;
-        break;
-      case 2:
-        currentFrequency = _500Hz_audio;
-        break;
-      case 3:
-        currentFrequency = _1000Hz_audio;
-        break;
-      case 4:
-        currentFrequency = _2000Hz_audio;
-        break;
-      case 5:
-        currentFrequency = _4000Hz_audio;
-        break;
+      // Always test by playing a sound
+      String currentFrequency = "";
+
+      switch (current_sound_stage) {
+        case 1:
+          currentFrequency = _250Hz_audio;
+          break;
+        case 2:
+          currentFrequency = _500Hz_audio;
+          break;
+        case 3:
+          currentFrequency = _1000Hz_audio;
+          break;
+        case 4:
+          currentFrequency = _2000Hz_audio;
+          break;
+        case 5:
+          currentFrequency = _4000Hz_audio;
+          break;
+      }
+
+      // Stop any currently playing audio
+      await frequency_player.stop();
+      is_sound_playing = false;
+
+      debugPrint("AUDIO DEBUG: Playing frequency: $currentFrequency");
+      debugPrint(
+          "AUDIO DEBUG: Current volume: ${current_volume.toStringAsFixed(2)}");
+      debugPrint(
+          "AUDIO DEBUG: Current dB SPL: ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)}");
+
+      // Set to mediaPlayer mode for better Bluetooth compatibility
+      await frequency_player.setReleaseMode(ReleaseMode.loop);
+      await frequency_player.setPlayerMode(PlayerMode.mediaPlayer);
+      await frequency_player.setVolume(current_volume);
+
+      // Small delay to ensure audio system is ready
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      debugPrint("AUDIO DEBUG: About to call play() method");
+
+      // Play the audio - using source path directly for more reliable loading
+      final source = AssetSource(currentFrequency);
+      debugPrint("AUDIO DEBUG: Asset source created: ${source.path}");
+
+      try {
+        await frequency_player.play(
+          source,
+          volume: current_volume,
+          balance: balance,
+        );
+
+        debugPrint("AUDIO DEBUG: Successfully started playback");
+        is_sound_playing = true;
+      } catch (playError) {
+        debugPrint("AUDIO DEBUG: Error during audio play: $playError");
+        // Try again with simplified parameters
+        try {
+          debugPrint("AUDIO DEBUG: Trying simplified playback");
+          await frequency_player.play(source);
+          await frequency_player.setVolume(current_volume);
+          is_sound_playing = true;
+        } catch (retryError) {
+          debugPrint("AUDIO DEBUG: Retry also failed: $retryError");
+          rethrow;
+        }
+      }
+    } catch (e) {
+      debugPrint("AUDIO DEBUG: Error playing frequency: $e");
+      if (mounted) {
+        _showCustomToast(context, 'Error playing audio: $e');
+      }
     }
-    await frequency_player.setReleaseMode(ReleaseMode.loop);
-    await frequency_player.play(
-      AssetSource(currentFrequency),
-      volume: current_volume,
-      balance: balance,
-    );
+  }
 
-    debugPrint("Playing $currentFrequency at $current_volume dB");
+  void stopSound() {
+    try {
+      frequency_player.stop();
+      is_sound_playing = false;
+    } catch (e) {
+      debugPrint("Error stopping sound: $e");
+    }
   }
 
   void setCurrentVolume(double newVolume) {
@@ -377,20 +494,26 @@ class _TestPageState extends State<TestPage> {
   }
 
   Future<void> decrementFrequencyVolume(AudioPlayer player) async {
-    double newVolume = current_volume - 0.05;
-    debugPrint("Current volume: ${current_volume.toStringAsFixed(2)}");
-    if (newVolume <= MIN_VOLUME) {
-      newVolume = 0.01;
-    }
+    double currentDBSPL = convertVolumeToDBSPL(current_volume);
+    double newDBSPL =
+        (currentDBSPL - STEP_DOWN_DB).clamp(MIN_DB_SPL, MAX_DB_SPL);
+    double newVolume = convertDBSPLToVolume(newDBSPL);
+
+    debugPrint("Current dB SPL: ${currentDBSPL.toStringAsFixed(1)}");
+    debugPrint("New dB SPL: ${newDBSPL.toStringAsFixed(1)}");
+
     setCurrentVolume(newVolume);
     await player.setVolume(newVolume);
   }
 
   Future<void> incrementFrequencyVolume(AudioPlayer player) async {
-    double newVolume = current_volume + 0.025;
-    if (newVolume > MAX_VOLUME) {
-      newVolume = MAX_VOLUME;
-    }
+    double currentDBSPL = convertVolumeToDBSPL(current_volume);
+    double newDBSPL = (currentDBSPL + STEP_UP_DB).clamp(MIN_DB_SPL, MAX_DB_SPL);
+    double newVolume = convertDBSPLToVolume(newDBSPL);
+
+    debugPrint("Current dB SPL: ${currentDBSPL.toStringAsFixed(1)}");
+    debugPrint("New dB SPL: ${newDBSPL.toStringAsFixed(1)}");
+
     setCurrentVolume(newVolume);
     await player.setVolume(newVolume);
   }
@@ -416,41 +539,93 @@ class _TestPageState extends State<TestPage> {
   }
 
   void handleHearingTestSequence() {
-    if (no_hear_button_pressed == true) {
-      if (yes_hear_button_pressed == false && no_hear_button_pressed == true) {
+    if (no_hear_button_pressed) {
+      debugPrint(
+          "User pressed 'Cannot Hear' at ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)} dB SPL");
+
+      // Reset for next button press
+      no_hear_button_pressed = false;
+
+      if (!is_finding_threshold) {
+        // First time they can't hear it - we found a potential threshold
+        debugPrint(
+            "First time user can't hear the tone - entering threshold finding phase");
+        last_heard_db = convertVolumeToDBSPL(current_volume) + STEP_DOWN_DB;
+        debugPrint(
+            "Found potential threshold at ${last_heard_db.toStringAsFixed(1)} dB SPL");
+        is_finding_threshold = true;
+
+        // Show message about confirmation phase - keeping this toast as it's user guidance
+        _showCustomToast(context,
+            'Press "I can hear it" if you can hear the tone to confirm your threshold.');
+
+        // Go back up 5dB
         incrementFrequencyVolume(frequency_player);
-      } else if (yes_hear_button_pressed == true) {
-        updateFrequency_dB_Value();
-        _showCustomToast(
-            context,
-            'Value recorded for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz');
-        setState(() {
-          current_sound_stage++;
-        });
-        no_hear_button_pressed = false;
-        yes_hear_button_pressed = false;
-        updateCurrentEar();
-        setCurrentVolume(1.00);
+        debugPrint("Increased volume for confirmation");
       }
-    } else if (yes_hear_button_pressed == true) {
-      if (current_volume == MIN_VOLUME) {
+    } else if (yes_hear_button_pressed) {
+      debugPrint(
+          "User pressed 'Can Hear' at ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)} dB SPL");
+
+      // Reset for next button press
+      yes_hear_button_pressed = false;
+
+      if (is_finding_threshold) {
+        // User confirmed they can hear it - save the threshold
         updateFrequency_dB_Value();
         _showCustomToast(
             context,
-            'Value recorded for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz');
+            'Threshold confirmed for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz: ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)} dB SPL');
+
+        // Stop current tone
+        stopSound();
+        debugPrint("Moving to next frequency/ear");
+
+        // Reset for next frequency
         setState(() {
           current_sound_stage++;
+          is_finding_threshold = false;
+          consecutive_not_heard = 0;
+          last_heard_db = 0.0;
         });
-        no_hear_button_pressed = false;
-        yes_hear_button_pressed = false;
+
         updateCurrentEar();
-        setCurrentVolume(1.00);
+        // Start next frequency at initial volume
+        setCurrentVolume(convertDBSPLToVolume(INITIAL_DB_SPL));
+        playFrequency(ear_balance);
       } else {
+        // Still in initial descent - continue going down in steps
         decrementFrequencyVolume(frequency_player);
-        yes_hear_button_pressed = false;
+        debugPrint("Decreased volume to find threshold");
       }
     }
-    playFrequency(ear_balance);
+  }
+
+  // Simple test function to try playing sound directly
+  Future<void> _testPlayDirectSound() async {
+    try {
+      debugPrint("TEST AUDIO: Attempting to play 1kHz test tone directly");
+      // Create a new player instance for testing
+      final testPlayer = AudioPlayer();
+      await testPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+
+      // Play with max volume
+      await testPlayer.setVolume(1.0);
+
+      await testPlayer.play(AssetSource('audio/1000Hz.wav'));
+      debugPrint("TEST AUDIO: Play method completed");
+
+      _showCustomToast(
+          context, "Testing sound playback - you should hear a 1kHz tone");
+
+      // Clean up after 3 seconds
+      await Future.delayed(const Duration(seconds: 3));
+      await testPlayer.stop();
+      await testPlayer.dispose();
+    } catch (e) {
+      debugPrint("TEST AUDIO: Error in test play: $e");
+      _showCustomToast(context, "Error testing audio: $e");
+    }
   }
 
   void handleStartTest() {
@@ -478,7 +653,8 @@ class _TestPageState extends State<TestPage> {
       current_ear = "L";
       ear_balance = -1.0;
       current_sound_stage = 1;
-      current_volume = 1.00;
+      current_volume =
+          convertDBSPLToVolume(INITIAL_DB_SPL); // Start at initial dB SPL
     });
 
     playFrequency(ear_balance);
@@ -519,8 +695,19 @@ class _TestPageState extends State<TestPage> {
         ? Colors.white
         : Colors.black.withOpacity(0.87);
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    // Replace WillPopScope with PopScope for better Android back button handling
+    return PopScope(
+      canPop: !start_pressed || test_completed,
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          return;
+        }
+
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: theme.primaryColor,
@@ -717,61 +904,91 @@ class _TestPageState extends State<TestPage> {
 
           SizedBox(height: screenHeight * 0.008),
 
-          // Chart area
+          // Chart area with extra padding
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: List.generate(
-                frequencies.length,
-                (index) {
-                  final leftBarHeight =
-                      (leftEarDBValues[index] / 60) * barMaxHeight;
-                  final rightBarHeight =
-                      (rightEarDBValues[index] / 60) * barMaxHeight;
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04, // Increased horizontal padding
+                vertical: screenHeight * 0.01,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(
+                  frequencies.length,
+                  (index) {
+                    final leftBarHeight =
+                        (leftEarDBValues[index] / 60) * barMaxHeight;
+                    final rightBarHeight =
+                        (rightEarDBValues[index] / 60) * barMaxHeight;
 
-                  return Expanded(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: screenWidth * 0.004),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Left ear bar with min height to ensure visibility
-                          Container(
-                            height: leftBarHeight > 0
-                                ? max(leftBarHeight, 3.0)
-                                : 0, // Minimum 3px height if value exists
-                            width: (screenWidth * 0.015).clamp(4.0, 12.0),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(4),
+                    // Calculate bar width with proper scaling
+                    final barWidth = (screenWidth * 0.02).clamp(4.0, 10.0);
+                    final columnWidth = screenWidth * 0.15;
+                    final spaceBetweenBars = columnWidth - (barWidth * 2);
+
+                    return Expanded(
+                      flex: 3, // Give each column equal flex
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.015, // Increased padding
+                          vertical: screenHeight * 0.01,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Use Row to position bars side by side
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // Left ear bar with min height to ensure visibility
+                                Container(
+                                  height: leftBarHeight > 0
+                                      ? max(leftBarHeight, 3.0)
+                                      : 0,
+                                  width: barWidth,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                SizedBox(width: spaceBetweenBars / 3),
+                                // Right ear bar with min height to ensure visibility
+                                Container(
+                                  height: rightBarHeight > 0
+                                      ? max(rightBarHeight, 3.0)
+                                      : 0,
+                                  width: barWidth,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          SizedBox(width: screenWidth * 0.01),
-                          // Right ear bar with min height to ensure visibility
-                          Container(
-                            height: rightBarHeight > 0
-                                ? max(rightBarHeight, 3.0)
-                                : 0, // Minimum 3px height if value exists
-                            width: (screenWidth * 0.015).clamp(4.0, 12.0),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4),
+                            SizedBox(height: screenHeight * 0.01),
+                            // Frequency label with better spacing
+                            Container(
+                              width: columnWidth,
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.005),
+                              child: Text(
+                                frequencies[index],
+                                style: TextStyle(
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: screenHeight * 0.005),
-                          // Frequency label
-                          Text(
-                            frequencies[index],
-                            style: TextStyle(fontSize: fontSize),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -810,41 +1027,34 @@ class _TestPageState extends State<TestPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-          child: ElevatedButton(
-            onPressed: handleStartTest,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              padding: EdgeInsets.symmetric(
-                  vertical: screenHeight * 0.025,
-                  horizontal: screenWidth * 0.05),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 5,
-            ),
-            child: Text(
-              "Begin Hearing Test",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: (screenWidth * 0.05)
-                    .clamp(18.0, 28.0), // Between 18-28px based on screen width
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+      child: ElevatedButton(
+        onPressed: handleStartTest,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.primaryColor,
+          padding: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.025, horizontal: screenWidth * 0.05),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 5,
+        ),
+        child: Text(
+          "Begin Hearing Test",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: (screenWidth * 0.05)
+                .clamp(18.0, 28.0), // Between 18-28px based on screen width
+            fontWeight: FontWeight.bold,
           ),
         ),
-      ],
+      ),
     );
   }
 
-  // Update the buttons display
+  // Build I can hear / I cannot hear buttons with more visible styling
   Widget _build_dB_AndButtons(BuildContext context, ThemeData theme) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -852,10 +1062,10 @@ class _TestPageState extends State<TestPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // dB display
+        // dB display with Bluetooth indicator
         Container(
           margin: EdgeInsets.only(bottom: screenHeight * 0.03),
-          width: (screenWidth * 0.35).clamp(120.0, 180.0),
+          width: (screenWidth * 0.45).clamp(150.0, 220.0),
           padding: EdgeInsets.symmetric(
               vertical: screenHeight * 0.015, horizontal: screenWidth * 0.04),
           decoration: BoxDecoration(
@@ -869,14 +1079,41 @@ class _TestPageState extends State<TestPage> {
               ),
             ],
           ),
-          child: Text(
-            "${convertVolumePercentTo_dB(current_volume).toInt()} dB",
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              fontSize: (screenWidth * 0.06).clamp(20.0, 32.0),
-            ),
-            textAlign: TextAlign.center,
+          child: Column(
+            children: [
+              Text(
+                "${convertVolumeToDBSPL(current_volume).toInt()} dB",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  fontSize: (screenWidth * 0.06).clamp(20.0, 32.0),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (!_isBluetoothConnected)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.bluetooth_disabled,
+                        color: Colors.amber,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "No Bluetooth",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.amber,
+                          fontSize: (screenWidth * 0.03).clamp(12.0, 16.0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
 
@@ -894,7 +1131,10 @@ class _TestPageState extends State<TestPage> {
                       padding: EdgeInsets.only(right: screenWidth * 0.02),
                       child: ElevatedButton(
                         onPressed: () {
-                          setYesHearButtonPressed(true);
+                          setState(() {
+                            yes_hear_button_pressed = true;
+                            no_hear_button_pressed = false;
+                          });
                           handleHearingTestSequence();
                         },
                         style: ElevatedButton.styleFrom(
@@ -925,7 +1165,10 @@ class _TestPageState extends State<TestPage> {
                       padding: EdgeInsets.only(left: screenWidth * 0.02),
                       child: ElevatedButton(
                         onPressed: () {
-                          setNoHearButtonPressed(true);
+                          setState(() {
+                            no_hear_button_pressed = true;
+                            yes_hear_button_pressed = false;
+                          });
                           handleHearingTestSequence();
                         },
                         style: ElevatedButton.styleFrom(
@@ -1112,5 +1355,31 @@ class _TestPageState extends State<TestPage> {
           },
         ) ??
         false;
+  }
+
+  Future<void> _checkBluetoothConnection() async {
+    try {
+      final bool isConnected =
+          await _bluetoothChannel.invokeMethod('isBluetoothHeadsetConnected');
+      setState(() {
+        _isBluetoothConnected = isConnected;
+      });
+
+      if (!isConnected) {
+        debugPrint("WARNING: No Bluetooth headset connected!");
+        if (mounted) {
+          _showCustomToast(context,
+              'Please connect Bluetooth headphones for accurate test results');
+        }
+      } else {
+        debugPrint("Bluetooth headset connected, proceeding with test");
+      }
+    } catch (e) {
+      debugPrint("Error checking Bluetooth connection: $e");
+      // Default to true to avoid blocking test
+      setState(() {
+        _isBluetoothConnected = true;
+      });
+    }
   }
 }
