@@ -23,8 +23,18 @@ class TestPage extends StatefulWidget {
 
 class _TestPageState extends State<TestPage> {
   final TextEditingController _nameController = TextEditingController();
-  late IconData chosen_icon = Icons.music_note;
-  
+  String soundTest_name = '';
+  double current_volume = 1.0;
+  int current_sound_stage = 1;
+  String current_ear = "";
+  bool start_pressed = false;
+  bool yes_hear_button_pressed = false;
+  bool no_hear_button_pressed = false;
+  double ear_balance = 0.0;
+
+  // Declare with correct type
+  IconData? chosen_icon = Icons.music_note;
+
   // Test measurements for left and right ear frequencies
   double L_user_250Hz_dB = 0.0;
   double L_user_500Hz_dB = 0.0;
@@ -40,32 +50,23 @@ class _TestPageState extends State<TestPage> {
   double R_user_4000Hz_dB = 0.0;
   double R_user_8000Hz_dB = 0.0;
 
-  String current_ear = "";
-  double ear_balance = 0.0;
-  int current_sound_stage = 0;
-
-  late double current_volume = 0.50;
   final double MAX_VOLUME = 1.0;
   final double MIN_VOLUME = 0.01;
   final int TIMER_DURATION = 10;
-
-  bool yes_hear_button_pressed = false;
-  bool no_hear_button_pressed = false;
-
-  bool start_pressed = false;
 
   @override
   void initState() {
     super.initState();
     _loadExistingTestData();
-    
+
     if (widget.soundTestName != null) {
       _nameController.text = widget.soundTestName!;
     }
   }
 
   void _loadExistingTestData() {
-    final soundTest = widget.soundTestProvider.getSoundTestById(widget.soundTestId);
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(widget.soundTestId);
     if (soundTest != null) {
       setState(() {
         L_user_250Hz_dB = soundTest.soundTestData['L_user_250Hz_dB'] ?? 0.0;
@@ -81,7 +82,7 @@ class _TestPageState extends State<TestPage> {
         R_user_2000Hz_dB = soundTest.soundTestData['R_user_2000Hz_dB'] ?? 0.0;
         R_user_4000Hz_dB = soundTest.soundTestData['R_user_4000Hz_dB'] ?? 0.0;
         R_user_8000Hz_dB = soundTest.soundTestData['R_user_8000Hz_dB'] ?? 0.0;
-        
+
         if (soundTest.icon != null) {
           chosen_icon = soundTest.icon;
         }
@@ -98,56 +99,56 @@ class _TestPageState extends State<TestPage> {
 
   double convertVolumePercentTo_dB(double volume) {
     // Convert from percentage to dB SPL
-    double dB_SPL_volume = 20 * log(volume);
-    debugPrint("Volume in dB SPL: $dB_SPL_volume");
-    return dB_SPL_volume;
+    double dbSplVolume = 20 * log(volume);
+    debugPrint("Volume in dB SPL: $dbSplVolume");
+    return dbSplVolume;
   }
 
   void updateFrequency_dB_Value() {
-    double captured_volume = current_volume;
-    double db_value = convertVolumePercentTo_dB(captured_volume);
-    
+    double capturedVolume = current_volume;
+    double dbValue = convertVolumePercentTo_dB(capturedVolume);
+
     if (current_ear == "L") {
       switch (current_sound_stage) {
         case 1:
-          debugPrint("Current volume for frequency: $captured_volume");
-          L_user_250Hz_dB = db_value;
+          debugPrint("Current volume for frequency: $capturedVolume");
+          L_user_250Hz_dB = dbValue;
           break;
         case 2:
-          L_user_500Hz_dB = db_value;
+          L_user_500Hz_dB = dbValue;
           break;
         case 3:
-          L_user_1000Hz_dB = db_value;
+          L_user_1000Hz_dB = dbValue;
           break;
         case 4:
-          L_user_2000Hz_dB = db_value;
+          L_user_2000Hz_dB = dbValue;
           break;
         case 5:
-          L_user_4000Hz_dB = db_value;
+          L_user_4000Hz_dB = dbValue;
           break;
         case 6:
-          L_user_8000Hz_dB = db_value;
+          L_user_8000Hz_dB = dbValue;
           break;
       }
     } else if (current_ear == "R") {
       switch (current_sound_stage) {
         case 1:
-          R_user_250Hz_dB = db_value;
+          R_user_250Hz_dB = dbValue;
           break;
         case 2:
-          R_user_500Hz_dB = db_value;
+          R_user_500Hz_dB = dbValue;
           break;
         case 3:
-          R_user_1000Hz_dB = db_value;
+          R_user_1000Hz_dB = dbValue;
           break;
         case 4:
-          R_user_2000Hz_dB = db_value;
+          R_user_2000Hz_dB = dbValue;
           break;
         case 5:
-          R_user_4000Hz_dB = db_value;
+          R_user_4000Hz_dB = dbValue;
           break;
         case 6:
-          R_user_8000Hz_dB = db_value;
+          R_user_8000Hz_dB = dbValue;
           break;
       }
     }
@@ -181,7 +182,8 @@ class _TestPageState extends State<TestPage> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
-                _showProfileCreationDialog(context); // Show the profile creation dialog
+                _showProfileCreationDialog(
+                    context); // Show the profile creation dialog
               },
               child: const Text('OK'),
             ),
@@ -192,7 +194,8 @@ class _TestPageState extends State<TestPage> {
   }
 
   void _showProfileCreationDialog(BuildContext context) {
-    IconData selectedIcon = chosen_icon; // Use current icon
+    IconData selectedIcon =
+        chosen_icon ?? Icons.music_note; // Use current icon or default
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -253,7 +256,7 @@ class _TestPageState extends State<TestPage> {
                 TextButton(
                   onPressed: () {
                     _saveSoundTest(selectedIcon);
-                    
+
                     debugPrint("Volume for frequencies:"
                         "\n-----------------------"
                         "\nLeft 250Hz: $L_user_250Hz_dB"
@@ -270,7 +273,8 @@ class _TestPageState extends State<TestPage> {
                         "\nRight 8000Hz: $R_user_8000Hz_dB"
                         "");
 
-                    Navigator.of(context).popUntil((route) => route.isFirst); // Go back to the first route
+                    Navigator.of(context).popUntil(
+                        (route) => route.isFirst); // Go back to the first route
                   },
                   child: const Text('Save'),
                 ),
@@ -282,11 +286,13 @@ class _TestPageState extends State<TestPage> {
     );
   }
 
-  Future<void> _saveSoundTest(IconData chosenIcon) async {
+  Future<void> _saveSoundTest(IconData? chosenIcon) async {
     final soundTest = SoundTest(
       id: widget.soundTestId,
-      name: _nameController.text.isNotEmpty ? _nameController.text : widget.soundTestName,
       dateCreated: DateTime.now(),
+      name: _nameController.text.isNotEmpty
+          ? _nameController.text
+          : (widget.soundTestName ?? 'Audio Profile'),
       soundTestData: {
         'L_user_250Hz_dB': L_user_250Hz_dB,
         'L_user_500Hz_dB': L_user_500Hz_dB,
@@ -388,29 +394,29 @@ class _TestPageState extends State<TestPage> {
     debugPrint("Playing $currentFrequency at $current_volume dB");
   }
 
-  void setCurrentVolume(double new_volume) {
+  void setCurrentVolume(double newVolume) {
     setState(() {
-      current_volume = new_volume;
+      current_volume = newVolume;
     });
   }
 
   Future<void> decrementFrequencyVolume(AudioPlayer player) async {
-    double new_volume = current_volume - 0.05;
+    double newVolume = current_volume - 0.05;
     debugPrint("Current volume: ${current_volume.toStringAsFixed(2)}");
-    if (new_volume <= MIN_VOLUME) {
-      new_volume = 0.01;
+    if (newVolume <= MIN_VOLUME) {
+      newVolume = 0.01;
     }
-    setCurrentVolume(new_volume);
-    await player.setVolume(new_volume);
+    setCurrentVolume(newVolume);
+    await player.setVolume(newVolume);
   }
 
   Future<void> incrementFrequencyVolume(AudioPlayer player) async {
-    double new_volume = current_volume + 0.025;
-    if (new_volume > MAX_VOLUME) {
-      new_volume = MAX_VOLUME;
+    double newVolume = current_volume + 0.025;
+    if (newVolume > MAX_VOLUME) {
+      newVolume = MAX_VOLUME;
     }
-    setCurrentVolume(new_volume);
-    await player.setVolume(new_volume);
+    setCurrentVolume(newVolume);
+    await player.setVolume(newVolume);
   }
 
   bool getYesHearButtonPressed() {
@@ -528,9 +534,10 @@ class _TestPageState extends State<TestPage> {
                         // Stop audio
                         frequency_player.stop();
                         frequency_player.setReleaseMode(ReleaseMode.release);
-                        
+
                         Navigator.of(context).pop(); // Close dialog
-                        Navigator.of(context).pop(); // Go back to the previous screen
+                        Navigator.of(context)
+                            .pop(); // Go back to the previous screen
                       },
                       child: const Text("Yes"),
                     ),
@@ -572,7 +579,9 @@ class _TestPageState extends State<TestPage> {
               children: [
                 _buildEarIdentifier(context, textColor),
                 _buildFrequencyStageSelection(context, theme),
-                start_pressed ? _build_dB_AndButtons(context, theme) : _buildStartButton(context, theme),
+                start_pressed
+                    ? _build_dB_AndButtons(context, theme)
+                    : _buildStartButton(context, theme),
               ],
             ),
           ],
@@ -753,7 +762,8 @@ class _TestPageState extends State<TestPage> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 18.75, horizontal: 25),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 18.75, horizontal: 25),
             ),
             child: const Text(
               "Begin Test",
@@ -805,7 +815,8 @@ class _TestPageState extends State<TestPage> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
                 child: const Text(
                   'I can hear it!',
@@ -819,7 +830,8 @@ class _TestPageState extends State<TestPage> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
                 child: const Text(
                   'I can not hear it!',

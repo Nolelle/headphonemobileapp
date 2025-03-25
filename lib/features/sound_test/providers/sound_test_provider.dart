@@ -17,9 +17,8 @@ class SoundTestProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  SoundTest? get activeSoundTest => _activeSoundTestId != null
-      ? _soundTests[_activeSoundTestId]
-      : null;
+  SoundTest? get activeSoundTest =>
+      _activeSoundTestId != null ? _soundTests[_activeSoundTestId] : null;
 
   Future<void> fetchSoundTests() async {
     try {
@@ -110,5 +109,29 @@ class SoundTestProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> deleteSoundTest(String id) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await _repository.deleteSoundTest(id);
+      _soundTests.remove(id);
+
+      if (_activeSoundTestId == id) {
+        _activeSoundTestId =
+            _soundTests.isNotEmpty ? _soundTests.keys.first : null;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to delete sound test: $e';
+      notifyListeners();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

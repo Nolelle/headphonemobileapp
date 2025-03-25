@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:projects/features/sound_test/views/screens/test_page.dart';
 import '../../providers/sound_test_provider.dart';
 import '../../models/sound_test.dart';
@@ -68,9 +69,10 @@ class _SoundTestPageState extends State<SoundTestPage> {
         _hasTestBeenTaken = false;
         activeSoundTestId = null;
       } else {
-        activeSoundTestId = widget.soundTestProvider.activeSoundTestId ?? soundTests.keys.first;
+        activeSoundTestId =
+            widget.soundTestProvider.activeSoundTestId ?? soundTests.keys.first;
         final currentTest = soundTests[activeSoundTestId!];
-        _hasTestBeenTaken = currentTest != null && 
+        _hasTestBeenTaken = currentTest != null &&
             currentTest.soundTestData.values.any((v) => v > 0);
       }
     });
@@ -78,24 +80,26 @@ class _SoundTestPageState extends State<SoundTestPage> {
 
   Future<bool> _showResetConfirmationDialog(BuildContext context) async {
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Reset'),
-          content: const Text('Are you sure you want to reset to default values?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Reset'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Confirm Reset'),
+              content: const Text(
+                  'Are you sure you want to reset to default values?'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Reset'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   Future<bool> _showDeleteConfirmationDialog(
@@ -190,16 +194,26 @@ class _SoundTestPageState extends State<SoundTestPage> {
           children: [
             _buildTestResultRow('Left Band 1', getBandValue('L_user_250Hz_dB')),
             _buildTestResultRow('Left Band 2', getBandValue('L_user_500Hz_dB')),
-            _buildTestResultRow('Left Band 3', getBandValue('L_user_1000Hz_dB')),
-            _buildTestResultRow('Left Band 4', getBandValue('L_user_2000Hz_dB')),
-            _buildTestResultRow('Left Band 5', getBandValue('L_user_4000Hz_dB')),
-            _buildTestResultRow('Left Band 6', getBandValue('L_user_8000Hz_dB')),
-            _buildTestResultRow('Right Band 1', getBandValue('R_user_250Hz_dB')),
-            _buildTestResultRow('Right Band 2', getBandValue('R_user_500Hz_dB')),
-            _buildTestResultRow('Right Band 3', getBandValue('R_user_1000Hz_dB')),
-            _buildTestResultRow('Right Band 4', getBandValue('R_user_2000Hz_dB')),
-            _buildTestResultRow('Right Band 5', getBandValue('R_user_4000Hz_dB')),
-            _buildTestResultRow('Right Band 6', getBandValue('R_user_8000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 3', getBandValue('L_user_1000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 4', getBandValue('L_user_2000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 5', getBandValue('L_user_4000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 6', getBandValue('L_user_8000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 1', getBandValue('R_user_250Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 2', getBandValue('R_user_500Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 3', getBandValue('R_user_1000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 4', getBandValue('R_user_2000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 5', getBandValue('R_user_4000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 6', getBandValue('R_user_8000Hz_dB')),
           ],
         ),
         const SizedBox(height: 20),
@@ -274,8 +288,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                 'soundTest_${DateTime.now().millisecondsSinceEpoch}';
                             final newSoundTest = SoundTest(
                               id: newId,
-                              name: 'Audio Profile #${audioProfileCount + 1}',
                               dateCreated: DateTime.now(),
+                              name: 'Audio Profile #${audioProfileCount + 1}',
                               soundTestData: {
                                 'L_user_250Hz_dB': 0.0,
                                 'L_user_500Hz_dB': 0.0,
@@ -309,7 +323,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                 ),
                               );
                               if (context.mounted) {
-                                await widget.soundTestProvider.fetchSoundTests();
+                                await widget.soundTestProvider
+                                    .fetchSoundTests();
                               }
                             }
                           },
@@ -319,12 +334,14 @@ class _SoundTestPageState extends State<SoundTestPage> {
                       _buildInstructions(textColor, iconColor),
                       // Show test results if available for the active profile
                       if (_hasTestBeenTaken && activeSoundTestId != null)
-                        _buildTestResults(widget.soundTestProvider.soundTests[activeSoundTestId!]!),
+                        _buildTestResults(widget
+                            .soundTestProvider.soundTests[activeSoundTestId!]!),
                     ],
                   ),
                 ),
                 // Title of 'Audio Presets' with counter
-                Consumer<SoundTestProvider>(builder: (context, provider, child) {
+                Consumer<SoundTestProvider>(
+                    builder: (context, provider, child) {
                   final audioProfileCount = provider.soundTests.length;
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -348,7 +365,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
                         itemCount: soundTests.length,
                         itemBuilder: (context, index) {
                           final soundTest = soundTests[index];
-                          final isActive = soundTest.id == provider.activeSoundTestId;
+                          final isActive =
+                              soundTest.id == provider.activeSoundTestId;
 
                           return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
@@ -361,14 +379,17 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                           activeSoundTestId = soundTest.id;
                                         });
 
-                                        provider.setActiveSoundTest(soundTest.id);
+                                        provider
+                                            .setActiveSoundTest(soundTest.id);
 
                                         if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
                                             SnackBar(
                                               content: Text(
                                                   '${soundTest.name} Successfully Applied!'),
-                                              duration: const Duration(seconds: 3),
+                                              duration:
+                                                  const Duration(seconds: 3),
                                             ),
                                           );
                                         }
@@ -378,9 +399,11 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                             ? theme.colorScheme.secondary
                                             : theme.primaryColor,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(5),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
                                         ),
-                                        minimumSize: const Size(double.infinity, 50),
+                                        minimumSize:
+                                            const Size(double.infinity, 50),
                                       ),
                                       child: Align(
                                         alignment: Alignment.center,
@@ -396,9 +419,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                                       MainAxisAlignment.start,
                                                   children: [
                                                     Padding(
-                                                      padding:
-                                                          const EdgeInsets.fromLTRB(
-                                                              0, 0, 10, 0),
+                                                      padding: const EdgeInsets
+                                                          .fromLTRB(
+                                                          0, 0, 10, 0),
                                                       child: Icon(
                                                         soundTest.icon,
                                                         color: Colors.white,
@@ -417,14 +440,16 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                                 onPressed: () async {
                                                   final shouldDelete =
                                                       await _showDeleteConfirmationDialog(
-                                                          context, soundTest.name);
+                                                          context,
+                                                          soundTest.name);
                                                   if (shouldDelete) {
                                                     provider.deleteSoundTest(
                                                         soundTest.id);
                                                     setState(() {
                                                       activeSoundTestId = null;
                                                     });
-                                                    ScaffoldMessenger.of(context)
+                                                    ScaffoldMessenger.of(
+                                                            context)
                                                         .showSnackBar(
                                                       SnackBar(
                                                         content: Text(
