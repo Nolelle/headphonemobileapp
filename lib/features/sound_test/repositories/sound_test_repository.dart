@@ -4,9 +4,19 @@ import '../models/sound_test.dart';
 
 class SoundTestRepository {
   static const String _soundTestsKey = 'soundTestsMap';
+  SharedPreferences? _prefs;
+
+  // Constructor that allows injection for testing
+  SoundTestRepository({SharedPreferences? sharedPreferences}) {
+    _prefs = sharedPreferences;
+  }
+
+  Future<SharedPreferences> get _sharedPreferences async {
+    return _prefs ?? await SharedPreferences.getInstance();
+  }
 
   Future<Map<String, SoundTest>> getAllSoundTests() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPreferences;
     final jsonString = prefs.getString(_soundTestsKey);
     if (jsonString == null) return {};
 
@@ -23,14 +33,15 @@ class SoundTestRepository {
   }
 
   Future<void> saveAllSoundTests(Map<String, SoundTest> soundTests) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _soundTestsKey,
-      jsonEncode({
-        for (var entry in soundTests.entries)
-          entry.key: entry.value.toJson()
-      }),
-    );
+
+    final prefs = await _sharedPreferences;
+    final Map<String, dynamic> jsonMap = {};
+
+    soundTests.forEach((key, soundTest) {
+      jsonMap[key] = soundTest.toJson();
+    });
+
+    await prefs.setString(_soundTestsKey, jsonEncode(jsonMap));
   }
 
   Future<void> addSoundTest(SoundTest soundTest) async {

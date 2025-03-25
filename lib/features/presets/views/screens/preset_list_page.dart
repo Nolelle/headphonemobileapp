@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -19,39 +20,67 @@ class PresetsListPage extends StatefulWidget {
 class _PresetsListPageState extends State<PresetsListPage> {
   String? activePresetId; // Tracks the currently active preset ID
 
-  Future<bool> _showDeleteConfirmationDialog(BuildContext context, String presetName) async {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<bool> _showDeleteConfirmationDialog(
+      BuildContext context, String presetName) async {
+    final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete "$presetName"?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: const Text('Delete'),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
-    ) ??
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(appLocalizations.translate('confirm_delete')),
+              content: Text(
+                  '${appLocalizations.translate('confirm_delete_message')} "$presetName"?'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text(appLocalizations.translate('cancel')),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                TextButton(
+                  child: Text(appLocalizations.translate('delete')),
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ],
+            );
+          },
+        ) ??
         false;
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final appLocalizations = AppLocalizations.of(context);
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(appLocalizations.translate('nav_presets')),
+      ),
       body: Column(
         children: [
           Expanded(
             child: Consumer<PresetProvider>(
               builder: (context, provider, child) {
                 final presets = provider.presets.values.toList();
+
+                if (presets.isEmpty) {
+                  return Center(
+                    child: Text(
+                      appLocalizations.translate('no_presets'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                  );
+                }
+
                 return ListView.builder(
                   padding: const EdgeInsets.all(16.0),
                   itemCount: presets.length,
@@ -76,7 +105,7 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        '${preset.name} Successfully Sent To Device!'),
+                                        '${preset.name} ${appLocalizations.translate('sent_to_device')}'),
                                     duration: const Duration(seconds: 1),
                                   ),
                                 );
@@ -84,8 +113,8 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isActive
-                                  ? const Color.fromRGBO(93, 59, 129, 1.00)
-                                  : const Color.fromRGBO(133, 86, 169, 1.00),
+                                  ? theme.colorScheme.secondary
+                                  : theme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5),
                               ),
@@ -94,9 +123,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             child: Align(
                               alignment: Alignment.center,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       preset.name,
@@ -104,10 +134,6 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                         fontSize: 20,
                                         color: Colors.white,
                                       ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white,
                                     ),
                                   ],
                                 ),
@@ -131,29 +157,33 @@ class _PresetsListPageState extends State<PresetsListPage> {
                                       ),
                                     );
                                   },
-                                  child: const Text('Edit'),
+                                  child:
+                                      Text(appLocalizations.translate('edit')),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                                    backgroundColor: theme.primaryColor,
                                   ),
                                   onPressed: () async {
-                                    final shouldDelete = await _showDeleteConfirmationDialog(
-                                        context, preset.name);
+                                    final shouldDelete =
+                                        await _showDeleteConfirmationDialog(
+                                            context, preset.name);
                                     if (shouldDelete) {
                                       provider.deletePreset(preset.id);
                                       setState(() {
                                         activePresetId = null;
                                       });
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                              '${preset.name} deleted successfully!'),
+                                              '${preset.name} ${appLocalizations.translate('deleted_successfully')}'),
                                         ),
                                       );
                                     }
                                   },
-                                  child: const Text('Delete'),
+                                  child: Text(
+                                      appLocalizations.translate('delete')),
                                 ),
                               ],
                             ),
@@ -171,10 +201,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
               return Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Presets: $presetCount/10',
-                  style: const TextStyle(
+                  '${appLocalizations.translate('presets_count')} $presetCount/10',
+                  style: TextStyle(
                     fontSize: 18,
-                    color: Colors.black,
+                    color: theme.textTheme.bodyLarge?.color,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -184,13 +214,13 @@ class _PresetsListPageState extends State<PresetsListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+        backgroundColor: theme.primaryColor,
         onPressed: () async {
           final presetCount = widget.presetProvider.presets.length;
           if (presetCount >= 10) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('You can only have a maximum of 10 presets!'),
+              SnackBar(
+                content: Text(appLocalizations.translate('max_presets')),
               ),
             );
             return;
@@ -204,7 +234,9 @@ class _PresetsListPageState extends State<PresetsListPage> {
             presetData: {
               'db_valueOV': 0.0,
               'db_valueSB_BS': 0.0,
+              'db_valueSB_LMS': 0.0,
               'db_valueSB_MRS': 0.0,
+              'db_valueSB_MHS': 0.0,
               'db_valueSB_TS': 0.0,
               'reduce_background_noise': false,
               'reduce_wind_noise': false,
