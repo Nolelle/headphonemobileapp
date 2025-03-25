@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:projects/features/sound_test/views/screens/test_page.dart';
 import '../../providers/sound_test_provider.dart';
+import '../../models/sound_test.dart';
 
 class SoundTestPage extends StatefulWidget {
   final SoundTestProvider soundTestProvider;
@@ -185,6 +186,41 @@ class _SoundTestPageState extends State<SoundTestPage> {
     }
   }
 
+  Future<void> _startNewTest(BuildContext context) async {
+    final soundTestId = activeSoundTestId ??
+        'soundTest_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (context.mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TestPage(
+            soundTestId: soundTestId,
+            soundTestName: 'Audio Profile',
+            soundTestProvider: widget.soundTestProvider,
+          ),
+        ),
+      );
+
+      if (context.mounted) {
+        await widget.soundTestProvider.fetchSoundTests();
+        setState(() {
+          activeSoundTestId = soundTestId;
+        });
+      }
+    }
+  }
+
+  void _resetToBaseline() {
+    final defaultTest = SoundTest.defaultTest(activeSoundTestId!);
+    widget.soundTestProvider.updateSoundTest(defaultTest);
+    setState(() {});
+  }
+
+  void _retakeTest() {
+    _startNewTest(context);
+  }
+
   Widget _buildInstructions(Color textColor, Color iconColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
@@ -227,6 +263,173 @@ class _SoundTestPageState extends State<SoundTestPage> {
     );
   }
 
+  Widget _buildAudiogramChart() {
+    final theme = Theme.of(context);
+
+    // Get current sound test data
+    if (activeSoundTestId == null ||
+        !widget.soundTestProvider.soundTests.containsKey(activeSoundTestId)) {
+      return Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Text(
+            'No test data available',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    final soundTest = widget.soundTestProvider.soundTests[activeSoundTestId]!;
+    final soundTestData = soundTest.soundTestData;
+
+    // Frequencies to display
+    final frequencies = [
+      '250Hz',
+      '500Hz',
+      '1000Hz',
+      '2000Hz',
+      '4000Hz',
+      '8000Hz'
+    ];
+
+    // Get left and right ear data
+    final leftEarData = [
+      soundTestData['L_user_250Hz_dB'] ?? 0.0,
+      soundTestData['L_user_500Hz_dB'] ?? 0.0,
+      soundTestData['L_user_1000Hz_dB'] ?? 0.0,
+      soundTestData['L_user_2000Hz_dB'] ?? 0.0,
+      soundTestData['L_user_4000Hz_dB'] ?? 0.0,
+      soundTestData['L_user_8000Hz_dB'] ?? 0.0,
+    ];
+
+    final rightEarData = [
+      soundTestData['R_user_250Hz_dB'] ?? 0.0,
+      soundTestData['R_user_500Hz_dB'] ?? 0.0,
+      soundTestData['R_user_1000Hz_dB'] ?? 0.0,
+      soundTestData['R_user_2000Hz_dB'] ?? 0.0,
+      soundTestData['R_user_4000Hz_dB'] ?? 0.0,
+      soundTestData['R_user_8000Hz_dB'] ?? 0.0,
+    ];
+
+    // Transform values from volume (0-1) to dB (approximate)
+    List<double> transformVolumeToDB(List<double> volumes) {
+      return volumes.map<double>((volume) {
+        if (volume <= 0) return 0;
+        // Convert volume (0-1) to dB scale (roughly -60 to 0)
+        // Lower volume = higher dB value (more hearing loss)
+        return (1 - volume) * 60;
+      }).toList();
+    }
+
+    final leftEarDBValues = transformVolumeToDB(leftEarData);
+    final rightEarDBValues = transformVolumeToDB(rightEarData);
+
+    return Container(
+      height: 250,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Legend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Left Ear'),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Row(
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Right Ear'),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Audiogram chart
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(
+                frequencies.length,
+                (index) {
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Left ear bar
+                          Container(
+                            height: (leftEarDBValues[index] / 60) * 120,
+                            width: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Right ear bar
+                          Container(
+                            height: (rightEarDBValues[index] / 60) * 120,
+                            width: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Frequency label
+                          Text(
+                            frequencies[index],
+                            style: const TextStyle(fontSize: 10),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTestResults() {
     final theme = Theme.of(context);
 
@@ -245,41 +448,67 @@ class _SoundTestPageState extends State<SoundTestPage> {
           ),
           const SizedBox(height: 16),
 
-          // Audiogram placeholder
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            child: const Center(
-              child: Text(
-                'Audiogram will be displayed here',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          ),
+          // Audiogram chart
+          _buildAudiogramChart(),
 
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _resetAudioProfile,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              backgroundColor: theme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+
+          // Buttons row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Reset Button
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ElevatedButton(
+                    onPressed: _resetToBaseline,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      backgroundColor: theme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Reset to Baseline',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            child: const Text(
-              'Reset to Default Settings',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+
+              // Retake Test Button
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: ElevatedButton(
+                    onPressed: _retakeTest,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Retake Test',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -289,105 +518,160 @@ class _SoundTestPageState extends State<SoundTestPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color textColor = isDarkMode ? Colors.white : Colors.black;
-    final Color iconColor = isDarkMode ? Colors.white70 : Colors.black87;
-
-    if (_isInitializing) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Sound Test'),
+        backgroundColor: theme.primaryColor,
+        title: const Text(
+          'Hearing Test',
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
-      body: _isResetting
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // Determine if we're creating or updating
-                          final audioProfiles =
-                              widget.soundTestProvider.soundTests;
-                          String soundTestId;
-                          String buttonText;
-
-                          if (audioProfiles.isEmpty) {
-                            // Create new profile
-                            soundTestId =
-                                'soundTest_${DateTime.now().millisecondsSinceEpoch}';
-                            buttonText = "New Audio Profile";
-                          } else {
-                            // Update existing profile
-                            soundTestId = audioProfiles.keys.first;
-                            buttonText = "Audio Profile";
-                          }
-
-                          if (context.mounted) {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TestPage(
-                                  soundTestId: soundTestId,
-                                  soundTestName: buttonText,
-                                  soundTestProvider: widget.soundTestProvider,
-                                ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Show audiogram if a test exists
+                if (activeSoundTestId != null) ...[
+                  Text(
+                    'Your Hearing Profile',
+                    style: TextStyle(
+                      fontSize: (screenWidth * 0.06).clamp(20.0, 32.0),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(
+                    height: (screenHeight * 0.35).clamp(200.0, 350.0),
+                    child: _buildAudiogramChart(),
+                  ),
+                  SizedBox(height: screenHeight * 0.03),
+                  // Action buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: screenWidth * 0.02),
+                          child: ElevatedButton(
+                            onPressed: _resetToBaseline,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.03,
+                                vertical: screenHeight * 0.02,
                               ),
-                            );
-
-                            if (context.mounted) {
-                              await widget.soundTestProvider.fetchSoundTests();
-
-                              // Show completion dialog if test was completed
-                              if (result == true) {
-                                await _showTestCompletionDialog(context);
-                              }
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor,
-                          minimumSize: const Size(double.infinity, 60),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          _hasTestBeenTaken
-                              ? "Retake Hearing Test"
-                              : "Begin Hearing Test",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                              backgroundColor: theme.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Reset to Baseline',
+                              style: TextStyle(
+                                fontSize:
+                                    (screenWidth * 0.04).clamp(14.0, 20.0),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: screenWidth * 0.02),
+                          child: ElevatedButton(
+                            onPressed: _retakeTest,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.03,
+                                vertical: screenHeight * 0.02,
+                              ),
+                              backgroundColor: theme.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Retake Test',
+                              style: TextStyle(
+                                fontSize:
+                                    (screenWidth * 0.04).clamp(14.0, 20.0),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // Initial state - no test taken yet
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenHeight * 0.1,
+                      horizontal: screenWidth * 0.06,
                     ),
-
-                    // Only show instructions if no test has been taken
-                    if (!_hasTestBeenTaken)
-                      _buildInstructions(textColor, iconColor),
-
-                    // Show test results if test has been taken
-                    if (_hasTestBeenTaken && activeSoundTestId != null)
-                      _buildTestResults(),
-                  ],
-                ),
-              ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Take a Hearing Test',
+                          style: TextStyle(
+                            fontSize: (screenWidth * 0.06).clamp(20.0, 32.0),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.02),
+                        Text(
+                          'Start your hearing test to create a personalized audio profile.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.04),
+                        ElevatedButton(
+                          onPressed: () => _startNewTest(context),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.08,
+                              vertical: screenHeight * 0.02,
+                            ),
+                            backgroundColor: theme.primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Start Test',
+                            style: TextStyle(
+                              fontSize: (screenWidth * 0.05).clamp(16.0, 24.0),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 }
