@@ -74,14 +74,14 @@ final ThemeData lightTheme = ThemeData(
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primaryColor: const Color.fromRGBO(133, 86, 169, 1.00),
-  scaffoldBackgroundColor: const Color.fromRGBO(30, 30, 30, 1.0),
+  scaffoldBackgroundColor: const Color.fromRGBO(52, 44, 72, 1.0),
   colorScheme: ColorScheme.fromSeed(
     brightness: Brightness.dark,
     seedColor: const Color.fromRGBO(133, 86, 169, 1.00),
     primary: const Color.fromRGBO(133, 86, 169, 1.00),
     secondary: const Color.fromRGBO(93, 59, 129, 1.00),
-    surface: const Color.fromRGBO(45, 45, 45, 1.0),
-    background: const Color.fromRGBO(30, 30, 30, 1.0),
+    surface: const Color.fromRGBO(64, 54, 87, 1.0),
+    background: const Color.fromRGBO(52, 44, 72, 1.0),
   ),
   sliderTheme: SliderThemeData(
     activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
@@ -128,7 +128,7 @@ final ThemeData darkTheme = ThemeData(
     type: BottomNavigationBarType.fixed,
   ),
   cardTheme: CardTheme(
-    color: const Color.fromRGBO(45, 45, 45, 1.0),
+    color: const Color.fromRGBO(64, 54, 87, 1.0),
     elevation: 2,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8.0),

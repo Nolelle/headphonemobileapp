@@ -747,33 +747,11 @@ class _TestPageState extends State<TestPage> {
                     ),
 
                     if (!start_pressed) ...[
-                      // Instructions with flexible spacing
+                      // Use the themed test instructions instead of plain text
                       Expanded(
                         child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: screenWidth * 0.06,
-                                vertical: screenHeight * 0.02),
-                            child: Text(
-                              appLocalizations.translate('test_instructions'),
-                              style: TextStyle(
-                                fontSize: screenWidth > 600 ? 18.0 : 14.0,
-                                color: textColor,
-                              ),
-                              textAlign: TextAlign.left,
-                            ),
-                          ),
+                          child: _buildTestInstructions(),
                         ),
-                      ),
-
-                      // Start button with adaptive padding
-                      Padding(
-                        padding: EdgeInsets.only(
-                            bottom: screenHeight * 0.1,
-                            top: screenHeight * 0.05,
-                            left: screenWidth * 0.05,
-                            right: screenWidth * 0.05),
-                        child: _buildStartButton(context, theme),
                       ),
                     ] else ...[
                       // Main content area with flexible spacing
@@ -1457,5 +1435,96 @@ class _TestPageState extends State<TestPage> {
         _isBluetoothConnected = true;
       });
     }
+  }
+
+  Widget _buildTestInstructions() {
+    final appLocalizations = AppLocalizations.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            appLocalizations.translate('some_instructions_before_starting'),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _buildInstructionItem(
+            appLocalizations.translate('sit_in_quiet_environment'),
+            Icons.volume_off,
+          ),
+          const SizedBox(height: 12),
+          _buildInstructionItem(
+            appLocalizations.translate('set_max_volume'),
+            Icons.volume_up,
+          ),
+          const SizedBox(height: 12),
+          _buildInstructionItem(
+            appLocalizations.translate('wear_headphones_properly'),
+            Icons.headphones,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: handleStartTest,
+            child: Text(
+              appLocalizations.translate('begin_sound_test'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            appLocalizations.translate('test_duration_minutes'),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstructionItem(String text, IconData icon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color: Theme.of(context).primaryColor,
+          size: 20,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

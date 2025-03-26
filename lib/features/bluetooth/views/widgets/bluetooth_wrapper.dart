@@ -25,11 +25,9 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
       builder: (context, bluetoothProvider, _) {
         if (!bluetoothProvider.isDeviceConnected) {
           return Scaffold(
-            backgroundColor: const Color.fromRGBO(237, 212, 254, 1.00),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
               title: const Text('Connect Bluetooth'),
-              backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
-              foregroundColor: Colors.white,
             ),
             body: Center(
               child: ConstrainedBox(
@@ -40,25 +38,28 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.bluetooth_searching,
                         size: 64,
-                        color: Color.fromRGBO(133, 86, 169, 1.00),
+                        color: Theme.of(context).primaryColor,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Please connect your Bluetooth headphones',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(93, 59, 129, 1.00),
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'To use this app, you need to connect your Bluetooth headphones',
-                        style: TextStyle(fontSize: 14),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
@@ -80,9 +81,9 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
   Widget _buildConnectionProgress() {
     return Column(
       children: [
-        const CircularProgressIndicator(
+        CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(
-            Color.fromRGBO(133, 86, 169, 1.00),
+            Theme.of(context).primaryColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -90,13 +91,16 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
           _statusMessage.isNotEmpty
               ? _statusMessage
               : 'Checking for connected devices...',
-          style: const TextStyle(fontSize: 16),
+          style: TextStyle(
+            fontSize: 16,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(93, 59, 129, 1.00),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: Colors.white,
           ),
           onPressed: () {
@@ -127,7 +131,7 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
                   icon: const Icon(Icons.settings_bluetooth),
                   label: const Text('Open Bluetooth Settings'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                    backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
                   ),
@@ -157,10 +161,10 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Check For Devices'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color.fromRGBO(133, 86, 169, 1.00),
+                    foregroundColor: Theme.of(context).primaryColor,
                     minimumSize: const Size(double.infinity, 48),
-                    side: const BorderSide(
-                      color: Color.fromRGBO(133, 86, 169, 1.00),
+                    side: BorderSide(
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                   onPressed: () => _checkForDevices(bluetoothProvider),
@@ -180,11 +184,12 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Developer Options',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 8),

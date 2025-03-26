@@ -91,11 +91,15 @@ final Map<String, String> enTranslations = {
   // Sound Test Page
   'sound_test': 'Sound Test',
   'hearing_test': 'Hearing Test',
-  'begin_sound_test': 'Begin Sound Test',
+  'begin_sound_test': 'BEGIN SOUND TEST',
+  'some_instructions_before_starting':
+      'Some instructions before starting the test:',
+  'sit_in_quiet_environment': 'Sit in a quiet environment.',
+  'set_max_volume': 'Set your device volume to maximum.',
+  'wear_headphones_properly':
+      'Wear your headphones correctly and comfortably so that it completely fits in your ears.',
+  'test_duration_minutes': 'This will take only take ~5 minutes',
   'instructions': 'A few instructions before starting the test:',
-  'instruction_1': 'Sit in a quiet environment.',
-  'instruction_2': 'Wear your headphones properly and comfortably.',
-  'instruction_3': 'Press the button when you hear the sound.',
   'audio_profiles': 'Audio Profiles:',
   'max_profiles': 'You can only have a maximum of 3 audio profiles!',
   'successfully_applied': 'Successfully Applied!',
