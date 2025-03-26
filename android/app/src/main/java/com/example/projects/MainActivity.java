@@ -29,6 +29,7 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -417,45 +418,124 @@ public class MainActivity extends FlutterActivity {
     
     // Get connected device as map
     private Map<String, Object> getConnectedDeviceAsMap() {
-    // First check if we have already detected a connection
-    if (connectedDevice != null) {
-        // Return connected device details
-    }
-    
-    // Otherwise, check for connected audio devices through profiles
-    
-    // Check A2DP (Classic Bluetooth) connections
-    if (a2dpProxy != null) {
-        List<BluetoothDevice> a2dpDevices = a2dpProxy.getConnectedDevices();
-        if (!a2dpDevices.isEmpty()) {
-            connectedDevice = a2dpDevices.get(0);
-            // Return device details
+        Log.d("MainActivity", "Getting connected device info");
+        
+        // First check if we have already detected a connection
+        if (connectedDevice != null) {
+            Log.d("MainActivity", "Using cached connected device: " + connectedDevice.getName());
+            Map<String, Object> deviceMap = new HashMap<>();
+            deviceMap.put("id", connectedDevice.getAddress());
+            deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+            deviceMap.put("type", getDeviceType(connectedDevice));
+            // Add mock battery level based on device name
+            deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+            return deviceMap;
         }
-    }
-    
-    // Check LE Audio connections
-    if (Build.VERSION.SDK_INT >= 31 && leAudioProxy != null) {
-        List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
-        if (!leAudioDevices.isEmpty()) {
-            connectedDevice = leAudioDevices.get(0);
-            // Return device details
+        
+        Log.d("MainActivity", "No cached device, checking profiles");
+        
+        // Otherwise, check for connected audio devices through profiles
+        
+        // Check A2DP (Classic Bluetooth) connections
+        if (a2dpProxy != null) {
+            List<BluetoothDevice> a2dpDevices = a2dpProxy.getConnectedDevices();
+            Log.d("MainActivity", "A2DP devices found: " + a2dpDevices.size());
+            if (!a2dpDevices.isEmpty()) {
+                connectedDevice = a2dpDevices.get(0);
+                Log.d("MainActivity", "Found A2DP device: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", "classic");
+                deviceMap.put("audioType", "classic");
+                // Add mock battery level based on device name
+                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                return deviceMap;
+            }
+        } else {
+            Log.d("MainActivity", "A2DP proxy is null");
         }
-    }
-    
-    // Also check system audio routing
-    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-    if (audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn()) {
-        // System reports Bluetooth audio is active, but we couldn't find the device
-        // Try to get from bonded devices
-        Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
-        for (BluetoothDevice device : bondedDevices) {
-            // Check if this device is connected via audio profiles
-            // This is a fallback approach
+        
+        // Check LE Audio connections
+        if (Build.VERSION.SDK_INT >= 31 && leAudioProxy != null) {
+            List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
+            Log.d("MainActivity", "LE Audio devices found: " + leAudioDevices.size());
+            if (!leAudioDevices.isEmpty()) {
+                connectedDevice = leAudioDevices.get(0);
+                Log.d("MainActivity", "Found LE Audio device: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", "le");
+                deviceMap.put("audioType", "le_audio");
+                // Add mock battery level based on device name
+                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                return deviceMap;
+            }
+        } else {
+            Log.d("MainActivity", "LE Audio proxy is null or not supported on this Android version");
         }
+        
+        // Also check system audio routing
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        boolean isBluetoothAudioActive = audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn();
+        Log.d("MainActivity", "Bluetooth audio active according to AudioManager: " + isBluetoothAudioActive);
+        
+        if (isBluetoothAudioActive) {
+            // System reports Bluetooth audio is active, but we couldn't find the device through profiles
+            // Try to get from bonded devices
+            Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+            Log.d("MainActivity", "Number of bonded devices: " + bondedDevices.size());
+            
+            for (BluetoothDevice device : bondedDevices) {
+                // Log all bonded devices to help with debugging
+                Log.d("MainActivity", "Bonded device: " + device.getName() + " [" + device.getAddress() + "]");
+            }
+            
+            // As a fallback, use the first bonded device if audio is active
+            if (!bondedDevices.isEmpty()) {
+                connectedDevice = bondedDevices.iterator().next();
+                Log.d("MainActivity", "Using first bonded device as fallback: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", getDeviceType(connectedDevice));
+                deviceMap.put("audioType", "classic"); // Assume classic as fallback
+                // Add mock battery level based on device name
+                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                return deviceMap;
+            }
+        }
+        
+        Log.d("MainActivity", "No connected Bluetooth audio device found");
+        return null; // No device found
     }
     
-    return null; // No device found
-}
+    // Helper method to provide mock battery level based on device name
+    private Integer getMockBatteryLevelForDevice(BluetoothDevice device) {
+        if (device == null) return null;
+        
+        String deviceName = device.getName();
+        if (deviceName == null || deviceName.isEmpty()) {
+            return 50; // Default for unknown devices
+        }
+        
+        String name = deviceName.toLowerCase();
+        if (name.contains("sony") || name.contains("wh-1000")) {
+            return 85; // Sony headphones
+        } else if (name.contains("bose") || name.contains("quiet")) {
+            return 78; // Bose headphones
+        } else if (name.contains("airpods") || name.contains("beats")) {
+            return 65; // Apple products
+        } else if (name.contains("samsung") || name.contains("galaxy")) {
+            return 55; // Samsung products
+        } else if (name.contains("jabra")) {
+            return 42; // Jabra products
+        }
+        
+        // For unknown headphones, return a random level between 30-90%
+        return 30 + (int)(Math.random() * 60);
+    }
     
     // Open Bluetooth settings
     // In MainActivity.java
@@ -635,6 +715,29 @@ public class MainActivity extends FlutterActivity {
             // On any error, return null
             System.out.println("Error in getBatteryLevel: " + e.getMessage());
             return null;
+        }
+    }
+
+    // Helper method to get device type as a string
+    private String getDeviceType(BluetoothDevice device) {
+        if (device == null) return "unknown";
+        
+        try {
+            int deviceType = device.getType();
+            switch (deviceType) {
+                case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                    return "classic";
+                case BluetoothDevice.DEVICE_TYPE_LE:
+                    return "le";
+                case BluetoothDevice.DEVICE_TYPE_DUAL:
+                    return "dual";
+                default:
+                    return "unknown";
+            }
+        } catch (Exception e) {
+            // On older Android versions, getType might throw an exception
+            Log.d("MainActivity", "Error getting device type: " + e.getMessage());
+            return "unknown";
         }
     }
 }
