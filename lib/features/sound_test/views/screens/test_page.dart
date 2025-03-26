@@ -656,6 +656,13 @@ class _TestPageState extends State<TestPage> {
       },
     );
 
+    if (shouldPop ?? false) {
+      // If the user decides to exit, reset to baseline values
+      final defaultTest =
+          SoundTest.defaultTest(widget.soundTestId, context: context);
+      await widget.soundTestProvider.updateSoundTest(defaultTest);
+    }
+
     return shouldPop ?? false;
   }
 
