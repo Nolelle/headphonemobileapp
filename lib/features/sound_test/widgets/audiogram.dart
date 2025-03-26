@@ -13,12 +13,23 @@ class Audiogram extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get device screen size for better responsiveness
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen =
+        screenSize.width < 360; // Adjust for small screens like MI A2
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
-        final graphHeight =
-            availableWidth * 1.1; // Increased height for better spacing
-        final padding = availableWidth * 0.02;
+        // Adjust height based on screen width with a minimum for small screens
+        final graphHeight = isSmallScreen
+            ? availableWidth * 1.2 // Taller for small screens
+            : availableWidth * 1.1; // Standard height for larger screens
+
+        final padding = availableWidth *
+            (isSmallScreen ? 0.03 : 0.02); // More padding for small screens
+        final fontSize =
+            (availableWidth * 0.03).clamp(9.0, 14.0); // Responsive font size
 
         return Column(
           children: [
@@ -30,19 +41,19 @@ class Audiogram extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Text('Left Ear ', style: TextStyle(fontSize: 12)),
+                      Text('Left Ear ', style: TextStyle(fontSize: fontSize)),
                       CustomPaint(
-                        size: const Size(16, 16),
+                        size: Size(fontSize * 1.3, fontSize * 1.3),
                         painter: SymbolPainter(isX: true, color: Colors.blue),
                       ),
                     ],
                   ),
-                  const SizedBox(width: 24),
+                  SizedBox(width: fontSize * 2),
                   Row(
                     children: [
-                      const Text('Right Ear ', style: TextStyle(fontSize: 12)),
+                      Text('Right Ear ', style: TextStyle(fontSize: fontSize)),
                       CustomPaint(
-                        size: const Size(16, 16),
+                        size: Size(fontSize * 1.3, fontSize * 1.3),
                         painter: SymbolPainter(isX: false, color: Colors.red),
                       ),
                     ],
@@ -66,18 +77,34 @@ class Audiogram extends StatelessWidget {
                   leftEarData: leftEarData,
                   rightEarData: rightEarData,
                   scaleFactor: availableWidth / 400,
+                  isSmallScreen: isSmallScreen,
                 ),
+              ),
+            ),
+            // X-Axis Legend (Frequency)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Frequency (Hz)',
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
             // Hearing Loss Legend
             Padding(
-              padding: const EdgeInsets.only(top: 8.0),
+              padding: const EdgeInsets.only(top: 12.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildHearingLossIndicator('Normal', Colors.white),
-                  _buildHearingLossIndicator('Mild', Colors.blue[50]!),
-                  _buildHearingLossIndicator('Moderate', Colors.blue[100]!),
+                  _buildHearingLossIndicator(
+                      'Normal', Colors.white, fontSize * 0.85),
+                  _buildHearingLossIndicator(
+                      'Mild', Colors.blue[50]!, fontSize * 0.85),
+                  _buildHearingLossIndicator(
+                      'Moderate', Colors.blue[100]!, fontSize * 0.85),
                 ],
               ),
             ),
@@ -86,8 +113,10 @@ class Audiogram extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildHearingLossIndicator('Severe', Colors.blue[200]!),
-                  _buildHearingLossIndicator('Profound', Colors.blue[300]!),
+                  _buildHearingLossIndicator(
+                      'Severe', Colors.blue[200]!, fontSize * 0.85),
+                  _buildHearingLossIndicator(
+                      'Profound', Colors.blue[300]!, fontSize * 0.85),
                 ],
               ),
             ),
@@ -97,20 +126,21 @@ class Audiogram extends StatelessWidget {
     );
   }
 
-  Widget _buildHearingLossIndicator(String label, Color color) {
+  Widget _buildHearingLossIndicator(
+      String label, Color color, double fontSize) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: fontSize,
+          height: fontSize,
           decoration: BoxDecoration(
             color: color,
             border: Border.all(color: Colors.grey[300]!),
           ),
         ),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 10)),
+        Text(label, style: TextStyle(fontSize: fontSize)),
       ],
     );
   }
@@ -157,6 +187,7 @@ class AudiogramPainter extends CustomPainter {
   final Map<String, double> leftEarData;
   final Map<String, double> rightEarData;
   final double scaleFactor;
+  final bool isSmallScreen;
 
   static const List<String> frequencies = [
     '250',
@@ -186,24 +217,38 @@ class AudiogramPainter extends CustomPainter {
     required this.leftEarData,
     required this.rightEarData,
     required this.scaleFactor,
+    this.isSmallScreen = false,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Add padding for labels
-    final graphPadding = size.width * 0.1;
+    // Add padding for labels and edges
+    final leftPadding = size.width *
+        (isSmallScreen ? 0.18 : 0.15); // More padding for small screens
+    final topPadding = size.height * 0.05;
+    final bottomPadding = size.width *
+        (isSmallScreen ? 0.15 : 0.12); // More bottom padding for small screens
+    final rightPadding = size.width *
+        (isSmallScreen ? 0.1 : 0.08); // More right padding for small screens
+
     final graphRect = Rect.fromLTWH(
-      graphPadding, // Left padding for dB labels
-      0, // Top
-      size.width - graphPadding, // Width minus left padding
+      leftPadding, // Left padding for dB labels
+      topPadding, // Top padding
+      size.width -
+          leftPadding -
+          rightPadding, // Width minus left and right padding
       size.height -
-          graphPadding, // Height minus bottom padding for frequency labels
+          topPadding -
+          bottomPadding, // Height minus top and bottom padding
     );
 
     final paint = Paint()
       ..color = Colors.black
       ..strokeWidth = 0.5 // Thinner lines
       ..style = PaintingStyle.stroke;
+
+    // Draw Y-Axis Legend (Hearing Level in dB)
+    _drawYAxisLegend(canvas, size, leftPadding);
 
     // Save canvas state and clip to graph area
     canvas.save();
@@ -232,6 +277,33 @@ class AudiogramPainter extends CustomPainter {
     // Draw data points and lines
     _drawDataPoints(canvas, graphRect, paint);
 
+    canvas.restore();
+  }
+
+  void _drawYAxisLegend(Canvas canvas, Size size, double leftPadding) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'Hearing Level (dB)',
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 10 * scaleFactor * (isSmallScreen ? 0.9 : 1.0),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    textPainter.layout();
+
+    // Position vertically centered and rotated 90 degrees
+    canvas.save();
+    canvas.translate(
+        leftPadding * (isSmallScreen ? 0.25 : 0.3), size.height / 2);
+    canvas.rotate(-math.pi / 2); // Rotate 90 degrees counter-clockwise
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -textPainter.height / 2),
+    );
     canvas.restore();
   }
 
@@ -303,30 +375,51 @@ class AudiogramPainter extends CustomPainter {
   }
 
   void _drawAxesLabels(Canvas canvas, Rect graphRect, TextPainter textPainter) {
-    final fontSize = 10.0 * scaleFactor;
+    final fontSize = 10.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0);
+
+    // Calculate the same positions as the data points
+    final graphWidth = graphRect.width;
+    final edgePadding = graphWidth *
+        (isSmallScreen ? 0.1 : 0.08); // More padding for small screens
+    final effectiveWidth = graphWidth - (edgePadding * 2);
+    final xStep = effectiveWidth / (frequencies.length - 1);
 
     // Draw frequency labels
-    final xStep = graphRect.width / (frequencies.length - 1);
     for (var i = 0; i < frequencies.length; i++) {
+      // Append unit to frequency label for better readability
+      String label = frequencies[i];
+      if (label == '1000')
+        label = '1k';
+      else if (label == '2000')
+        label = '2k';
+      else if (label == '4000') label = '4k';
+
       textPainter.text = TextSpan(
-        text: frequencies[i],
+        text: label,
         style: TextStyle(
           color: Colors.black,
           fontSize: fontSize,
         ),
       );
       textPainter.layout();
+
+      // Calculate x position with edge padding, same as the data points
+      final x = graphRect.left + edgePadding + (i * xStep);
+
       textPainter.paint(
         canvas,
         Offset(
-          graphRect.left + (i * xStep) - (textPainter.width / 2),
-          graphRect.bottom + 2,
+          x - (textPainter.width / 2),
+          graphRect.bottom + (isSmallScreen ? 5 : 4),
         ),
       );
     }
 
     // Draw dB labels
     for (var db in dbLevels) {
+      // If small screen, show fewer dB labels to avoid overcrowding
+      if (isSmallScreen && db % 20 != 0 && db != -10) continue;
+
       textPainter.text = TextSpan(
         text: db.toString(),
         style: TextStyle(
@@ -338,7 +431,7 @@ class AudiogramPainter extends CustomPainter {
       textPainter.paint(
         canvas,
         Offset(
-          0,
+          graphRect.left - textPainter.width - (isSmallScreen ? 3 : 4),
           _getYPosition(db.toDouble(), graphRect) - (textPainter.height / 2),
         ),
       );
@@ -358,13 +451,22 @@ class AudiogramPainter extends CustomPainter {
   void _drawEarPoints(
       Canvas canvas, Rect graphRect, Map<String, double> data, bool isLeft) {
     final points = <Offset>[];
-    final xStep = graphRect.width / (frequencies.length - 1);
-    final markerSize = 4.0 * scaleFactor;
+
+    // Frequency positions with internal padding to keep 250Hz and 4000Hz away from edges
+    final graphWidth = graphRect.width;
+    final edgePadding = graphWidth *
+        (isSmallScreen ? 0.1 : 0.08); // More padding for small screens
+    final effectiveWidth = graphWidth - (edgePadding * 2);
+    final xStep = effectiveWidth / (frequencies.length - 1);
+
+    final markerSize = 4.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0);
 
     for (var i = 0; i < frequencies.length; i++) {
       final freq = frequencies[i];
       final value = data['${isLeft ? "L" : "R"}_user_${freq}Hz_dB'] ?? 0.0;
-      final x = graphRect.left + (i * xStep);
+
+      // Calculate x position with edge padding
+      final x = graphRect.left + edgePadding + (i * xStep);
       final y = _getYPosition(value.abs(), graphRect);
       points.add(Offset(x, y));
 
@@ -378,7 +480,7 @@ class AudiogramPainter extends CustomPainter {
     // Draw lines connecting points
     final linePaint = Paint()
       ..color = isLeft ? Colors.blue : Colors.red
-      ..strokeWidth = 1.0 * scaleFactor
+      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
       ..style = PaintingStyle.stroke;
 
     for (var i = 0; i < points.length - 1; i++) {
@@ -389,7 +491,7 @@ class AudiogramPainter extends CustomPainter {
   void _drawX(Canvas canvas, Offset center, double size, Color color) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.0 * scaleFactor
+      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
       ..style = PaintingStyle.stroke;
 
     canvas.drawLine(
@@ -407,7 +509,7 @@ class AudiogramPainter extends CustomPainter {
   void _drawO(Canvas canvas, Offset center, double radius, Color color) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.0 * scaleFactor
+      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
       ..style = PaintingStyle.stroke;
 
     canvas.drawCircle(center, radius, paint);
