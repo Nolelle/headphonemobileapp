@@ -162,5 +162,10 @@ final Map<String, String> frTranslations = {
   'mild_loss': 'Léger',
   'moderate_loss': 'Modéré',
   'severe_loss': 'Sévère',
-  'profound_loss': 'Profond',
+  'profound_loss': 'Perte Profonde (>90 dB)',
+
+  // Add new translations for Bluetooth file sharing
+  'share_via_bluetooth': 'Partager les Résultats',
+  'file_sent_successfully': 'Fichier de test auditif préparé pour le partage',
+  'file_send_failed': 'Échec de la préparation du fichier de test auditif',
 };

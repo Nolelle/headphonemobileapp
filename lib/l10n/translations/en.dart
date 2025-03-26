@@ -162,5 +162,10 @@ final Map<String, String> enTranslations = {
   'mild_loss': 'Mild',
   'moderate_loss': 'Moderate',
   'severe_loss': 'Severe',
-  'profound_loss': 'Profound',
+  'profound_loss': 'Profound Loss (>90 dB)',
+
+  // Add new translations for Bluetooth file sharing
+  'share_via_bluetooth': 'Share Test Results',
+  'file_sent_successfully': 'Hearing test file prepared for sharing',
+  'file_send_failed': 'Failed to prepare hearing test file',
 };

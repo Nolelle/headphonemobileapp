@@ -50,6 +50,10 @@ import java.lang.reflect.Method;
 import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.io.File;
+import java.io.FileOutputStream;
+import android.net.Uri;
+import androidx.core.content.FileProvider;
 
 // Import LE Audio classes conditionally for Android 12+
 // This is a workaround for the build error
@@ -74,6 +78,7 @@ public class MainActivity extends FlutterActivity {
     private static final String SETTINGS_CHANNEL = "com.headphonemobileapp/settings";
     private static final String BT_CHANNEL = "com.headphonemobileapp/bluetooth";
     private static final String BLE_DATA_CHANNEL = "com.headphonemobileapp/ble_data";
+    private static final String BT_FILE_CHANNEL = "com.headphonemobileapp/bt_file";
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1;
     
     private BluetoothAdapter bluetoothAdapter;
@@ -230,6 +235,28 @@ public class MainActivity extends FlutterActivity {
                         case "isGattReady":
                             // Simulate GATT service discovery
                             result.success(true);
+                            break;
+                        default:
+                            result.notImplemented();
+                            break;
+                    }
+                }
+            );
+            
+        // Add Bluetooth File Transfer channel
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BT_FILE_CHANNEL)
+            .setMethodCallHandler(
+                (call, result) -> {
+                    switch (call.method) {
+                        case "sendFile":
+                            String jsonData = call.argument("jsonData");
+                            String fileName = call.argument("fileName");
+                            
+                            if (jsonData != null && fileName != null) {
+                                sendFileViaBluetooth(jsonData, fileName, result);
+                            } else {
+                                result.error("INVALID_ARGUMENTS", "Missing jsonData or fileName", null);
+                            }
                             break;
                         default:
                             result.notImplemented();
@@ -1034,6 +1061,71 @@ public class MainActivity extends FlutterActivity {
             // On older Android versions, getType might throw an exception
             Log.d("MainActivity", "Error getting device type: " + e.getMessage());
             return "unknown";
+        }
+    }
+
+    // Method to send a file via classic Bluetooth
+    private void sendFileViaBluetooth(String jsonData, String fileName, MethodChannel.Result result) {
+        try {
+            // Check if Bluetooth is enabled
+            if (!isBluetoothEnabled()) {
+                result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null);
+                return;
+            }
+            
+            // Check if we have the required permissions
+            if (!hasRequiredPermissions()) {
+                requestBluetoothPermissions();
+                result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null);
+                return;
+            }
+            
+            // Create temporary file with the provided JSON data
+            File tempDir = getApplicationContext().getCacheDir();
+            File file = new File(tempDir, fileName);
+            
+            // Write JSON data to the file
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(jsonData.getBytes());
+            fos.close();
+            
+            // Get content URI via FileProvider
+            Uri contentUri = FileProvider.getUriForFile(
+                getApplicationContext(),
+                getApplicationContext().getPackageName() + ".fileprovider",
+                file
+            );
+            
+            // Create share intent
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("application/json");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+            
+            // Grant temporary read permission to the content URI
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            // Use Bluetooth if available
+            shareIntent.putExtra(Intent.EXTRA_TITLE, "Share Hearing Test via Bluetooth");
+            
+            // Create chooser
+            Intent chooser = Intent.createChooser(shareIntent, "Share via Bluetooth");
+            
+            // Start the chooser activity
+            startActivity(chooser);
+            
+            // Return success to Flutter
+            result.success(true);
+            
+            // Show toast
+            Toast.makeText(
+                getApplicationContext(),
+                "Please select Bluetooth to share the hearing test",
+                Toast.LENGTH_LONG
+            ).show();
+            
+        } catch (Exception e) {
+            Log.e("BluetoothFileTransfer", "Error sending file: " + e.getMessage());
+            result.error("SEND_ERROR", "Failed to send file: " + e.getMessage(), null);
         }
     }
 }

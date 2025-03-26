@@ -5,6 +5,7 @@ import '../../models/sound_test.dart';
 import '../../widgets/audiogram.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../features/bluetooth/services/ble_data_service.dart';
+import '../../../../features/bluetooth/services/bluetooth_file_service.dart';
 import '../../../../features/bluetooth/providers/bluetooth_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +27,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
   bool _isResetting = false;
   bool _isInitializing = true;
   final BLEDataService _bleDataService = BLEDataService();
+  final BluetoothFileService _btFileService = BluetoothFileService();
 
   @override
   void initState() {
@@ -141,6 +143,39 @@ class _SoundTestPageState extends State<SoundTestPage> {
         await _bleDataService.sendHearingTestData(soundTest);
       } catch (e) {
         print('Error sending hearing test data: $e');
+      }
+    }
+  }
+
+  Future<void> _shareViaBluetoothFile() async {
+    if (activeSoundTestId == null) return;
+
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
+    if (soundTest == null) return;
+
+    try {
+      final success = await _btFileService.sendHearingTestFile(soundTest);
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)
+                .translate('file_sent_successfully')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error sharing via Bluetooth: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                AppLocalizations.of(context).translate('file_send_failed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -356,6 +391,24 @@ class _SoundTestPageState extends State<SoundTestPage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _shareViaBluetoothFile,
+                icon: const Icon(Icons.share, size: 18),
+                label: Text(
+                  appLocalizations.translate('share_via_bluetooth'),
+                  style: const TextStyle(fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
