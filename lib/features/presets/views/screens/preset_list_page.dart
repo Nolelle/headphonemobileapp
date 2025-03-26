@@ -4,6 +4,7 @@ import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/bluetooth/views/widgets/headphone_info_banner.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -63,6 +64,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
       ),
       body: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: HeadphoneInfoBanner(),
+          ),
           Expanded(
             child: Consumer<PresetProvider>(
               builder: (context, provider, child) {
