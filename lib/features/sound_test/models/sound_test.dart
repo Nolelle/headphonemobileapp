@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SoundTest {
   final String id;
@@ -69,14 +70,20 @@ class SoundTest {
     );
   }
 
-  factory SoundTest.defaultTest(String id) {
+  factory SoundTest.defaultTest(String id, {BuildContext? context}) {
     // Using baseline values around 10 dB which represents good hearing
     // Lower values (closer to 0) represent better hearing
     const baselineValue = -10.0; // This will convert to about 10 dB in the UI
 
+    String profileName = 'Default Audio Profile';
+    if (context != null) {
+      final appLocalizations = AppLocalizations.of(context);
+      profileName = appLocalizations.translate('default_audio_profile');
+    }
+
     return SoundTest(
       id: id,
-      name: 'Default Audio Profile',
+      name: profileName,
       dateCreated: DateTime.now(),
       soundTestData: {
         'L_user_250Hz_dB': baselineValue,

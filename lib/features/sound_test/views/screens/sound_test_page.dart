@@ -3,6 +3,7 @@ import 'package:projects/features/sound_test/views/screens/test_page.dart';
 import '../../providers/sound_test_provider.dart';
 import '../../models/sound_test.dart';
 import '../../widgets/audiogram.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SoundTestPage extends StatefulWidget {
   final SoundTestProvider soundTestProvider;
@@ -80,19 +81,20 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   Future<void> _showTestCompletionDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Test Completed'),
-          content: const Text(
-            'Your hearing test has been completed successfully. The results have been saved.',
+          title: Text(appLocalizations.translate('test_completed')),
+          content: Text(
+            appLocalizations.translate('test_completed_message'),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(appLocalizations.translate('ok')),
             ),
           ],
         );
@@ -101,16 +103,17 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   Future<void> _showValuesSavedDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Values Saved'),
-          content: const Text('Your test values have been saved successfully.'),
+          title: Text(appLocalizations.translate('values_saved')),
+          content: Text(appLocalizations.translate('values_saved_message')),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(appLocalizations.translate('ok')),
             ),
           ],
         );
@@ -119,21 +122,22 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   Future<bool> _showResetConfirmationDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Reset'),
-              content: const Text(
-                  'Are you sure you want to reset to default values?'),
+              title: Text(appLocalizations.translate('confirm_reset')),
+              content:
+                  Text(appLocalizations.translate('confirm_reset_message')),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(appLocalizations.translate('cancel')),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Reset'),
+                  child: Text(appLocalizations.translate('reset')),
                 ),
               ],
             );
@@ -144,20 +148,21 @@ class _SoundTestPageState extends State<SoundTestPage> {
 
   Future<bool> _showDeleteConfirmationDialog(
       BuildContext context, String soundTestName) async {
+    final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Delete'),
-              content:
-                  Text('Are you sure you want to delete "$soundTestName"?'),
+              title: Text(appLocalizations.translate('confirm_delete')),
+              content: Text(
+                  '${appLocalizations.translate('confirm_delete_message')} "$soundTestName"?'),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Cancel'),
+                  child: Text(appLocalizations.translate('cancel')),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
                 TextButton(
-                  child: const Text('Delete'),
+                  child: Text(appLocalizations.translate('delete')),
                   onPressed: () => Navigator.of(context).pop(true),
                 ),
               ],
@@ -188,6 +193,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   Future<void> _startNewTest(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
     final soundTestId = activeSoundTestId ??
         'soundTest_${DateTime.now().millisecondsSinceEpoch}';
 
@@ -197,7 +203,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
         MaterialPageRoute(
           builder: (context) => TestPage(
             soundTestId: soundTestId,
-            soundTestName: 'Audio Profile',
+            soundTestName: appLocalizations.translate('audio_profile'),
             soundTestProvider: widget.soundTestProvider,
           ),
         ),
@@ -213,7 +219,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   void _resetToBaseline() {
-    final defaultTest = SoundTest.defaultTest(activeSoundTestId!);
+    final defaultTest =
+        SoundTest.defaultTest(activeSoundTestId!, context: context);
     widget.soundTestProvider.updateSoundTest(defaultTest);
     setState(() {});
   }
@@ -223,6 +230,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
   }
 
   Widget _buildAudiogramSection() {
+    final appLocalizations = AppLocalizations.of(context);
     final soundTest =
         widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
     if (soundTest == null) return const SizedBox.shrink();
@@ -233,17 +241,17 @@ class _SoundTestPageState extends State<SoundTestPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Your Audiogram',
-              style: TextStyle(
+            Text(
+              appLocalizations.translate('your_audiogram'),
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'The audiogram below shows your hearing threshold at different frequencies. Each point represents the softest sound you can hear at that frequency.',
-              style: TextStyle(
+            Text(
+              appLocalizations.translate('audiogram_description'),
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
               ),
@@ -252,6 +260,15 @@ class _SoundTestPageState extends State<SoundTestPage> {
             Audiogram(
               leftEarData: soundTest.soundTestData,
               rightEarData: soundTest.soundTestData,
+              leftEarLabel: appLocalizations.translate('left_ear'),
+              rightEarLabel: appLocalizations.translate('right_ear'),
+              frequencyLabel: appLocalizations.translate('frequency'),
+              hearingLevelLabel: appLocalizations.translate('hearing_level'),
+              normalHearingLabel: appLocalizations.translate('normal_hearing'),
+              mildLossLabel: appLocalizations.translate('mild_loss'),
+              moderateLossLabel: appLocalizations.translate('moderate_loss'),
+              severeLossLabel: appLocalizations.translate('severe_loss'),
+              profoundLossLabel: appLocalizations.translate('profound_loss'),
             ),
             const SizedBox(height: 32),
             Row(
@@ -261,14 +278,18 @@ class _SoundTestPageState extends State<SoundTestPage> {
                   child: ElevatedButton(
                     onPressed: _resetToBaseline,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Reset to Baseline',
-                      style: TextStyle(fontSize: 16),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        appLocalizations.translate('reset_to_baseline'),
+                        style: const TextStyle(fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
@@ -277,14 +298,15 @@ class _SoundTestPageState extends State<SoundTestPage> {
                   child: ElevatedButton(
                     onPressed: _retakeTest,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Retake Test',
-                      style: TextStyle(fontSize: 16),
+                    child: Text(
+                      appLocalizations.translate('retake_test'),
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
@@ -298,9 +320,10 @@ class _SoundTestPageState extends State<SoundTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hearing Test'),
+        title: Text(appLocalizations.translate('hearing_test')),
       ),
       body: activeSoundTestId != null
           ? _buildAudiogramSection()
@@ -308,17 +331,17 @@ class _SoundTestPageState extends State<SoundTestPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Welcome to the Hearing Test',
-                    style: TextStyle(
+                  Text(
+                    appLocalizations.translate('welcome_hearing_test'),
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Take a hearing test to see your audiogram.',
-                    style: TextStyle(
+                  Text(
+                    appLocalizations.translate('take_hearing_test_message'),
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.grey,
                     ),
@@ -326,7 +349,14 @@ class _SoundTestPageState extends State<SoundTestPage> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => _startNewTest(context),
-                    child: const Text('Start Test'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(appLocalizations.translate('start_test')),
                   ),
                 ],
               ),

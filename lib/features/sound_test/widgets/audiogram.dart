@@ -4,11 +4,29 @@ import 'dart:math' as math;
 class Audiogram extends StatelessWidget {
   final Map<String, double> leftEarData;
   final Map<String, double> rightEarData;
+  final String leftEarLabel;
+  final String rightEarLabel;
+  final String frequencyLabel;
+  final String hearingLevelLabel;
+  final String normalHearingLabel;
+  final String mildLossLabel;
+  final String moderateLossLabel;
+  final String severeLossLabel;
+  final String profoundLossLabel;
 
   const Audiogram({
     super.key,
     required this.leftEarData,
     required this.rightEarData,
+    this.leftEarLabel = 'Left Ear',
+    this.rightEarLabel = 'Right Ear',
+    this.frequencyLabel = 'Frequency (Hz)',
+    this.hearingLevelLabel = 'Hearing Level (dB)',
+    this.normalHearingLabel = 'Normal',
+    this.mildLossLabel = 'Mild',
+    this.moderateLossLabel = 'Moderate',
+    this.severeLossLabel = 'Severe',
+    this.profoundLossLabel = 'Profound',
   });
 
   @override
@@ -41,7 +59,8 @@ class Audiogram extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text('Left Ear ', style: TextStyle(fontSize: fontSize)),
+                      Text('$leftEarLabel ',
+                          style: TextStyle(fontSize: fontSize)),
                       CustomPaint(
                         size: Size(fontSize * 1.3, fontSize * 1.3),
                         painter: SymbolPainter(isX: true, color: Colors.blue),
@@ -51,7 +70,8 @@ class Audiogram extends StatelessWidget {
                   SizedBox(width: fontSize * 2),
                   Row(
                     children: [
-                      Text('Right Ear ', style: TextStyle(fontSize: fontSize)),
+                      Text('$rightEarLabel ',
+                          style: TextStyle(fontSize: fontSize)),
                       CustomPaint(
                         size: Size(fontSize * 1.3, fontSize * 1.3),
                         painter: SymbolPainter(isX: false, color: Colors.red),
@@ -78,6 +98,12 @@ class Audiogram extends StatelessWidget {
                   rightEarData: rightEarData,
                   scaleFactor: availableWidth / 400,
                   isSmallScreen: isSmallScreen,
+                  hearingLevelLabel: hearingLevelLabel,
+                  normalHearingLabel: normalHearingLabel,
+                  mildLossLabel: mildLossLabel,
+                  moderateLossLabel: moderateLossLabel,
+                  severeLossLabel: severeLossLabel,
+                  profoundLossLabel: profoundLossLabel,
                 ),
               ),
             ),
@@ -85,7 +111,7 @@ class Audiogram extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                'Frequency (Hz)',
+                frequencyLabel,
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
@@ -100,11 +126,11 @@ class Audiogram extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildHearingLossIndicator(
-                      'Normal', Colors.white, fontSize * 0.85),
+                      normalHearingLabel, Colors.white, fontSize * 0.85),
                   _buildHearingLossIndicator(
-                      'Mild', Colors.blue[50]!, fontSize * 0.85),
+                      mildLossLabel, Colors.blue[50]!, fontSize * 0.85),
                   _buildHearingLossIndicator(
-                      'Moderate', Colors.blue[100]!, fontSize * 0.85),
+                      moderateLossLabel, Colors.blue[100]!, fontSize * 0.85),
                 ],
               ),
             ),
@@ -114,9 +140,9 @@ class Audiogram extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildHearingLossIndicator(
-                      'Severe', Colors.blue[200]!, fontSize * 0.85),
+                      severeLossLabel, Colors.blue[200]!, fontSize * 0.85),
                   _buildHearingLossIndicator(
-                      'Profound', Colors.blue[300]!, fontSize * 0.85),
+                      profoundLossLabel, Colors.blue[300]!, fontSize * 0.85),
                 ],
               ),
             ),
@@ -188,6 +214,12 @@ class AudiogramPainter extends CustomPainter {
   final Map<String, double> rightEarData;
   final double scaleFactor;
   final bool isSmallScreen;
+  final String hearingLevelLabel;
+  final String normalHearingLabel;
+  final String mildLossLabel;
+  final String moderateLossLabel;
+  final String severeLossLabel;
+  final String profoundLossLabel;
 
   static const List<String> frequencies = [
     '250',
@@ -218,6 +250,12 @@ class AudiogramPainter extends CustomPainter {
     required this.rightEarData,
     required this.scaleFactor,
     this.isSmallScreen = false,
+    required this.hearingLevelLabel,
+    required this.normalHearingLabel,
+    required this.mildLossLabel,
+    required this.moderateLossLabel,
+    required this.severeLossLabel,
+    required this.profoundLossLabel,
   });
 
   @override
@@ -283,7 +321,7 @@ class AudiogramPainter extends CustomPainter {
   void _drawYAxisLegend(Canvas canvas, Size size, double leftPadding) {
     final textPainter = TextPainter(
       text: TextSpan(
-        text: 'Hearing Level (dB)',
+        text: hearingLevelLabel,
         style: TextStyle(
           color: Colors.black,
           fontSize: 10 * scaleFactor * (isSmallScreen ? 0.9 : 1.0),
@@ -309,11 +347,11 @@ class AudiogramPainter extends CustomPainter {
 
   void _drawHearingLossRegions(Canvas canvas, Rect graphRect) {
     final regions = [
-      (Colors.white, 120.0, 100.0, 'Normal Hearing'),
-      (Colors.blue[50]!, 100.0, 80.0, 'Mild Loss'),
-      (Colors.blue[100]!, 80.0, 50.0, 'Moderate Loss'),
-      (Colors.blue[200]!, 50.0, 30.0, 'Severe Loss'),
-      (Colors.blue[300]!, 30.0, 0.0, 'Profound Loss'),
+      (Colors.white, 120.0, 100.0, normalHearingLabel),
+      (Colors.blue[50]!, 100.0, 80.0, mildLossLabel),
+      (Colors.blue[100]!, 80.0, 50.0, moderateLossLabel),
+      (Colors.blue[200]!, 50.0, 30.0, severeLossLabel),
+      (Colors.blue[300]!, 30.0, 0.0, profoundLossLabel),
     ];
 
     for (var region in regions) {

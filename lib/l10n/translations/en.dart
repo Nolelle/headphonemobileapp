@@ -90,6 +90,7 @@ final Map<String, String> enTranslations = {
 
   // Sound Test Page
   'sound_test': 'Sound Test',
+  'hearing_test': 'Hearing Test',
   'begin_sound_test': 'Begin Sound Test',
   'instructions': 'A few instructions before starting the test:',
   'instruction_1': 'Sit in a quiet environment.',
@@ -98,4 +99,64 @@ final Map<String, String> enTranslations = {
   'audio_profiles': 'Audio Profiles:',
   'max_profiles': 'You can only have a maximum of 3 audio profiles!',
   'successfully_applied': 'Successfully Applied!',
+  'retake_test': 'Retake Test',
+  'reset_to_baseline': 'Reset to Baseline',
+
+  // Test Page - New additions
+  'hearing_test_in_progress': 'Hearing Test In Progress',
+  'prepare_for_hearing_test': 'Prepare for Hearing Test',
+  'test_instructions': 'Find a quiet place for this test.\n\n'
+      'How the test works:\n'
+      '1. You will hear tones in each ear at different frequencies\n'
+      '2. Press "I can hear it!" when you first hear a sound\n'
+      '3. The volume will decrease and you should keep pressing "I can hear it!" until you can\'t hear it anymore\n'
+      '4. When you can\'t hear the sound anymore, press "I cannot hear it!"\n'
+      '5. If you press "I cannot hear it!" and then hear it again, press "I can hear it!"\n'
+      '6. This will record your hearing threshold for that frequency\n'
+      '7. The test will automatically move to the next frequency\n'
+      '8. This process repeats for all frequencies in both ears',
+  'start_test': 'Start Test',
+  'i_can_hear_it': 'I can hear it!',
+  'i_cannot_hear_it': 'I cannot hear it!',
+  'no_bluetooth': 'No Bluetooth',
+  'test_complete': 'Test Complete',
+  'test_complete_message': 'Your hearing test has been completed and saved.',
+  'testing_sound_playback':
+      'Testing sound playback - you should hear a 1kHz tone',
+  'error_testing_audio': 'Error testing audio:',
+  'cancel_test': 'Cancel Test?',
+  'cancel_test_message':
+      'Are you sure you want to cancel the hearing test? Your progress will be lost.',
+  'no_continue_test': 'No, Continue Test',
+  'yes_cancel': 'Yes, Cancel',
+  'welcome_hearing_test': 'Welcome to the Hearing Test',
+  'take_hearing_test_message': 'Take a hearing test to see your audiogram.',
+  'bluetooth_warning':
+      'Please connect Bluetooth headphones for accurate test results',
+  'ok': 'OK',
+  'your_audiogram': 'Your Audiogram',
+  'audiogram_description':
+      'The audiogram below shows your hearing threshold at different frequencies. Each point represents the softest sound you can hear at that frequency.',
+  'test_completed': 'Test Completed',
+  'test_completed_message':
+      'Your hearing test has been completed successfully. The results have been saved.',
+  'values_saved': 'Values Saved',
+  'values_saved_message': 'Your test values have been saved successfully.',
+  'confirm_reset': 'Confirm Reset',
+  'confirm_reset_message': 'Are you sure you want to reset to default values?',
+  'reset': 'Reset',
+  'audio_profile': 'Audio Profile',
+  'default_audio_profile': 'Default Audio Profile',
+  'left_ear': 'Left Ear',
+  'right_ear': 'Right Ear',
+  'test_results_saved': 'Test results saved successfully',
+
+  // Audiogram labels
+  'frequency': 'Frequency (Hz)',
+  'hearing_level': 'Hearing Level (dB)',
+  'normal_hearing': 'Normal',
+  'mild_loss': 'Mild',
+  'moderate_loss': 'Moderate',
+  'severe_loss': 'Severe',
+  'profound_loss': 'Profound',
 };

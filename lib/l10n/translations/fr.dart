@@ -91,6 +91,7 @@ final Map<String, String> frTranslations = {
 
   // Sound Test Page
   'sound_test': 'Test Sonore',
+  'hearing_test': 'Test Auditif',
   'begin_sound_test': 'Commencer le test sonore',
   'instructions': 'Quelques instructions avant de commencer le test:',
   'instruction_1': 'Asseyez-vous dans un environnement calme.',
@@ -99,4 +100,67 @@ final Map<String, String> frTranslations = {
   'audio_profiles': 'Profils audio:',
   'max_profiles': 'Vous ne pouvez avoir qu\'un maximum de 3 profils audio!',
   'successfully_applied': 'Appliqué avec succès!',
+  'retake_test': 'Refaire le Test',
+  'reset_to_baseline': 'Réinitialiser aux Valeurs de Base',
+
+  // Test Page - New additions
+  'hearing_test_in_progress': 'Test Auditif en Cours',
+  'prepare_for_hearing_test': 'Préparez-vous pour le Test Auditif',
+  'test_instructions': 'Trouvez un endroit calme pour ce test.\n\n'
+      'Comment fonctionne le test:\n'
+      '1. Vous entendrez des sons dans chaque oreille à différentes fréquences\n'
+      '2. Appuyez sur "Je l\'entends!" dès que vous entendez un son\n'
+      '3. Le volume diminuera et vous devez continuer à appuyer sur "Je l\'entends!" jusqu\'à ce que vous ne l\'entendiez plus\n'
+      '4. Lorsque vous n\'entendez plus le son, appuyez sur "Je ne l\'entends pas!"\n'
+      '5. Si vous appuyez sur "Je ne l\'entends pas!" et que vous l\'entendez à nouveau, appuyez sur "Je l\'entends!"\n'
+      '6. Cela enregistrera votre seuil d\'audition pour cette fréquence\n'
+      '7. Le test passera automatiquement à la fréquence suivante\n'
+      '8. Ce processus se répète pour toutes les fréquences dans les deux oreilles',
+  'start_test': 'Commencer le test',
+  'i_can_hear_it': 'Je l\'entends!',
+  'i_cannot_hear_it': 'Je ne l\'entends pas!',
+  'no_bluetooth': 'Pas de Bluetooth',
+  'test_complete': 'Test Terminé',
+  'test_complete_message': 'Votre test auditif a été complété et sauvegardé.',
+  'testing_sound_playback':
+      'Test de lecture audio - vous devriez entendre un son de 1kHz',
+  'error_testing_audio': 'Erreur lors du test audio:',
+  'cancel_test': 'Annuler le Test?',
+  'cancel_test_message':
+      'Êtes-vous sûr de vouloir annuler le test auditif? Votre progression sera perdue.',
+  'no_continue_test': 'Non, Continuer le Test',
+  'yes_cancel': 'Oui, Annuler',
+  'welcome_hearing_test': 'Bienvenue au Test Auditif',
+  'take_hearing_test_message':
+      'Effectuez un test auditif pour voir votre audiogramme.',
+  'bluetooth_warning':
+      'Veuillez connecter des écouteurs Bluetooth pour des résultats de test précis',
+  'ok': 'OK',
+  'your_audiogram': 'Votre Audiogramme',
+  'audiogram_description':
+      'L\'audiogramme ci-dessous montre votre seuil d\'audition à différentes fréquences. Chaque point représente le son le plus doux que vous pouvez entendre à cette fréquence.',
+  'test_completed': 'Test Terminé',
+  'test_completed_message':
+      'Votre test auditif a été complété avec succès. Les résultats ont été sauvegardés.',
+  'values_saved': 'Valeurs Sauvegardées',
+  'values_saved_message':
+      'Vos valeurs de test ont été sauvegardées avec succès.',
+  'confirm_reset': 'Confirmer la Réinitialisation',
+  'confirm_reset_message':
+      'Êtes-vous sûr de vouloir réinitialiser aux valeurs par défaut?',
+  'reset': 'Réinitialiser',
+  'audio_profile': 'Profil Audio',
+  'default_audio_profile': 'Profil Audio par Défaut',
+  'left_ear': 'Oreille Gauche',
+  'right_ear': 'Oreille Droite',
+  'test_results_saved': 'Résultats du test sauvegardés avec succès',
+
+  // Audiogram labels
+  'frequency': 'Fréquence (Hz)',
+  'hearing_level': 'Niveau d\'Audition (dB)',
+  'normal_hearing': 'Normal',
+  'mild_loss': 'Léger',
+  'moderate_loss': 'Modéré',
+  'severe_loss': 'Sévère',
+  'profound_loss': 'Profond',
 };
