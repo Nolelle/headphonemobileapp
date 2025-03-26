@@ -60,6 +60,13 @@ tasks.matching { task ->
     task.enabled = gradle.startParameter.taskNames.any { name -> name.toLowerCase().contains('test') }
 }
 
+dependencies {
+    // Add JSON library for BLE data handling (already part of Android SDK)
+    // Add coroutines for background processing
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+}
+
 flutter {
     source = "../.."
 }

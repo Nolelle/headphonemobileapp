@@ -3,6 +3,10 @@ import 'dart:async'; // Add this import for Timer
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/bluetooth/services/ble_data_service.dart';
+import '../../../../features/bluetooth/providers/bluetooth_provider.dart';
+import '../../../../features/sound_test/providers/sound_test_provider.dart';
+import 'package:provider/provider.dart';
 
 class PresetPage extends StatefulWidget {
   final String presetId;
@@ -36,6 +40,9 @@ class _PresetPageState extends State<PresetPage> {
   bool _isSaving = false;
   Timer? _debounceTimer;
   String? _lastSavedSetting;
+
+  // BLE data service
+  final BLEDataService _bleDataService = BLEDataService();
 
   // SnackBar controller
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _currentSnackBar;
@@ -101,112 +108,121 @@ class _PresetPageState extends State<PresetPage> {
         _nameController.text != preset.name;
   }
 
-  Future<void> _savePreset({String? settingName}) async {
-    // Update the last saved setting
-    _lastSavedSetting = settingName;
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    final preset = Preset(
-      id: widget.presetId,
-      name: _nameController.text,
-      dateCreated: DateTime.now(),
-      presetData: {
-        'db_valueOV': db_valueOV,
-        'db_valueSB_BS': db_valueSB_BS,
-        'db_valueSB_MRS': db_valueSB_MRS,
-        'db_valueSB_TS': db_valueSB_TS,
-        'reduce_background_noise': reduce_background_noise,
-        'reduce_wind_noise': reduce_wind_noise,
-        'soften_sudden_noise': soften_sudden_noise,
-      },
-    );
-
-    try {
-      await widget.presetProvider.updatePreset(preset);
-
-      if (mounted) {
-        // Dismiss any existing SnackBar
-        _currentSnackBar?.close();
-
-        // Show a new SnackBar with the updated setting
-        String message =
-            '${_nameController.text} ${AppLocalizations.of(context).translate('successfully_updated')}';
-        if (settingName != null) {
-          message =
-              '$settingName ${AppLocalizations.of(context).translate('updated')}';
-        }
-
-        _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-            action: _isSaving
-                ? SnackBarAction(
-                    label: 'Dismiss',
-                    onPressed: () {
-                      _currentSnackBar?.close();
-                    },
-                  )
-                : null,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
-
   // Helper method to auto-save after each change with debouncing
-  void _autoSave({String? settingName}) {
-    // Cancel any existing timer
+  Future<void> _autoSave({String? settingName}) async {
+    // Cancel any previous timer
     _debounceTimer?.cancel();
 
-    // Show saving indicator immediately
-    if (mounted) {
+    // Debounce multiple calls (wait 500ms before saving)
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      // Update the last saved setting
+      _lastSavedSetting = settingName;
+
       setState(() {
         _isSaving = true;
       });
 
-      // Dismiss any existing SnackBar and show "Updating..." message
-      _currentSnackBar?.close();
-      _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(settingName != null
-                  ? '${AppLocalizations.of(context).translate('updating')} $settingName...'
-                  : AppLocalizations.of(context).translate('updating')),
-            ],
-          ),
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-        ),
+      final preset = Preset(
+        id: widget.presetId,
+        name: _nameController.text,
+        dateCreated: DateTime.now(),
+        presetData: {
+          'db_valueOV': db_valueOV,
+          'db_valueSB_BS': db_valueSB_BS,
+          'db_valueSB_MRS': db_valueSB_MRS,
+          'db_valueSB_TS': db_valueSB_TS,
+          'reduce_background_noise': reduce_background_noise,
+          'reduce_wind_noise': reduce_wind_noise,
+          'soften_sudden_noise': soften_sudden_noise,
+        },
       );
-    }
 
-    // Set a new timer
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _savePreset(settingName: settingName);
+      try {
+        await widget.presetProvider.updatePreset(preset);
+
+        // Send preset data via BLE
+        await _sendPresetData(preset);
+
+        // Send combined data if there's an active hearing test
+        await _sendCombinedData(preset);
+
+        if (mounted) {
+          // Dismiss any existing SnackBar
+          _currentSnackBar?.close();
+
+          // Show a new SnackBar with the updated setting
+          String message =
+              '${_nameController.text} ${AppLocalizations.of(context).translate('successfully_updated')}';
+          if (settingName != null) {
+            message =
+                '$settingName ${AppLocalizations.of(context).translate('updated')}';
+          }
+
+          _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+              action: _isSaving
+                  ? SnackBarAction(
+                      label: 'Dismiss',
+                      onPressed: () {
+                        _currentSnackBar?.close();
+                      },
+                    )
+                  : null,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      }
     });
+  }
+
+  // Send preset data via BLE
+  Future<void> _sendPresetData(Preset preset) async {
+    final bluetoothProvider =
+        Provider.of<BluetoothProvider>(context, listen: false);
+    if (!bluetoothProvider.isDeviceConnected) return;
+
+    try {
+      final bool sent = await _bleDataService.sendPresetData(preset);
+      if (sent && mounted) {
+        print('Preset data sent to device successfully');
+      }
+    } catch (e) {
+      print('Error sending preset data: $e');
+    }
+  }
+
+  // Send combined hearing test and preset data
+  Future<void> _sendCombinedData(Preset preset) async {
+    final bluetoothProvider =
+        Provider.of<BluetoothProvider>(context, listen: false);
+    if (!bluetoothProvider.isDeviceConnected) return;
+
+    try {
+      // Get active sound test
+      final soundTestProvider =
+          Provider.of<SoundTestProvider>(context, listen: false);
+      final activeSoundTest = soundTestProvider.activeSoundTest;
+
+      if (activeSoundTest != null) {
+        final bool sent =
+            await _bleDataService.sendCombinedData(activeSoundTest, preset);
+        if (sent && mounted) {
+          print('Combined data sent to device successfully');
+        }
+      }
+    } catch (e) {
+      print('Error sending combined data: $e');
+    }
   }
 
   @override

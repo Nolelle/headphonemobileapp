@@ -36,6 +36,9 @@ import android.Manifest;
 import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import org.json.JSONObject;
+import org.json.JSONException;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +47,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.lang.reflect.Method;
+import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 // Import LE Audio classes conditionally for Android 12+
 // This is a workaround for the build error
@@ -67,6 +73,7 @@ import java.lang.reflect.Method;
 public class MainActivity extends FlutterActivity {
     private static final String SETTINGS_CHANNEL = "com.headphonemobileapp/settings";
     private static final String BT_CHANNEL = "com.headphonemobileapp/bluetooth";
+    private static final String BLE_DATA_CHANNEL = "com.headphonemobileapp/ble_data";
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1;
     
     private BluetoothAdapter bluetoothAdapter;
@@ -76,6 +83,16 @@ public class MainActivity extends FlutterActivity {
     private Map<String, BluetoothDevice> scannedDevices = new HashMap<>();
     private BluetoothDevice connectedDevice = null;
     private BluetoothHeadset bluetoothHeadset; // BluetoothHeadset proxy
+    
+    // BLE Data transmission stuff
+    private Executor bgExecutor = Executors.newSingleThreadExecutor();
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Random random = new Random();
+    
+    // UUID for BLE characteristics we'll use for JSON transfer (standard UUIDs)
+    private static final UUID HEARING_TEST_CHAR_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
+    private static final UUID PRESET_CHAR_UUID = UUID.fromString("00002A1D-0000-1000-8000-00805f9b34fb");
+    private static final UUID COMBINED_DATA_CHAR_UUID = UUID.fromString("00002A1E-0000-1000-8000-00805f9b34fb");
     
     // Audio-specific profile constants
     private static final int A2DP_PROFILE = BluetoothProfile.A2DP;
@@ -194,8 +211,94 @@ public class MainActivity extends FlutterActivity {
                 }
             );
             
+        // Add BLE Data channel for JSON transmission
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BLE_DATA_CHANNEL)
+            .setMethodCallHandler(
+                (call, result) -> {
+                    switch (call.method) {
+                        case "writeCharacteristic":
+                            String characteristicUuid = call.argument("characteristicUuid");
+                            byte[] data = call.argument("data");
+                            Boolean withoutResponse = call.argument("withoutResponse");
+                            
+                            if (characteristicUuid != null && data != null) {
+                                handleWriteCharacteristic(characteristicUuid, data, withoutResponse != null ? withoutResponse : false, result);
+                            } else {
+                                result.error("INVALID_ARGUMENTS", "Missing characteristicUuid or data", null);
+                            }
+                            break;
+                        case "isGattReady":
+                            // Simulate GATT service discovery
+                            result.success(true);
+                            break;
+                        default:
+                            result.notImplemented();
+                            break;
+                    }
+                }
+            );
+            
         // Initialize profile proxies for LE Audio and A2DP
         initAudioProxies();
+    }
+    
+    private void handleWriteCharacteristic(
+        String characteristicUuid, 
+        byte[] data, 
+        boolean withoutResponse,
+        MethodChannel.Result result
+    ) {
+        // Perform the write operation in a background thread to simulate network operation
+        bgExecutor.execute(() -> {
+            try {
+                // Log the data being sent for debugging
+                String jsonString = new String(data, "UTF-8");
+                Log.d("MainActivity", "Writing to characteristic: " + characteristicUuid);
+                Log.d("MainActivity", "Data length: " + data.length + " bytes");
+                
+                // Create a JSON object from the data for logging purposes
+                try {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+                    String dataType = "Unknown";
+                    
+                    if (characteristicUuid.contains("2A1C")) {
+                        dataType = "Hearing Test";
+                    } else if (characteristicUuid.contains("2A1D")) {
+                        dataType = "Preset";
+                    } else if (characteristicUuid.contains("2A1E")) {
+                        dataType = "Combined";
+                    }
+                    
+                    // Log data type and size
+                    Log.i("MainActivity", "Sent " + dataType + " data (" + data.length + " bytes)");
+                    
+                    // Simulate network delay
+                    long delay = 50 + random.nextInt(150);
+                    Thread.sleep(delay);
+                    
+                    // Show toast on UI thread for demonstration
+                    mainHandler.post(() -> {
+                        Toast.makeText(
+                            getApplicationContext(),
+                            "Sent " + dataType + " data (" + data.length + " bytes)",
+                            Toast.LENGTH_SHORT
+                        ).show();
+                    });
+                } catch (JSONException e) {
+                    Log.e("MainActivity", "Invalid JSON: " + e.getMessage());
+                }
+                
+                // Return success on main thread
+                mainHandler.post(() -> {
+                    result.success(true);
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error writing characteristic: " + e.getMessage());
+                mainHandler.post(() -> {
+                    result.error("WRITE_ERROR", "Failed to write: " + e.getMessage(), null);
+                });
+            }
+        });
     }
     
     private void initAudioProxies() {

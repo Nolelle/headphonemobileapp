@@ -4,6 +4,9 @@ import '../../providers/sound_test_provider.dart';
 import '../../models/sound_test.dart';
 import '../../widgets/audiogram.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/bluetooth/services/ble_data_service.dart';
+import '../../../../features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:provider/provider.dart';
 
 class SoundTestPage extends StatefulWidget {
   final SoundTestProvider soundTestProvider;
@@ -22,6 +25,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
   bool _hasTestBeenTaken = false;
   bool _isResetting = false;
   bool _isInitializing = true;
+  final BLEDataService _bleDataService = BLEDataService();
 
   @override
   void initState() {
@@ -121,6 +125,34 @@ class _SoundTestPageState extends State<SoundTestPage> {
     );
   }
 
+  Future<void> _sendHearingTestData() async {
+    if (activeSoundTestId == null) return;
+
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
+    if (soundTest == null) return;
+
+    final bluetoothProvider =
+        Provider.of<BluetoothProvider>(context, listen: false);
+
+    // Only send if device is connected
+    if (bluetoothProvider.isDeviceConnected) {
+      try {
+        final bool sent = await _bleDataService.sendHearingTestData(soundTest);
+        if (sent && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Hearing test data sent to device'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error sending hearing test data: $e');
+      }
+    }
+  }
+
   Future<bool> _showResetConfirmationDialog(BuildContext context) async {
     final appLocalizations = AppLocalizations.of(context);
     return await showDialog<bool>(
@@ -184,6 +216,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
       await widget.soundTestProvider.resetSoundTest(activeSoundTestId!);
       if (mounted) {
         await _showValuesSavedDialog(context);
+
+        // Send reset data to device
+        _sendHearingTestData();
       }
     } finally {
       if (mounted) {
@@ -214,6 +249,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
         setState(() {
           activeSoundTestId = soundTestId;
         });
+
+        // Send the updated hearing test data
+        _sendHearingTestData();
       }
     }
   }
@@ -223,6 +261,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
         SoundTest.defaultTest(activeSoundTestId!, context: context);
     widget.soundTestProvider.updateSoundTest(defaultTest);
     setState(() {});
+
+    // Send reset data to device
+    _sendHearingTestData();
   }
 
   void _retakeTest() {
