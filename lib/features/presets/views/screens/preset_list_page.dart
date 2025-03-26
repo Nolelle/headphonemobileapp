@@ -118,7 +118,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isActive
-                                  ? theme.colorScheme.secondary
+                                  ? (theme.brightness == Brightness.dark
+                                      ? theme.colorScheme
+                                          .tertiary // Use the theme color
+                                      : theme.colorScheme.secondary)
                                   : theme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5),

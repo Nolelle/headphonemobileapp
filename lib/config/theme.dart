@@ -82,6 +82,7 @@ final ThemeData darkTheme = ThemeData(
     secondary: const Color.fromRGBO(93, 59, 129, 1.00),
     surface: const Color.fromRGBO(64, 54, 87, 1.0),
     background: const Color.fromRGBO(52, 44, 72, 1.0),
+    tertiary: const Color.fromRGBO(133, 106, 169, 1.0),
   ),
   sliderTheme: SliderThemeData(
     activeTrackColor: const Color.fromRGBO(133, 86, 169, 1.00),
