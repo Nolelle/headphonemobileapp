@@ -259,7 +259,7 @@ public class MainActivity extends FlutterActivity {
                 // Create a JSON object from the data for logging purposes
                 try {
                     JSONObject jsonObject = new JSONObject(jsonString);
-                    String dataType = "Unknown";
+                    final String dataType; // Make it explicitly final
                     
                     if (characteristicUuid.contains("2A1C")) {
                         dataType = "Hearing Test";
@@ -267,6 +267,8 @@ public class MainActivity extends FlutterActivity {
                         dataType = "Preset";
                     } else if (characteristicUuid.contains("2A1E")) {
                         dataType = "Combined";
+                    } else {
+                        dataType = "Unknown";
                     }
                     
                     // Log data type and size
