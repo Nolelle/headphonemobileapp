@@ -138,15 +138,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
     // Only send if device is connected
     if (bluetoothProvider.isDeviceConnected) {
       try {
-        final bool sent = await _bleDataService.sendHearingTestData(soundTest);
-        if (sent && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Hearing test data sent to device'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        await _bleDataService.sendHearingTestData(soundTest);
       } catch (e) {
         print('Error sending hearing test data: $e');
       }
