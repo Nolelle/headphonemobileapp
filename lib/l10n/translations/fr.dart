@@ -101,7 +101,7 @@ final Map<String, String> frTranslations = {
   'max_profiles': 'Vous ne pouvez avoir qu\'un maximum de 3 profils audio!',
   'successfully_applied': 'Appliqué avec succès!',
   'retake_test': 'Refaire le Test',
-  'reset_to_baseline': 'Réinitialiser aux Valeurs de Base',
+  'reset_to_baseline': 'Réinitialiser',
 
   // Test Page - New additions
   'hearing_test_in_progress': 'Test Auditif en Cours',
@@ -118,7 +118,7 @@ final Map<String, String> frTranslations = {
       '8. Ce processus se répète pour toutes les fréquences dans les deux oreilles',
   'start_test': 'Commencer le test',
   'i_can_hear_it': 'Je l\'entends!',
-  'i_cannot_hear_it': 'Je ne l\'entends pas!',
+  'i_cannot_hear_it': 'Pas entendu!',
   'no_bluetooth': 'Pas de Bluetooth',
   'test_complete': 'Test Terminé',
   'test_complete_message': 'Votre test auditif a été complété et sauvegardé.',

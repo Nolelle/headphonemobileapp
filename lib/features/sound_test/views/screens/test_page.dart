@@ -350,43 +350,6 @@ class _TestPageState extends State<TestPage> {
     });
   }
 
-  double setCurrentEarTextSize(String selectedEar, double screenWidth) {
-    // Much smaller size factors to prevent text from going off screen
-    double baseSize =
-        screenWidth * 0.05; // 5% of screen width for main ear (was 20%)
-    double inactiveSize =
-        screenWidth * 0.04; // 4% of screen width for inactive ear (was 8%)
-
-    if (selectedEar == current_ear) {
-      return baseSize > 24.0 ? 24.0 : (baseSize < 16.0 ? 16.0 : baseSize);
-    }
-    return inactiveSize > 20.0
-        ? 20.0
-        : (inactiveSize < 14.0 ? 14.0 : inactiveSize);
-  }
-
-  double setCurrentEarIconSize(String selectedEar, double screenWidth) {
-    // Much smaller size factors for icons
-    double baseSize =
-        screenWidth * 0.06; // 6% of screen width for main ear icon (was 10%)
-    double inactiveSize =
-        screenWidth * 0.04; // 4% of screen width for inactive ear icon
-
-    if (selectedEar == current_ear) {
-      return baseSize > 30.0 ? 30.0 : (baseSize < 24.0 ? 24.0 : baseSize);
-    }
-    return inactiveSize > 24.0
-        ? 24.0
-        : (inactiveSize < 20.0 ? 20.0 : inactiveSize);
-  }
-
-  IconData setCurrentEarIconDisplay(String selectedEar) {
-    if (selectedEar == current_ear) {
-      return Icons.volume_up;
-    }
-    return Icons.volume_off;
-  }
-
   Color determineCurrentSoundStageBGColor(int soundStage, ThemeData theme) {
     if (soundStage == current_sound_stage) {
       return theme.brightness == Brightness.dark
@@ -1180,14 +1143,19 @@ class _TestPageState extends State<TestPage> {
                         ),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            appLocalizations.translate('i_can_hear_it'),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: (screenWidth * 0.038).clamp(14.0, 18.0),
-                              fontWeight: FontWeight.bold,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              appLocalizations.translate('i_can_hear_it'),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize:
+                                    (screenWidth * 0.035).clamp(12.0, 16.0),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1218,14 +1186,19 @@ class _TestPageState extends State<TestPage> {
                         ),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            appLocalizations.translate('i_cannot_hear_it'),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: (screenWidth * 0.038).clamp(14.0, 18.0),
-                              fontWeight: FontWeight.bold,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              appLocalizations.translate('i_cannot_hear_it'),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize:
+                                    (screenWidth * 0.035).clamp(12.0, 16.0),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1244,19 +1217,20 @@ class _TestPageState extends State<TestPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final appLocalizations = AppLocalizations.of(context);
 
-    // Fixed width for both ear containers to ensure they're the same size
-    final containerWidth = screenWidth * 0.35;
+    // Reduce container width to avoid text overflow
+    final containerWidth = screenWidth * 0.4;
+    final textSize = (screenWidth * 0.032).clamp(10.0, 16.0);
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Left ear container with fixed width
           Container(
             width: containerWidth,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             decoration: BoxDecoration(
               color: current_ear == "L"
                   ? Colors.blue.withOpacity(0.1)
@@ -1273,33 +1247,39 @@ class _TestPageState extends State<TestPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  setCurrentEarIconDisplay("L"),
-                  size: setCurrentEarIconSize("L", screenWidth),
+                  current_ear == "L" ? Icons.volume_up : Icons.volume_off,
+                  size: textSize * 1.4,
                   color: current_ear == "L"
                       ? Colors.blue
                       : textColor.withOpacity(0.6),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  appLocalizations.translate('left_ear'),
-                  style: TextStyle(
-                    fontSize: setCurrentEarTextSize("L", screenWidth),
-                    fontWeight: current_ear == "L"
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    color: current_ear == "L"
-                        ? Colors.blue
-                        : textColor.withOpacity(0.6),
+                Flexible(
+                  child: Text(
+                    appLocalizations.translate('left_ear'),
+                    style: TextStyle(
+                      fontSize: textSize,
+                      fontWeight: current_ear == "L"
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: current_ear == "L"
+                          ? Colors.blue
+                          : textColor.withOpacity(0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
 
+          const SizedBox(width: 8),
+
           // Right ear container with fixed width
           Container(
             width: containerWidth,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             decoration: BoxDecoration(
               color: current_ear == "R"
                   ? Colors.red.withOpacity(0.1)
@@ -1316,23 +1296,27 @@ class _TestPageState extends State<TestPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  setCurrentEarIconDisplay("R"),
-                  size: setCurrentEarIconSize("R", screenWidth),
+                  current_ear == "R" ? Icons.volume_up : Icons.volume_off,
+                  size: textSize * 1.4,
                   color: current_ear == "R"
                       ? Colors.red
                       : textColor.withOpacity(0.6),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  appLocalizations.translate('right_ear'),
-                  style: TextStyle(
-                    fontSize: setCurrentEarTextSize("R", screenWidth),
-                    fontWeight: current_ear == "R"
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    color: current_ear == "R"
-                        ? Colors.red
-                        : textColor.withOpacity(0.6),
+                Flexible(
+                  child: Text(
+                    appLocalizations.translate('right_ear'),
+                    style: TextStyle(
+                      fontSize: textSize,
+                      fontWeight: current_ear == "R"
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: current_ear == "R"
+                          ? Colors.red
+                          : textColor.withOpacity(0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

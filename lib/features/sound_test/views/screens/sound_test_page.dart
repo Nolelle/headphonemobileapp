@@ -278,35 +278,47 @@ class _SoundTestPageState extends State<SoundTestPage> {
                   child: ElevatedButton(
                     onPressed: _resetToBaseline,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(
-                        appLocalizations.translate('reset_to_baseline'),
-                        style: const TextStyle(fontSize: 14),
-                        textAlign: TextAlign.center,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          appLocalizations.translate('reset_to_baseline'),
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _retakeTest,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text(
-                      appLocalizations.translate('retake_test'),
-                      style: const TextStyle(fontSize: 14),
-                      textAlign: TextAlign.center,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          appLocalizations.translate('retake_test'),
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -351,12 +363,18 @@ class _SoundTestPageState extends State<SoundTestPage> {
                     onPressed: () => _startNewTest(context),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 12),
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text(appLocalizations.translate('start_test')),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        appLocalizations.translate('start_test'),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
                 ],
               ),
