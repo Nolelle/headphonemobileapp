@@ -127,7 +127,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
     );
   }
 
-  Future<void> _sendHearingTestData() async {
+  Future<void> _sendHearingTestData({bool silent = true}) async {
     if (activeSoundTestId == null) return;
 
     final soundTest =
@@ -140,8 +140,22 @@ class _SoundTestPageState extends State<SoundTestPage> {
     // Only send if device is connected
     if (bluetoothProvider.isDeviceConnected) {
       try {
-        // Silently send data without showing any feedback
+        // NOTE: The BLE service sends data silently already, but the notification
+        // is coming from the platform code, not from this method
         await _bleDataService.sendHearingTestData(soundTest);
+
+        // We'll handle notifications here instead
+        if (!silent && mounted) {
+          // Show notification only if not in silent mode
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).translate('sent_to_device')),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       } catch (e) {
         // Silently log error without showing to user
         print('Error sending hearing test data: $e');
@@ -247,7 +261,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
         // No dialog needed - silently reset
 
         // Send reset data to device silently
-        _sendHearingTestData();
+        _sendHearingTestData(silent: true);
       }
     } finally {
       if (mounted) {
@@ -292,7 +306,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
     setState(() {});
 
     // Send reset data to device silently
-    _sendHearingTestData();
+    _sendHearingTestData(silent: true);
 
     // Show a simple notification without mentioning data being sent
     if (mounted) {
