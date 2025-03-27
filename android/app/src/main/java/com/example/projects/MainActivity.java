@@ -1105,7 +1105,7 @@ public class MainActivity extends FlutterActivity {
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             
             // Use Bluetooth if available
-            shareIntent.putExtra(Intent.EXTRA_TITLE, "Share Hearing Test via Bluetooth");
+            shareIntent.putExtra(Intent.EXTRA_TITLE, "Share via Bluetooth");
             
             // Create chooser
             Intent chooser = Intent.createChooser(shareIntent, "Share via Bluetooth");
@@ -1119,7 +1119,7 @@ public class MainActivity extends FlutterActivity {
             // Show toast
             Toast.makeText(
                 getApplicationContext(),
-                "Please select Bluetooth to share the hearing test",
+                "Please select Bluetooth to share the file",
                 Toast.LENGTH_LONG
             ).show();
             

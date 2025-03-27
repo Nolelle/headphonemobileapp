@@ -6,6 +6,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../features/bluetooth/services/ble_data_service.dart';
 import '../../../../features/bluetooth/providers/bluetooth_provider.dart';
 import '../../../../features/sound_test/providers/sound_test_provider.dart';
+import '../../../../features/bluetooth/services/bluetooth_file_service.dart';
 import 'package:provider/provider.dart';
 
 class PresetPage extends StatefulWidget {
@@ -138,13 +139,30 @@ class _PresetPageState extends State<PresetPage> {
       );
 
       try {
+        // 1. Update the preset in storage
         await widget.presetProvider.updatePreset(preset);
 
-        // Send preset data via BLE
-        await _sendPresetData(preset);
+        // 2. Set this preset as the active preset
+        widget.presetProvider.setActivePreset(preset.id);
 
-        // Send combined data if there's an active hearing test
-        await _sendCombinedData(preset);
+        // 3. Send preset data via BLE directly
+        final bluetoothProvider =
+            Provider.of<BluetoothProvider>(context, listen: false);
+        bool deviceConnected = bluetoothProvider.isDeviceConnected;
+
+        bool dataSent = false;
+        if (deviceConnected) {
+          // First attempt to send combined data
+          final soundTestProvider =
+              Provider.of<SoundTestProvider>(context, listen: false);
+          dataSent = await widget.presetProvider
+              .sendCombinedDataToDevice(soundTestProvider);
+
+          // If that fails, try sending just the preset
+          if (!dataSent) {
+            dataSent = await _sendPresetData(preset);
+          }
+        }
 
         if (mounted) {
           // Dismiss any existing SnackBar
@@ -156,6 +174,12 @@ class _PresetPageState extends State<PresetPage> {
           if (settingName != null) {
             message =
                 '$settingName ${AppLocalizations.of(context).translate('updated')}';
+          }
+
+          // Instead of showing "sent to device", just indicate the value is saved
+          if (deviceConnected && dataSent) {
+            // Send to device silently without showing in notification
+            // Don't add anything extra to the message, just show what was updated
           }
 
           _currentSnackBar = ScaffoldMessenger.of(context).showSnackBar(
@@ -186,18 +210,20 @@ class _PresetPageState extends State<PresetPage> {
   }
 
   // Send preset data via BLE
-  Future<void> _sendPresetData(Preset preset) async {
+  Future<bool> _sendPresetData(Preset preset) async {
     final bluetoothProvider =
         Provider.of<BluetoothProvider>(context, listen: false);
-    if (!bluetoothProvider.isDeviceConnected) return;
+    if (!bluetoothProvider.isDeviceConnected) return false;
 
     try {
       final bool sent = await _bleDataService.sendPresetData(preset);
       if (sent && mounted) {
         print('Preset data sent to device successfully');
       }
+      return sent;
     } catch (e) {
       print('Error sending preset data: $e');
+      return false;
     }
   }
 
@@ -327,6 +353,7 @@ class _PresetPageState extends State<PresetPage> {
                   textColor, subtitleColor, appLocalizations),
               _buildSoundEnhancementSection(
                   textColor, subtitleColor, appLocalizations),
+              _buildShareButton(appLocalizations),
             ],
           ),
         ),
@@ -789,5 +816,93 @@ class _PresetPageState extends State<PresetPage> {
         ],
       ),
     );
+  }
+
+  // New method to build the share button
+  Widget _buildShareButton(AppLocalizations appLocalizations) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+      alignment: Alignment.center,
+      child: ElevatedButton.icon(
+        onPressed: _sharePresetFile,
+        icon: const Icon(Icons.share, size: 18),
+        label: Text(
+          appLocalizations.translate('share_preset'),
+          style: const TextStyle(fontSize: 14),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          minimumSize: const Size(200, 48),
+        ),
+      ),
+    );
+  }
+
+  // Method to share the preset file with hearing test data
+  Future<void> _sharePresetFile() async {
+    try {
+      // Create preset object with current settings
+      final preset = Preset(
+        id: widget.presetId,
+        name: _nameController.text,
+        dateCreated: DateTime.now(),
+        presetData: {
+          'db_valueOV': db_valueOV,
+          'db_valueSB_BS': db_valueSB_BS,
+          'db_valueSB_MRS': db_valueSB_MRS,
+          'db_valueSB_TS': db_valueSB_TS,
+          'reduce_background_noise': reduce_background_noise,
+          'reduce_wind_noise': reduce_wind_noise,
+          'soften_sudden_noise': soften_sudden_noise,
+        },
+      );
+
+      // Get the active sound test
+      final soundTestProvider =
+          Provider.of<SoundTestProvider>(context, listen: false);
+      final activeSoundTest = soundTestProvider.activeSoundTest;
+
+      if (activeSoundTest == null) {
+        // No active sound test available
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                AppLocalizations.of(context).translate('no_active_sound_test')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      // Send combined data
+      final bluetoothFileService = BluetoothFileService();
+      final success = await bluetoothFileService
+          .sendCombinedHearingTestWithPreset(activeSoundTest, preset);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).translate(success
+                ? 'combined_data_prepared_for_sharing'
+                : 'combined_data_share_failed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error sharing combined data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)
+                .translate('combined_data_share_failed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }

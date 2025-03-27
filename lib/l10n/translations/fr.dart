@@ -76,6 +76,7 @@ final Map<String, String> frTranslations = {
   'updated': 'mis à jour',
   'successfully_updated': 'Mis à jour avec succès!',
   'updating': 'Mise à jour',
+  'value_is_saved': 'Valeur enregistrée',
 
   // Presets List Page
   'no_presets':
@@ -86,6 +87,7 @@ final Map<String, String> frTranslations = {
   'confirm_delete_message': 'Êtes-vous sûr de vouloir supprimer',
   'deleted_successfully': 'supprimé avec succès!',
   'sent_to_device': 'Envoyé avec succès à l\'appareil!',
+  'preset_applied': 'appliqué avec succès!',
   'presets_count': 'Préréglages:',
   'max_presets': 'Vous ne pouvez avoir qu\'un maximum de 10 préréglages!',
 
@@ -100,8 +102,9 @@ final Map<String, String> frTranslations = {
   'audio_profiles': 'Profils audio:',
   'max_profiles': 'Vous ne pouvez avoir qu\'un maximum de 3 profils audio!',
   'successfully_applied': 'Appliqué avec succès!',
-  'retake_test': 'Refaire le Test',
+  'retake_test': 'Refaire le test',
   'reset_to_baseline': 'Réinitialiser',
+  'reset_successful': 'Réinitialisation réussie',
 
   // Test Page - New additions
   'hearing_test_in_progress': 'Test Auditif en Cours',
@@ -165,7 +168,29 @@ final Map<String, String> frTranslations = {
   'profound_loss': 'Perte Profonde (>90 dB)',
 
   // Add new translations for Bluetooth file sharing
-  'share_via_bluetooth': 'Partager les Résultats',
+  'share_via_bluetooth': 'Envoyer à l\'Appareil',
   'file_sent_successfully': 'Fichier de test auditif préparé pour le partage',
   'file_send_failed': 'Échec de la préparation du fichier de test auditif',
+
+  // New translations for preset sharing
+  'share_preset': 'Partager le Préréglage',
+  'preset_prepared_for_sharing': 'Préréglage préparé pour le partage',
+  'preset_share_failed': 'Échec de préparation du fichier de préréglage',
+
+  // Combined hearing test and preset sharing
+  'no_active_sound_test':
+      'Aucun test auditif actif disponible. Veuillez d\'abord effectuer un test auditif.',
+  'combined_data_prepared_for_sharing':
+      'Profil auditif avec paramètres préréglés préparé pour le partage',
+  'combined_data_share_failed':
+      'Échec de la préparation du profil auditif combiné',
+
+  // Demo Reset
+  'demo_reset': 'Réinitialisation Démo',
+  'demo_reset_description': 'Réinitialiser l\'application pour démonstration',
+  'demo_reset_confirmation': 'Réinitialiser l\'Application pour Démo?',
+  'demo_reset_message':
+      'Cela effacera tous les tests auditifs et préréglages. Cette action ne peut pas être annulée.',
+  'demo_reset_success':
+      'L\'application a été réinitialisée pour la démonstration',
 };

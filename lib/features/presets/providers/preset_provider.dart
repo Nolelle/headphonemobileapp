@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/preset.dart';
 import '../repositories/preset_repository.dart';
+import '../../bluetooth/services/ble_data_service.dart';
+import '../../sound_test/providers/sound_test_provider.dart';
 
 class PresetProvider with ChangeNotifier {
   final PresetRepository _repository;
@@ -10,6 +12,7 @@ class PresetProvider with ChangeNotifier {
   String? _activePresetId;
   bool _isLoading = false;
   String? _error;
+  final BLEDataService _bleDataService = BLEDataService();
 
   PresetProvider(this._repository);
 
@@ -104,6 +107,44 @@ class PresetProvider with ChangeNotifier {
     if (_presets.containsKey(id)) {
       _activePresetId = id;
       notifyListeners();
+    }
+  }
+
+  // Send the active preset to the connected device
+  Future<bool> sendActivePresetToDevice() async {
+    if (_activePresetId == null || !_presets.containsKey(_activePresetId!)) {
+      return false;
+    }
+
+    try {
+      final activePreset = _presets[_activePresetId!]!;
+      return await _bleDataService.sendPresetData(activePreset);
+    } catch (e) {
+      print("Failed to send active preset to device: $e");
+      return false;
+    }
+  }
+
+  // Send combined preset and sound test data if available
+  Future<bool> sendCombinedDataToDevice(
+      SoundTestProvider soundTestProvider) async {
+    if (_activePresetId == null || !_presets.containsKey(_activePresetId!)) {
+      return false;
+    }
+
+    final activeSoundTest = soundTestProvider.activeSoundTest;
+    if (activeSoundTest == null) {
+      // If no active sound test, just send the preset
+      return await sendActivePresetToDevice();
+    }
+
+    try {
+      final activePreset = _presets[_activePresetId!]!;
+      return await _bleDataService.sendCombinedData(
+          activeSoundTest, activePreset);
+    } catch (e) {
+      print("Failed to send combined data to device: $e");
+      return false;
     }
   }
 

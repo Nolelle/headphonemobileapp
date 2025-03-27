@@ -76,6 +76,7 @@ final Map<String, String> enTranslations = {
   'updated': 'updated',
   'successfully_updated': 'Successfully Updated!',
   'updating': 'Updating',
+  'value_is_saved': 'Value is saved',
 
   // Presets List Page
   'no_presets': 'No presets available. Create a new preset to get started.',
@@ -85,6 +86,7 @@ final Map<String, String> enTranslations = {
   'confirm_delete_message': 'Are you sure you want to delete',
   'deleted_successfully': 'deleted successfully!',
   'sent_to_device': 'Successfully sent to device!',
+  'preset_applied': 'applied successfully!',
   'presets_count': 'Presets:',
   'max_presets': 'You can only have a maximum of 10 presets!',
 
@@ -105,6 +107,7 @@ final Map<String, String> enTranslations = {
   'successfully_applied': 'Successfully Applied!',
   'retake_test': 'Retake Test',
   'reset_to_baseline': 'Reset to Baseline',
+  'reset_successful': 'Reset successful',
 
   // Test Page - New additions
   'hearing_test_in_progress': 'Hearing Test In Progress',
@@ -165,7 +168,27 @@ final Map<String, String> enTranslations = {
   'profound_loss': 'Profound Loss (>90 dB)',
 
   // Add new translations for Bluetooth file sharing
-  'share_via_bluetooth': 'Share Test Results',
+  'share_via_bluetooth': 'Send to Device',
   'file_sent_successfully': 'Hearing test file prepared for sharing',
   'file_send_failed': 'Failed to prepare hearing test file',
+
+  // New translations for preset sharing
+  'share_preset': 'Share Preset',
+  'preset_prepared_for_sharing': 'Preset prepared for sharing',
+  'preset_share_failed': 'Failed to prepare preset file',
+
+  // Combined hearing test and preset sharing
+  'no_active_sound_test':
+      'No active hearing test available. Please complete a hearing test first.',
+  'combined_data_prepared_for_sharing':
+      'Hearing profile with preset settings prepared for sharing',
+  'combined_data_share_failed': 'Failed to prepare combined hearing profile',
+
+  // Demo Reset
+  'demo_reset': 'Demo Reset',
+  'demo_reset_description': 'Reset app for demonstration',
+  'demo_reset_confirmation': 'Reset App for Demo?',
+  'demo_reset_message':
+      'This will clear all hearing tests and presets. This action cannot be undone.',
+  'demo_reset_success': 'App has been reset for demonstration',
 };

@@ -280,16 +280,6 @@ class _TestPageState extends State<TestPage> {
                 Navigator.of(context).pop();
                 // Then pop the test page to return to sound test page
                 Navigator.of(context).pop();
-                // Show a success toast on the sound test page
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          appLocalizations.translate('test_results_saved')),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
               },
               child: Text(appLocalizations.translate('ok')),
             ),

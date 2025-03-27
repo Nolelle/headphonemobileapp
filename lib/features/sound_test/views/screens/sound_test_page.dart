@@ -140,8 +140,10 @@ class _SoundTestPageState extends State<SoundTestPage> {
     // Only send if device is connected
     if (bluetoothProvider.isDeviceConnected) {
       try {
+        // Silently send data without showing any feedback
         await _bleDataService.sendHearingTestData(soundTest);
       } catch (e) {
+        // Silently log error without showing to user
         print('Error sending hearing test data: $e');
       }
     }
@@ -242,9 +244,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
     try {
       await widget.soundTestProvider.resetSoundTest(activeSoundTestId!);
       if (mounted) {
-        await _showValuesSavedDialog(context);
+        // No dialog needed - silently reset
 
-        // Send reset data to device
+        // Send reset data to device silently
         _sendHearingTestData();
       }
     } finally {
@@ -289,8 +291,20 @@ class _SoundTestPageState extends State<SoundTestPage> {
     widget.soundTestProvider.updateSoundTest(defaultTest);
     setState(() {});
 
-    // Send reset data to device
+    // Send reset data to device silently
     _sendHearingTestData();
+
+    // Show a simple notification without mentioning data being sent
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context).translate('reset_successful')),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _retakeTest() {
@@ -425,44 +439,70 @@ class _SoundTestPageState extends State<SoundTestPage> {
       ),
       body: activeSoundTestId != null
           ? _buildAudiogramSection()
-          : Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    appLocalizations.translate('welcome_hearing_test'),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Center(
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.hearing,
+                          size: 48,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          appLocalizations.translate('welcome_hearing_test'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          appLocalizations
+                              .translate('take_hearing_test_message'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _startNewTest(context),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              appLocalizations.translate('start_test'),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    appLocalizations.translate('take_hearing_test_message'),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => _startNewTest(context),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        appLocalizations.translate('start_test'),
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
     );

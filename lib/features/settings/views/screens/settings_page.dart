@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/sound_test/providers/sound_test_provider.dart';
+import '../../../../features/presets/providers/preset_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -53,6 +56,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: languageProvider.getLanguageName(),
                 onTap: () {
                   _showLanguageDialog(languageProvider, appLocalizations);
+                },
+              ),
+
+              // Demo Reset Option
+              _buildSettingItem(
+                icon: Icons.refresh,
+                title: appLocalizations.translate('demo_reset'),
+                subtitle: appLocalizations.translate('demo_reset_description'),
+                onTap: () {
+                  _showDemoResetConfirmationDialog(appLocalizations);
                 },
               ),
 
@@ -323,5 +336,71 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       },
     );
+  }
+
+  void _showDemoResetConfirmationDialog(AppLocalizations appLocalizations) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(appLocalizations.translate('demo_reset_confirmation')),
+          content: Text(appLocalizations.translate('demo_reset_message')),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(appLocalizations.translate('cancel')),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _resetAppForDemo();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        appLocalizations.translate('demo_reset_success'),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: Text(appLocalizations.translate('reset')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _resetAppForDemo() async {
+    // Get the providers
+    final soundTestProvider =
+        Provider.of<SoundTestProvider>(context, listen: false);
+    final presetProvider = Provider.of<PresetProvider>(context, listen: false);
+
+    try {
+      // Clear all data using SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+
+      // Clear sound tests and presets directly from shared preferences
+      await prefs.remove('soundTestsMap');
+      await prefs.remove('presetsMap');
+
+      // Refresh the providers to reflect the cleared data
+      await soundTestProvider.fetchSoundTests();
+      await presetProvider.fetchPresets();
+
+      // Clear active selections
+      soundTestProvider.clearActiveSoundTest();
+      presetProvider.clearActivePreset();
+    } catch (e) {
+      print('Error resetting app for demo: $e');
+    }
   }
 }

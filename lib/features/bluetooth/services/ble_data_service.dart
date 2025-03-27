@@ -27,10 +27,10 @@ class BLEDataService {
       Map<String, dynamic> jsonData = soundTest.toJson();
       jsonData['id'] = soundTest.id; // Add ID which may not be in toJson()
 
-      // Send data
-      return await _sendJSONData(HEARING_TEST_CHAR_UUID, jsonData);
+      // Send data - silently, without logging
+      return await _sendJSONDataSilently(HEARING_TEST_CHAR_UUID, jsonData);
     } catch (e) {
-      print("Failed to send hearing test data: $e");
+      // Silently fail without showing messages to user
       return false;
     }
   }
@@ -42,10 +42,10 @@ class BLEDataService {
       Map<String, dynamic> jsonData = preset.toJson();
       jsonData['id'] = preset.id; // Add ID which may not be in toJson()
 
-      // Send data
-      return await _sendJSONData(PRESET_CHAR_UUID, jsonData);
+      // Send data silently
+      return await _sendJSONDataSilently(PRESET_CHAR_UUID, jsonData);
     } catch (e) {
-      print("Failed to send preset data: $e");
+      // Silently fail
       return false;
     }
   }
@@ -57,10 +57,10 @@ class BLEDataService {
       Map<String, dynamic> combinedData =
           calculateCombinedValues(soundTest, preset);
 
-      // Send data
-      return await _sendJSONData(COMBINED_DATA_CHAR_UUID, combinedData);
+      // Send data silently
+      return await _sendJSONDataSilently(COMBINED_DATA_CHAR_UUID, combinedData);
     } catch (e) {
-      print("Failed to send combined data: $e");
+      // Silently fail
       return false;
     }
   }
@@ -152,6 +152,62 @@ class BLEDataService {
     };
 
     return combinedData;
+  }
+
+  // Helper method to send JSON data over BLE silently (no logging)
+  Future<bool> _sendJSONDataSilently(
+      String characteristicUuid, Map<String, dynamic> data) async {
+    try {
+      // Convert to JSON string
+      String jsonString = jsonEncode(data);
+
+      // Convert to bytes
+      List<int> bytes = utf8.encode(jsonString);
+
+      // Check if we need to split into chunks
+      if (bytes.length <= MAX_CHUNK_SIZE) {
+        // Send in one go
+        return await _writeCharacteristic(
+            characteristicUuid, Uint8List.fromList(bytes), false);
+      } else {
+        // Send in chunks with metadata
+        int totalChunks = (bytes.length / MAX_CHUNK_SIZE).ceil();
+        bool success = true;
+
+        for (int i = 0; i < totalChunks; i++) {
+          int start = i * MAX_CHUNK_SIZE;
+          int end = (start + MAX_CHUNK_SIZE < bytes.length)
+              ? start + MAX_CHUNK_SIZE
+              : bytes.length;
+
+          // Add chunk metadata
+          List<int> chunkMetadata = [
+            i, // chunk index
+            totalChunks - 1, // last chunk index
+          ];
+
+          // Create chunk with metadata
+          List<int> chunk = [...chunkMetadata, ...bytes.sublist(start, end)];
+
+          // Send chunk
+          bool chunkSent = await _writeCharacteristic(
+            characteristicUuid,
+            Uint8List.fromList(chunk),
+            i < totalChunks - 1, // Only wait for response on last chunk
+          );
+
+          if (!chunkSent) {
+            success = false;
+            break;
+          }
+        }
+
+        return success;
+      }
+    } catch (e) {
+      // Silently fail
+      return false;
+    }
   }
 
   // Helper method to send JSON data over BLE
