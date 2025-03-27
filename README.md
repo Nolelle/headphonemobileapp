@@ -1,5 +1,16 @@
 # Mobile Audio Companion App
 
+A Flutter application designed to enhance the user experience of audio headphone devices through precise preset management, sound testing, and Bluetooth connectivity.
+
+## Project Overview
+
+This mobile application serves as a companion for audio headphone devices, allowing users to:
+
+- Create and manage custom audio presets
+- Perform hearing tests to generate personalized audio profiles
+- Connect to Bluetooth headphone devices
+- Customize application settings including themes and languages
+
 ## Project Structure
 
 The project follows a feature-first architecture with clean separation of concerns:
@@ -20,44 +31,32 @@ lib/
 │   │
 │   ├── presets/              # Core preset management feature
 │   │   ├── models/           # Data models
-│   │   │   └── preset.dart
 │   │   ├── repositories/     # Data access layer
-│   │   │   └── preset_repository.dart
 │   │   ├── providers/        # State management
-│   │   │   └── preset_provider.dart
 │   │   └── views/           # UI components
-│   │       └── screens/     
-│   │           ├── preset_list_page.dart
-│   │           └── preset_page.dart
 │   │
 │   ├── settings/            # Application settings feature
 │   │   ├── models/          # Settings data models
 │   │   ├── repositories/    # Settings data access
 │   │   ├── providers/       # Settings state management
-│   │   │   ├── theme_provider.dart  # Manages app theme (dark/light mode)
-│   │   │   └── language_provider.dart  # Manages app language
 │   │   └── views/          # Settings UI components
-│   │       └── screens/
-│   │           └── settings_page.dart
 │   │
 │   └── sound_test/         # Audio testing feature
 │       ├── models/         # Sound test data models
 │       ├── repositories/   # Sound test data access
 │       ├── providers/      # Sound test state management
 │       └── views/         # Sound test UI components
-│           └── screens/
-│               └── sound_test_page.dart
 │
 ├── l10n/                    # Localization resources
 │   ├── app_localizations.dart  # Localization manager
 │   └── translations/        # Translation files
-│       ├── en.dart          # English translations
-│       └── fr.dart          # French translations
+│
+├── shared/                 # Shared utilities and components
 │
 └── main.dart               # Application entry point
 ```
 
-### Architecture Overview
+## Architecture Overview
 
 The application follows these key architectural principles:
 
@@ -85,10 +84,10 @@ The application follows these key architectural principles:
    - Custom localization system
    - Language switching with persistent preferences
 
-6. **Theming**:
-   - Supports light and dark themes
-   - Consistent UI across theme changes
-   - Persists theme preferences
+6. **Lifecycle Management**:
+   - Robust Bluetooth connection management across app lifecycle
+   - Intelligent handling of app foreground/background transitions
+   - Multi-phase connection detection approach
 
 ## Key Features
 
@@ -98,6 +97,21 @@ The application follows these key architectural principles:
 - Adjust volume, sound balance, and enhancement settings
 - Real-time feedback with optimized notifications
 - Intelligent auto-save functionality
+
+### Bluetooth Connectivity
+
+- Connect to Bluetooth headphone devices
+- Send preset configurations to connected devices
+- Monitor connection status
+- Handle device reconnection gracefully
+- Multi-phase connection detection for reliable device pairing
+
+### Sound Testing
+
+- Perform hearing tests across multiple frequencies (250Hz-8000Hz)
+- Generate personalized audio profiles based on test results
+- Create presets optimized for user's hearing profile
+- Visualize hearing test results
 
 ### Theme Support
 
@@ -110,18 +124,6 @@ The application follows these key architectural principles:
 - English and French language options
 - Complete translations for all UI elements
 - Persistent language preferences
-
-### Bluetooth Connectivity
-
-- Connect to Bluetooth headphone devices
-- Send preset configurations to connected devices
-- Monitor connection status
-
-### Sound Testing
-
-- Perform hearing tests
-- Generate personalized audio profiles
-- Create presets based on test results
 
 ## Setup and Development
 
@@ -157,6 +159,27 @@ The application follows these key architectural principles:
    ```bash
    flutter run
    ```
+
+### Testing
+
+The project includes a comprehensive testing suite:
+
+- **Unit Tests**: Validate individual components and functions
+- **Widget Tests**: Ensure UI components work correctly
+- **Integration Tests**: Test feature workflows end-to-end
+- **Mock Services**: Simulate Bluetooth connections for reliable testing
+
+Run tests with:
+
+```bash
+flutter test
+```
+
+For integration tests:
+
+```bash
+flutter test integration_test
+```
 
 ### Development Guidelines
 
@@ -205,6 +228,19 @@ For iOS:
 ```bash
 flutter build ios --release
 ```
+
+## Dependencies
+
+The app relies on the following key dependencies:
+
+- **Provider**: For state management
+- **Shared Preferences**: For data persistence
+- **AudioPlayers**: For audio playback during sound tests
+- **Permission Handler**: For managing Bluetooth and audio permissions
+- **Intl**: For internationalization support
+- **Flutter Localizations**: For language support
+- **URL Launcher**: For opening external links
+- **Path Provider**: For file system access
 
 ## Contributing
 
