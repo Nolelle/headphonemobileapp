@@ -112,6 +112,12 @@ class HeadphoneInfoBanner extends StatelessWidget {
                   ),
                 ),
               ] else ...[
+                Icon(
+                  batteryIcon,
+                  color: batteryColor,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
                 Text(
                   'N/A',
                   style: TextStyle(

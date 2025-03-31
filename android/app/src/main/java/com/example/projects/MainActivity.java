@@ -595,8 +595,8 @@ public class MainActivity extends FlutterActivity {
             deviceMap.put("id", connectedDevice.getAddress());
             deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
             deviceMap.put("type", getDeviceType(connectedDevice));
-            // Add mock battery level based on device name
-            deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+            // Don't add mock battery level
+            deviceMap.put("batteryLevel", null);
             return deviceMap;
         }
         
@@ -616,8 +616,8 @@ public class MainActivity extends FlutterActivity {
                 deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
                 deviceMap.put("type", "classic");
                 deviceMap.put("audioType", "classic");
-                // Add mock battery level based on device name
-                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
                 return deviceMap;
             }
         } else {
@@ -636,8 +636,8 @@ public class MainActivity extends FlutterActivity {
                 deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
                 deviceMap.put("type", "le");
                 deviceMap.put("audioType", "le_audio");
-                // Add mock battery level based on device name
-                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
                 return deviceMap;
             }
         } else {
@@ -669,40 +669,14 @@ public class MainActivity extends FlutterActivity {
                 deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
                 deviceMap.put("type", getDeviceType(connectedDevice));
                 deviceMap.put("audioType", "classic"); // Assume classic as fallback
-                // Add mock battery level based on device name
-                deviceMap.put("batteryLevel", getMockBatteryLevelForDevice(connectedDevice));
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
                 return deviceMap;
             }
         }
         
         Log.d("MainActivity", "No connected Bluetooth audio device found");
         return null; // No device found
-    }
-    
-    // Helper method to provide mock battery level based on device name
-    private Integer getMockBatteryLevelForDevice(BluetoothDevice device) {
-        if (device == null) return null;
-        
-        String deviceName = device.getName();
-        if (deviceName == null || deviceName.isEmpty()) {
-            return 50; // Default for unknown devices
-        }
-        
-        String name = deviceName.toLowerCase();
-        if (name.contains("sony") || name.contains("wh-1000")) {
-            return 85; // Sony headphones
-        } else if (name.contains("bose") || name.contains("quiet")) {
-            return 78; // Bose headphones
-        } else if (name.contains("airpods") || name.contains("beats")) {
-            return 65; // Apple products
-        } else if (name.contains("samsung") || name.contains("galaxy")) {
-            return 55; // Samsung products
-        } else if (name.contains("jabra")) {
-            return 42; // Jabra products
-        }
-        
-        // For unknown headphones, return a random level between 30-90%
-        return 30 + (int)(Math.random() * 60);
     }
     
     // Open Bluetooth settings
@@ -983,12 +957,11 @@ public class MainActivity extends FlutterActivity {
                             mGatt = null;
                         }
                         
-                        // Fall back to mock data if GATT fails
-                        Integer mockLevel = getMockBatteryLevelForDevice(connectedDevice);
-                        Log.d("MainActivity", "Using mock battery level: " + mockLevel);
-                        cachedBatteryLevel = mockLevel;
+                        // Return null instead of using mock data
+                        Log.d("MainActivity", "Battery level not available");
+                        cachedBatteryLevel = null;
                         lastBatteryCheckTime = System.currentTimeMillis();
-                        result.success(mockLevel);
+                        result.success(null);
                     }
                 }
             }, 5000); // 5 second timeout
@@ -1001,18 +974,16 @@ public class MainActivity extends FlutterActivity {
                 Log.e("MainActivity", "Error connecting to GATT: " + e.getMessage());
                 isGattConnecting = false;
                 
-                // Fall back to mock on error
-                Integer mockLevel = getMockBatteryLevelForDevice(connectedDevice);
-                Log.d("MainActivity", "Using mock battery level: " + mockLevel);
-                cachedBatteryLevel = mockLevel;
+                // Return null instead of using mock data
+                Log.d("MainActivity", "Battery level not available");
+                cachedBatteryLevel = null;
                 lastBatteryCheckTime = System.currentTimeMillis();
-                result.success(mockLevel);
+                result.success(null);
             }
         } else {
-            // If already connecting or GATT in use, fall back to mock data
-            Log.d("MainActivity", "GATT already in use, using mock data");
-            Integer mockLevel = getMockBatteryLevelForDevice(connectedDevice);
-            result.success(mockLevel);
+            // If already connecting or GATT in use, return null instead of mock data
+            Log.d("MainActivity", "GATT already in use, battery level not available");
+            result.success(null);
         }
     }
     
