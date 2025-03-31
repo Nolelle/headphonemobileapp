@@ -143,15 +143,25 @@ class _TestPageState extends State<TestPage> {
   @override
   void dispose() {
     try {
-      // Ensure sound is stopped
-      stopSound();
+      // Ensure sound is stopped and set flag to prevent further usage
+      is_sound_playing = false;
 
       // Complete cleanup of audio resources
+      // Make these calls in a safer sequence to prevent race conditions
+      frequency_player.onPlayerStateChanged
+          .listen(null); // Remove listener first
       frequency_player.stop();
-      frequency_player.release();
-      frequency_player.dispose();
-
-      debugPrint("Audio player resources successfully released");
+      Future.delayed(const Duration(milliseconds: 200), () {
+        try {
+          if (!mounted) {
+            frequency_player.release();
+            frequency_player.dispose();
+            debugPrint("Audio player resources successfully released");
+          }
+        } catch (innerError) {
+          debugPrint("Error in delayed cleanup: $innerError");
+        }
+      });
     } catch (e) {
       debugPrint("Error disposing audio player: $e");
     }
@@ -227,7 +237,10 @@ class _TestPageState extends State<TestPage> {
         ear_balance = 1.0;
         current_sound_stage = 1;
       } else if (current_ear == "R" && current_sound_stage > 5) {
+        current_ear = "";
         ear_balance = 0.0;
+        test_completed = true;
+        debugPrint("Hearing test completed for both ears");
         _handleTestCompletion();
       }
     });
@@ -406,6 +419,18 @@ class _TestPageState extends State<TestPage> {
         case 5:
           currentFrequency = _4000Hz_audio;
           break;
+        default:
+          // Handle unexpected sound stage by providing a default
+          debugPrint(
+              "AUDIO DEBUG: Invalid sound stage: $current_sound_stage, defaulting to 1000Hz");
+          currentFrequency = _1000Hz_audio;
+          break;
+      }
+
+      // Check if currentFrequency is empty or invalid
+      if (currentFrequency.isEmpty) {
+        throw Exception(
+            "Invalid frequency selected. Sound stage: $current_sound_stage");
       }
 
       // Stop any currently playing audio
@@ -464,8 +489,13 @@ class _TestPageState extends State<TestPage> {
 
   void stopSound() {
     try {
-      frequency_player.stop();
-      is_sound_playing = false;
+      if (frequency_player.state != PlayerState.disposed) {
+        frequency_player.stop();
+        is_sound_playing = false;
+        debugPrint("Sound stopped successfully");
+      } else {
+        debugPrint("Skipping stop command - player already disposed");
+      }
     } catch (e) {
       debugPrint("Error stopping sound: $e");
     }
@@ -574,9 +604,15 @@ class _TestPageState extends State<TestPage> {
         });
 
         updateCurrentEar();
-        // Start next frequency at initial volume
-        setCurrentVolume(convertDBSPLToVolume(INITIAL_DB_SPL));
-        playFrequency(ear_balance);
+
+        // Check if test is complete before playing next frequency
+        if (!test_completed) {
+          // Start next frequency at initial volume
+          setCurrentVolume(convertDBSPLToVolume(INITIAL_DB_SPL));
+          playFrequency(ear_balance);
+        } else {
+          debugPrint("Test completed, not playing next frequency");
+        }
       } else {
         // Still in initial descent - continue going down in steps
         decrementFrequencyVolume(frequency_player);
