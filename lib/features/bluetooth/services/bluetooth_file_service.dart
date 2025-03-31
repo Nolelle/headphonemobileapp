@@ -63,8 +63,12 @@ class BluetoothFileService {
       SoundTest soundTest, Preset preset) async {
     try {
       // Create a copy of the original hearing test data to modify
-      Map<String, dynamic> jsonData = soundTest.toJson();
+      Map<String, dynamic> jsonData = {};
+
+      // Set fields in the requested order
       jsonData['id'] = soundTest.id;
+      jsonData['dateCreated'] = soundTest.dateCreated.toIso8601String();
+      jsonData['name'] = soundTest.name;
 
       // Get preset data values
       final bassAdjustment = preset.presetData['db_valueSB_BS'] as double;
@@ -74,7 +78,7 @@ class BluetoothFileService {
 
       // Clone the sound test data for modifications
       Map<String, dynamic> soundTestData =
-          Map<String, dynamic>.from(jsonData['soundTestData'] as Map);
+          Map<String, dynamic>.from(soundTest.toJson()['soundTestData'] as Map);
 
       // Apply frequency-based adjustments to both ears
       // Bass adjustment (250Hz, 500Hz)
@@ -103,12 +107,17 @@ class BluetoothFileService {
       _applyAdjustment(
           soundTestData, 'R_user_4000Hz_dB', trebleAdjustment + overallVolume);
 
-      // Update the modified sound test data
+      // Add the sound test data
       jsonData['soundTestData'] = soundTestData;
 
-      // Add the preset name and enhancement settings as metadata
-      jsonData['appliedPresetName'] = preset.name;
+      // Add the preset enhancement settings
       jsonData['presetEnhancements'] = {
+        'presetId': preset.id,
+        'presetName': preset.name,
+        'overallVolume': preset.presetData['db_valueOV'],
+        'bassAdjustment': preset.presetData['db_valueSB_BS'],
+        'midAdjustment': preset.presetData['db_valueSB_MRS'],
+        'trebleAdjustment': preset.presetData['db_valueSB_TS'],
         'reduce_background_noise': preset.presetData['reduce_background_noise'],
         'reduce_wind_noise': preset.presetData['reduce_wind_noise'],
         'soften_sudden_noise': preset.presetData['soften_sudden_noise'],

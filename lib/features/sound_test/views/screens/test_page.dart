@@ -143,11 +143,19 @@ class _TestPageState extends State<TestPage> {
   @override
   void dispose() {
     try {
+      // Ensure sound is stopped
       stopSound();
+
+      // Complete cleanup of audio resources
+      frequency_player.stop();
+      frequency_player.release();
       frequency_player.dispose();
+
+      debugPrint("Audio player resources successfully released");
     } catch (e) {
       debugPrint("Error disposing audio player: $e");
     }
+
     _nameController.dispose();
     super.dispose();
   }
@@ -226,17 +234,32 @@ class _TestPageState extends State<TestPage> {
   }
 
   void _handleTestCompletion() {
-    // Stop playing sound
-    frequency_player.stop();
-    frequency_player.setReleaseMode(ReleaseMode.release);
+    try {
+      // Stop playing sound and ensure complete cleanup
+      frequency_player.stop();
+      frequency_player.setReleaseMode(ReleaseMode.release);
 
-    // Mark test as completed
-    setState(() {
-      test_completed = true;
-    });
+      // Add a proper release call to free all resources
+      frequency_player.release();
 
-    // Save test data and show completion dialog
-    _saveSoundTest();
+      // Additional cleanup & state management
+      is_sound_playing = false;
+
+      // Mark test as completed
+      setState(() {
+        test_completed = true;
+      });
+
+      // Save test data and show completion dialog
+      _saveSoundTest();
+    } catch (e) {
+      debugPrint("Error during test completion: $e");
+      // Still mark as completed even if there's an error
+      setState(() {
+        test_completed = true;
+      });
+      _saveSoundTest();
+    }
   }
 
   Future<void> _saveSoundTest() async {

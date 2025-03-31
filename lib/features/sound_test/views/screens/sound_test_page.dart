@@ -293,6 +293,9 @@ class _SoundTestPageState extends State<SoundTestPage> {
           activeSoundTestId = soundTestId;
         });
 
+        // Add a brief delay to prevent resource conflicts with audio assets
+        await Future.delayed(const Duration(milliseconds: 500));
+
         // Send the updated hearing test data
         _sendHearingTestData();
       }
