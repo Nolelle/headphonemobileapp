@@ -36,6 +36,9 @@ class Audiogram extends StatelessWidget {
     final isSmallScreen =
         screenSize.width < 360; // Adjust for small screens like MI A2
 
+    final theme = Theme.of(context); // Get the current theme
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
@@ -60,10 +63,13 @@ class Audiogram extends StatelessWidget {
                   Row(
                     children: [
                       Text('$leftEarLabel ',
-                          style: TextStyle(fontSize: fontSize)),
+                          style: TextStyle(
+                              fontSize: fontSize,
+                              color: theme.textTheme.bodyMedium?.color)),
                       CustomPaint(
                         size: Size(fontSize * 1.3, fontSize * 1.3),
-                        painter: SymbolPainter(isX: true, color: Colors.blue),
+                        painter:
+                            SymbolPainter(isX: true, color: theme.primaryColor),
                       ),
                     ],
                   ),
@@ -71,10 +77,13 @@ class Audiogram extends StatelessWidget {
                   Row(
                     children: [
                       Text('$rightEarLabel ',
-                          style: TextStyle(fontSize: fontSize)),
+                          style: TextStyle(
+                              fontSize: fontSize,
+                              color: theme.textTheme.bodyMedium?.color)),
                       CustomPaint(
                         size: Size(fontSize * 1.3, fontSize * 1.3),
-                        painter: SymbolPainter(isX: false, color: Colors.red),
+                        painter: SymbolPainter(
+                            isX: false, color: theme.colorScheme.error),
                       ),
                     ],
                   ),
@@ -86,14 +95,15 @@ class Audiogram extends StatelessWidget {
               height: graphHeight,
               padding: EdgeInsets.all(padding),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: theme.dividerColor),
               ),
               child: CustomPaint(
                 size: Size(availableWidth - (padding * 2),
                     graphHeight - (padding * 2)),
                 painter: AudiogramPainter(
+                  theme: theme,
                   leftEarData: leftEarData,
                   rightEarData: rightEarData,
                   scaleFactor: availableWidth / 400,
@@ -115,6 +125,7 @@ class Audiogram extends StatelessWidget {
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -125,12 +136,12 @@ class Audiogram extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildHearingLossIndicator(
-                      normalHearingLabel, Colors.white, fontSize * 0.85),
-                  _buildHearingLossIndicator(
-                      mildLossLabel, Colors.blue[50]!, fontSize * 0.85),
-                  _buildHearingLossIndicator(
-                      moderateLossLabel, Colors.blue[100]!, fontSize * 0.85),
+                  _buildHearingLossIndicator(theme, normalHearingLabel,
+                      _getHearingLossColor(theme, 0), fontSize * 0.85),
+                  _buildHearingLossIndicator(theme, mildLossLabel,
+                      _getHearingLossColor(theme, 1), fontSize * 0.85),
+                  _buildHearingLossIndicator(theme, moderateLossLabel,
+                      _getHearingLossColor(theme, 2), fontSize * 0.85),
                 ],
               ),
             ),
@@ -139,10 +150,10 @@ class Audiogram extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildHearingLossIndicator(
-                      severeLossLabel, Colors.blue[200]!, fontSize * 0.85),
-                  _buildHearingLossIndicator(
-                      profoundLossLabel, Colors.blue[300]!, fontSize * 0.85),
+                  _buildHearingLossIndicator(theme, severeLossLabel,
+                      _getHearingLossColor(theme, 3), fontSize * 0.85),
+                  _buildHearingLossIndicator(theme, profoundLossLabel,
+                      _getHearingLossColor(theme, 4), fontSize * 0.85),
                 ],
               ),
             ),
@@ -152,8 +163,27 @@ class Audiogram extends StatelessWidget {
     );
   }
 
+  Color _getHearingLossColor(ThemeData theme, int level) {
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    // Use shades of grey in dark mode, and subtle blues in light mode
+    // Base color is slightly lighter/darker than card color for contrast
+    final baseColor = isDarkMode
+        ? HSLColor.fromColor(theme.cardColor).withLightness(0.15).toColor()
+        : HSLColor.fromColor(theme.cardColor).withLightness(0.95).toColor();
+    final endColor = isDarkMode
+        ? HSLColor.fromColor(theme.primaryColor).withLightness(0.3).toColor()
+        : HSLColor.fromColor(theme.primaryColor).withLightness(0.8).toColor();
+
+    // Interpolate between base and end color based on level
+    return Color.lerp(baseColor, endColor, level / 4.0) ?? baseColor;
+  }
+
   Widget _buildHearingLossIndicator(
-      String label, Color color, double fontSize) {
+    ThemeData theme,
+    String label,
+    Color color,
+    double fontSize,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -162,11 +192,13 @@ class Audiogram extends StatelessWidget {
           height: fontSize,
           decoration: BoxDecoration(
             color: color,
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: theme.dividerColor),
           ),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: fontSize)),
+        Text(label,
+            style: TextStyle(
+                fontSize: fontSize, color: theme.textTheme.bodySmall?.color)),
       ],
     );
   }
@@ -210,6 +242,7 @@ class SymbolPainter extends CustomPainter {
 }
 
 class AudiogramPainter extends CustomPainter {
+  final ThemeData theme;
   final Map<String, double> leftEarData;
   final Map<String, double> rightEarData;
   final double scaleFactor;
@@ -246,6 +279,7 @@ class AudiogramPainter extends CustomPainter {
   ];
 
   AudiogramPainter({
+    required this.theme,
     required this.leftEarData,
     required this.rightEarData,
     required this.scaleFactor,
@@ -280,8 +314,8 @@ class AudiogramPainter extends CustomPainter {
           bottomPadding, // Height minus top and bottom padding
     );
 
-    final paint = Paint()
-      ..color = Colors.black
+    final gridPaint = Paint()
+      ..color = theme.dividerColor
       ..strokeWidth = 0.5 // Thinner lines
       ..style = PaintingStyle.stroke;
 
@@ -296,7 +330,7 @@ class AudiogramPainter extends CustomPainter {
     _drawHearingLossRegions(canvas, graphRect);
 
     // Draw grid
-    _drawGrid(canvas, graphRect, paint);
+    _drawGrid(canvas, graphRect, gridPaint);
 
     canvas.restore();
 
@@ -313,7 +347,7 @@ class AudiogramPainter extends CustomPainter {
     canvas.clipRect(graphRect);
 
     // Draw data points and lines
-    _drawDataPoints(canvas, graphRect, paint);
+    _drawDataPoints(canvas, graphRect);
 
     canvas.restore();
   }
@@ -323,7 +357,7 @@ class AudiogramPainter extends CustomPainter {
       text: TextSpan(
         text: hearingLevelLabel,
         style: TextStyle(
-          color: Colors.black,
+          color: theme.textTheme.bodyMedium?.color,
           fontSize: 10 * scaleFactor * (isSmallScreen ? 0.9 : 1.0),
           fontWeight: FontWeight.bold,
         ),
@@ -347,11 +381,11 @@ class AudiogramPainter extends CustomPainter {
 
   void _drawHearingLossRegions(Canvas canvas, Rect graphRect) {
     final regions = [
-      (Colors.white, 120.0, 100.0, normalHearingLabel),
-      (Colors.blue[50]!, 100.0, 80.0, mildLossLabel),
-      (Colors.blue[100]!, 80.0, 50.0, moderateLossLabel),
-      (Colors.blue[200]!, 50.0, 30.0, severeLossLabel),
-      (Colors.blue[300]!, 30.0, 0.0, profoundLossLabel),
+      (_getHearingLossColor(theme, 0), 120.0, 100.0, normalHearingLabel),
+      (_getHearingLossColor(theme, 1), 100.0, 80.0, mildLossLabel),
+      (_getHearingLossColor(theme, 2), 80.0, 50.0, moderateLossLabel),
+      (_getHearingLossColor(theme, 3), 50.0, 30.0, severeLossLabel),
+      (_getHearingLossColor(theme, 4), 30.0, 0.0, profoundLossLabel),
     ];
 
     for (var region in regions) {
@@ -372,7 +406,7 @@ class AudiogramPainter extends CustomPainter {
         text: TextSpan(
           text: region.$4,
           style: TextStyle(
-            color: Colors.black54,
+            color: theme.textTheme.bodySmall?.color,
             fontSize: 8 * scaleFactor,
           ),
         ),
@@ -389,7 +423,7 @@ class AudiogramPainter extends CustomPainter {
     }
   }
 
-  void _drawGrid(Canvas canvas, Rect graphRect, Paint paint) {
+  void _drawGrid(Canvas canvas, Rect graphRect, Paint gridPaint) {
     // Draw vertical lines
     final xStep = graphRect.width / (frequencies.length - 1);
     for (var i = 0; i < frequencies.length; i++) {
@@ -397,7 +431,7 @@ class AudiogramPainter extends CustomPainter {
       canvas.drawLine(
         Offset(x, graphRect.top),
         Offset(x, graphRect.bottom),
-        paint,
+        gridPaint,
       );
     }
 
@@ -407,7 +441,7 @@ class AudiogramPainter extends CustomPainter {
       canvas.drawLine(
         Offset(graphRect.left, y),
         Offset(graphRect.right, y),
-        paint,
+        gridPaint,
       );
     }
   }
@@ -435,7 +469,7 @@ class AudiogramPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: label,
         style: TextStyle(
-          color: Colors.black,
+          color: theme.textTheme.bodyMedium?.color,
           fontSize: fontSize,
         ),
       );
@@ -461,7 +495,7 @@ class AudiogramPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: db.toString(),
         style: TextStyle(
-          color: Colors.black,
+          color: theme.textTheme.bodyMedium?.color,
           fontSize: fontSize,
         ),
       );
@@ -476,18 +510,24 @@ class AudiogramPainter extends CustomPainter {
     }
   }
 
-  void _drawDataPoints(Canvas canvas, Rect graphRect, Paint paint) {
+  void _drawDataPoints(Canvas canvas, Rect graphRect) {
     // Draw left ear points (X)
-    paint.color = Colors.blue;
-    _drawEarPoints(canvas, graphRect, leftEarData, true);
+    final leftPaint = Paint()
+      ..color = theme.primaryColor
+      ..strokeWidth = 1.5 * scaleFactor
+      ..style = PaintingStyle.stroke;
+    _drawEarPoints(canvas, graphRect, leftEarData, true, leftPaint);
 
     // Draw right ear points (O)
-    paint.color = Colors.red;
-    _drawEarPoints(canvas, graphRect, rightEarData, false);
+    final rightPaint = Paint()
+      ..color = theme.colorScheme.error
+      ..strokeWidth = 1.5 * scaleFactor
+      ..style = PaintingStyle.stroke;
+    _drawEarPoints(canvas, graphRect, rightEarData, false, rightPaint);
   }
 
-  void _drawEarPoints(
-      Canvas canvas, Rect graphRect, Map<String, double> data, bool isLeft) {
+  void _drawEarPoints(Canvas canvas, Rect graphRect, Map<String, double> data,
+      bool isLeft, Paint paint) {
     final points = <Offset>[];
 
     // Frequency positions with internal padding to keep 250Hz and 4000Hz away from edges
@@ -498,6 +538,12 @@ class AudiogramPainter extends CustomPainter {
     final xStep = effectiveWidth / (frequencies.length - 1);
 
     final markerSize = 4.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0);
+    final linePaint = Paint()
+      ..color = paint.color
+      ..strokeWidth = 1.0 * scaleFactor
+      ..style = PaintingStyle.stroke;
+
+    Offset? lastPoint;
 
     for (var i = 0; i < frequencies.length; i++) {
       final freq = frequencies[i];
@@ -506,58 +552,62 @@ class AudiogramPainter extends CustomPainter {
       // Calculate x position with edge padding
       final x = graphRect.left + edgePadding + (i * xStep);
       final y = _getYPosition(value.abs(), graphRect);
-      points.add(Offset(x, y));
+      final currentPoint = Offset(x, y);
+      points.add(currentPoint);
 
+      // Draw line between points if last point exists
+      if (lastPoint != null) {
+        canvas.drawLine(lastPoint, currentPoint, linePaint);
+      }
+      lastPoint = currentPoint;
+    }
+
+    // Draw the markers after drawing lines
+    for (final point in points) {
       if (isLeft) {
-        _drawX(canvas, Offset(x, y), markerSize, Colors.blue);
+        // Draw X
+        final halfMarker = markerSize / 2;
+        canvas.drawLine(Offset(point.dx - halfMarker, point.dy - halfMarker),
+            Offset(point.dx + halfMarker, point.dy + halfMarker), paint);
+        canvas.drawLine(Offset(point.dx + halfMarker, point.dy - halfMarker),
+            Offset(point.dx - halfMarker, point.dy + halfMarker), paint);
       } else {
-        _drawO(canvas, Offset(x, y), markerSize, Colors.red);
+        // Draw O
+        canvas.drawCircle(point, markerSize, paint);
       }
     }
-
-    // Draw lines connecting points
-    final linePaint = Paint()
-      ..color = isLeft ? Colors.blue : Colors.red
-      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
-      ..style = PaintingStyle.stroke;
-
-    for (var i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], linePaint);
-    }
   }
 
-  void _drawX(Canvas canvas, Offset center, double size, Color color) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(center.dx - size, center.dy - size),
-      Offset(center.dx + size, center.dy + size),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(center.dx + size, center.dy - size),
-      Offset(center.dx - size, center.dy + size),
-      paint,
-    );
-  }
-
-  void _drawO(Canvas canvas, Offset center, double radius, Color color) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0 * scaleFactor * (isSmallScreen ? 0.9 : 1.0)
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(center, radius, paint);
-  }
-
-  double _getYPosition(double db, Rect graphRect) {
-    // Invert the Y-axis mapping: Higher dB = lower on graph (better hearing)
-    return graphRect.top + (graphRect.height * (130 - db) / 130);
+  double _getYPosition(double dbValue, Rect graphRect) {
+    // Ensure dbValue is within the expected range [-10, 120]
+    final clampedDb = dbValue.clamp(-10.0, 120.0);
+    // Normalize the value to a 0-1 range (inverted because y-axis increases downwards)
+    final normalized = (clampedDb - (-10)) / (120 - (-10));
+    // Map the normalized value to the graph's height
+    return graphRect.top + (graphRect.height * (1 - normalized));
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant AudiogramPainter oldDelegate) {
+    // Repaint if theme, data, or dimensions change
+    return oldDelegate.theme != theme ||
+        oldDelegate.leftEarData != leftEarData ||
+        oldDelegate.rightEarData != rightEarData ||
+        oldDelegate.scaleFactor != scaleFactor ||
+        oldDelegate.isSmallScreen != isSmallScreen;
+  }
+
+  Color _getHearingLossColor(ThemeData theme, int level) {
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    // Use shades based on card/background color and primary color
+    final baseColor = isDarkMode
+        ? HSLColor.fromColor(theme.cardColor).withLightness(0.15).toColor()
+        : HSLColor.fromColor(theme.cardColor).withLightness(0.95).toColor();
+    final endColor = isDarkMode
+        ? HSLColor.fromColor(theme.primaryColor).withLightness(0.3).toColor()
+        : HSLColor.fromColor(theme.primaryColor).withLightness(0.8).toColor();
+
+    // Interpolate between base and end color based on level
+    return Color.lerp(baseColor, endColor, level / 4.0) ?? baseColor;
+  }
 }
