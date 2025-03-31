@@ -124,10 +124,12 @@ class _TestPageState extends State<TestPage> {
       // Set up error handling using onPlayerStateChanged
       frequency_player.onPlayerStateChanged.listen((state) {
         debugPrint("Audio player state changed: $state");
-        if (state == PlayerState.completed && is_sound_playing) {
-          // If we're supposed to be playing but the sound completed, restart it
-          playFrequency(ear_balance);
-        }
+        // if (state == PlayerState.completed && is_sound_playing) {
+        //   // If we're supposed to be playing but the sound completed, restart it
+        //   // This conflicts with ReleaseMode.loop set in playFrequency
+        //   // playFrequency(ear_balance);
+        // }
+        // TODO: Add other state handling if needed (e.g., error state)
       });
     } catch (e) {
       debugPrint("Error initializing audio: $e");

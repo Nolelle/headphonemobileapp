@@ -62,10 +62,10 @@ class HeadphoneInfoBanner extends StatelessWidget {
           batteryColor = Colors.orange;
         } else if (batteryLevel <= 60) {
           batteryIcon = Icons.battery_4_bar;
-          batteryColor = Colors.yellow;
+          batteryColor = Colors.lightGreen;
         } else if (batteryLevel <= 80) {
           batteryIcon = Icons.battery_5_bar;
-          batteryColor = Colors.lightGreen;
+          batteryColor = Colors.green;
         } else {
           batteryIcon = Icons.battery_full;
           batteryColor = Colors.green;
@@ -109,6 +109,15 @@ class HeadphoneInfoBanner extends StatelessWidget {
                   style: TextStyle(
                     color: batteryColor,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'N/A',
+                  style: TextStyle(
+                    color: theme.textTheme.bodySmall?.color ?? Colors.grey,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
                   ),
                 ),
               ],
