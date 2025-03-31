@@ -34,16 +34,16 @@ final Map<String, String> frTranslations = {
   'faq': 'Questions Fréquemment Posées',
   'faq_clean': 'Comment nettoyer et entretenir mes écouteurs?',
   'faq_clean_answer':
-      'Un nettoyage régulier est essentiel. Utilisez un chiffon doux et sec pour essuyer l\'extérieur quotidiennement, et suivez les instructions de nettoyage spécifiques fournies dans l\'application. Nous recommandons également de prévoir des nettoyages professionnels tous les quelques mois.',
+      'Un nettoyage régulier est essentiel. Utilisez un chiffon doux et sec pour essuyer l\'extérieur quotidiennement. Pour un nettoyage plus profond, suivez les instructions du fabricant. Nous recommandons un nettoyage professionnel tous les quelques mois pour des performances et une longévité optimales de vos écouteurs.',
   'faq_adjust': 'Comment puis-je ajuster les paramètres de mes écouteurs?',
   'faq_adjust_answer':
-      'Vous pouvez ajuster les paramètres de vos écouteurs via l\'application. Cela inclut le changement de volume, la sélection de différents programmes d\'écoute. Il suffit d\'aller à l\'égaliseur et de changer en fonction de votre environnement.',
-  'faq_test': 'Comment puis-je effectuer un test sonore?',
+      'Connectez vos écouteurs via Bluetooth, puis allez dans l\'onglet Préréglages. Vous pouvez ajuster les niveaux de volume, les fréquences de basses, médiums et aigus, et activer des fonctionnalités comme la réduction de bruit de fond. Les modifications sont envoyées à vos écouteurs lorsque vous appliquez un préréglage.',
+  'faq_test': 'Comment puis-je effectuer un test auditif?',
   'faq_test_answer':
-      'Le test sonore est extrêmement facile à réaliser. Un son sera joué à différentes fréquences. Et le son devient de plus en plus fort au fil du temps. Vous devez cliquer sur le bouton dès que vous entendez le son. Vous devez faire cela pour chaque fréquence. Vos réponses seront enregistrées et un préréglage sera créé en conséquence. Vous pourrez ensuite utiliser ce préréglage dans vos écouteurs.',
-  'faq_multiple': 'Puis-je faire plus d\'un test?',
+      'Allez dans l\'onglet Test Auditif et appuyez sur COMMENCER LE TEST SONORE. Vous entendrez des sons à différentes fréquences qui deviennent progressivement plus forts. Appuyez sur le bouton dès que vous entendez chaque son. Le test évalue les deux oreilles et crée un préréglage personnalisé basé sur votre profil auditif qui peut être appliqué à vos écouteurs.',
+  'faq_multiple': 'Puis-je sauvegarder plusieurs résultats de tests auditifs?',
   'faq_multiple_answer':
-      'Oui bien sûr! Vous pouvez faire autant de tests que vous le souhaitez, chaque test crée un nouveau préréglage dans l\'application, vous pouvez ensuite utiliser ce préréglage dans vos écouteurs. Avec cette fonctionnalité, vous pouvez utiliser différents préréglages pour différents environnements comme écouter de la musique ou être assis dans les transports en commun.',
+      'Oui! Vous pouvez effectuer plusieurs tests auditifs et chacun crée un nouveau préréglage. Cela vous permet d\'avoir différents préréglages pour divers environnements d\'écoute comme la musique, les conversations ou les environnements bruyants. Vous pouvez stocker jusqu\'à 10 préréglages et passer facilement de l\'un à l\'autre.',
 
   // About
   'about': 'À propos',

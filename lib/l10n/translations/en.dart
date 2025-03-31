@@ -34,16 +34,16 @@ final Map<String, String> enTranslations = {
   'faq': 'Frequently Asked Questions',
   'faq_clean': 'How do I clean and maintain my headphones?',
   'faq_clean_answer':
-      'Regular cleaning is essential. Use a soft, dry cloth to wipe the exterior daily, and follow the specific cleaning instructions provided in the app. We also recommend scheduling professional cleanings every few months.',
+      'Regular cleaning is essential. Use a soft, dry cloth to wipe the exterior daily. For deeper cleaning, follow the manufacturer\'s instructions. We recommend professional cleaning every few months for optimal performance and longevity of your headphones.',
   'faq_adjust': 'How can I adjust the settings on my headphones?',
   'faq_adjust_answer':
-      'You can adjust your headphone settings through the app. This includes changing the volume, selecting different listening programs. Just go to the equalizer and change according to your environment.',
-  'faq_test': 'How can I perform a sound test?',
+      'Connect your headphones via Bluetooth, then go to the Presets tab. You can adjust volume levels, bass, mid, and treble frequencies, and enable features like background noise reduction. Changes are sent to your headphones when you apply a preset.',
+  'faq_test': 'How can I perform a hearing test?',
   'faq_test_answer':
-      'The sound test is extremely easy to complete. A sound will be played at different frequencies. And the sound keep getting louder overtime. You have to click the button as soon as you hear the sound. You have to do this for every frequency. You responses will be recorded a preset will be made according to that. You can then use that preset in your headphones.',
-  'faq_multiple': 'Can I do more than one test?',
+      'Go to the Hearing Test tab and tap BEGIN SOUND TEST. You\'ll hear sounds at different frequencies that gradually get louder. Tap the button as soon as you hear each sound. The test evaluates both ears and creates a personalized preset based on your hearing profile that can be applied to your headphones.',
+  'faq_multiple': 'Can I save multiple hearing test results?',
   'faq_multiple_answer':
-      'Yes of course! You can do as many Tests as you want, conducting every test creates a new preset in the app, you can then use that preset in your headphones. With this feature, you can use different presets for different environments such as listening to music, or sitting in transit vehicles.',
+      'Yes! You can perform multiple hearing tests and each one creates a new preset. This allows you to have different presets for various listening environments like music, conversations, or noisy settings. You can store up to 10 presets and easily switch between them.',
 
   // About
   'about': 'About',
