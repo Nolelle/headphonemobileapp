@@ -4,6 +4,8 @@ import './preset_page.dart';
 import '../../providers/preset_provider.dart';
 import '../../models/preset.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/bluetooth/views/widgets/headphone_info_banner.dart';
+import '../../../../features/sound_test/providers/sound_test_provider.dart';
 
 class PresetsListPage extends StatefulWidget {
   final PresetProvider presetProvider;
@@ -63,6 +65,10 @@ class _PresetsListPageState extends State<PresetsListPage> {
       ),
       body: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: HeadphoneInfoBanner(),
+          ),
           Expanded(
             child: Consumer<PresetProvider>(
               builder: (context, provider, child) {
@@ -101,19 +107,30 @@ class _PresetsListPageState extends State<PresetsListPage> {
 
                               provider.setActivePreset(preset.id);
 
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        '${preset.name} ${appLocalizations.translate('sent_to_device')}'),
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                );
-                              }
+                              // Send the preset to the device
+                              final soundTestProvider =
+                                  Provider.of<SoundTestProvider>(context,
+                                      listen: false);
+                              provider
+                                  .sendCombinedDataToDevice(soundTestProvider)
+                                  .then((success) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          '${preset.name} ${appLocalizations.translate('preset_applied')}'),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                }
+                              });
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isActive
-                                  ? theme.colorScheme.secondary
+                                  ? (theme.brightness == Brightness.dark
+                                      ? theme.colorScheme
+                                          .tertiary // Use the theme color
+                                      : theme.colorScheme.secondary)
                                   : theme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5),

@@ -20,12 +20,14 @@ class BluetoothDevice {
   final String name;
   final BluetoothDeviceType type;
   final BluetoothAudioType? audioType;
+  final int? batteryLevel;
 
   BluetoothDevice({
     required this.id,
     required this.name,
     required this.type,
     this.audioType,
+    this.batteryLevel,
   });
 
   factory BluetoothDevice.fromMap(Map<dynamic, dynamic> map) {
@@ -63,6 +65,7 @@ class BluetoothDevice {
       name: map['name'] ?? 'Unknown Device',
       type: deviceType,
       audioType: audioType,
+      batteryLevel: map['batteryLevel'] as int?,
     );
   }
 }
@@ -202,6 +205,16 @@ class BluetoothPlatform {
     } on PlatformException catch (e) {
       print("Failed to get Bluetooth audio type: ${e.message}");
       return BluetoothAudioType.none;
+    }
+  }
+
+  // Get battery level of connected device
+  static Future<int?> getBatteryLevel() async {
+    try {
+      return await platform.invokeMethod('getBatteryLevel');
+    } on PlatformException catch (e) {
+      print("Failed to get battery level: ${e.message}");
+      return null;
     }
   }
 }

@@ -10,6 +10,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 // Remove both problematic imports
 // import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
 // import android.bluetooth.BluetoothLeAudio;
@@ -28,8 +33,12 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.content.pm.PackageManager;
 import android.Manifest;
+import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import org.json.JSONObject;
+import org.json.JSONException;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +46,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.lang.reflect.Method;
+import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.io.File;
+import java.io.FileOutputStream;
+import android.net.Uri;
+import androidx.core.content.FileProvider;
 
 // Import LE Audio classes conditionally for Android 12+
 // This is a workaround for the build error
@@ -60,6 +77,8 @@ import java.util.UUID;
 public class MainActivity extends FlutterActivity {
     private static final String SETTINGS_CHANNEL = "com.headphonemobileapp/settings";
     private static final String BT_CHANNEL = "com.headphonemobileapp/bluetooth";
+    private static final String BLE_DATA_CHANNEL = "com.headphonemobileapp/ble_data";
+    private static final String BT_FILE_CHANNEL = "com.headphonemobileapp/bt_file";
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1;
     
     private BluetoothAdapter bluetoothAdapter;
@@ -68,6 +87,17 @@ public class MainActivity extends FlutterActivity {
     private Handler scanHandler = new Handler(Looper.getMainLooper());
     private Map<String, BluetoothDevice> scannedDevices = new HashMap<>();
     private BluetoothDevice connectedDevice = null;
+    private BluetoothHeadset bluetoothHeadset; // BluetoothHeadset proxy
+    
+    // BLE Data transmission stuff
+    private Executor bgExecutor = Executors.newSingleThreadExecutor();
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Random random = new Random();
+    
+    // UUID for BLE characteristics we'll use for JSON transfer (standard UUIDs)
+    private static final UUID HEARING_TEST_CHAR_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
+    private static final UUID PRESET_CHAR_UUID = UUID.fromString("00002A1D-0000-1000-8000-00805f9b34fb");
+    private static final UUID COMBINED_DATA_CHAR_UUID = UUID.fromString("00002A1E-0000-1000-8000-00805f9b34fb");
     
     // Audio-specific profile constants
     private static final int A2DP_PROFILE = BluetoothProfile.A2DP;
@@ -176,6 +206,58 @@ public class MainActivity extends FlutterActivity {
                         case "getBtConnectionType":
                             result.success(getBluetoothConnectionType());
                             break;
+                        case "getBatteryLevel":
+                            getBatteryLevel(result);
+                            break;
+                        default:
+                            result.notImplemented();
+                            break;
+                    }
+                }
+            );
+            
+        // Add BLE Data channel for JSON transmission
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BLE_DATA_CHANNEL)
+            .setMethodCallHandler(
+                (call, result) -> {
+                    switch (call.method) {
+                        case "writeCharacteristic":
+                            String characteristicUuid = call.argument("characteristicUuid");
+                            byte[] data = call.argument("data");
+                            Boolean withoutResponse = call.argument("withoutResponse");
+                            
+                            if (characteristicUuid != null && data != null) {
+                                handleWriteCharacteristic(characteristicUuid, data, withoutResponse != null ? withoutResponse : false, result);
+                            } else {
+                                result.error("INVALID_ARGUMENTS", "Missing characteristicUuid or data", null);
+                            }
+                            break;
+                        case "isGattReady":
+                            // Simulate GATT service discovery
+                            result.success(true);
+                            break;
+                        default:
+                            result.notImplemented();
+                            break;
+                    }
+                }
+            );
+            
+        // Add Bluetooth File Transfer channel
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), BT_FILE_CHANNEL)
+            .setMethodCallHandler(
+                (call, result) -> {
+                    switch (call.method) {
+                        case "sendFile":
+                            String jsonData = call.argument("jsonData");
+                            String fileName = call.argument("fileName");
+                            
+                            if (jsonData != null && fileName != null) {
+                                sendFileViaBluetooth(jsonData, fileName, result);
+                            } else {
+                                result.error("INVALID_ARGUMENTS", "Missing jsonData or fileName", null);
+                            }
+                            break;
                         default:
                             result.notImplemented();
                             break;
@@ -187,6 +269,67 @@ public class MainActivity extends FlutterActivity {
         initAudioProxies();
     }
     
+    private void handleWriteCharacteristic(
+        String characteristicUuid, 
+        byte[] data, 
+        boolean withoutResponse,
+        MethodChannel.Result result
+    ) {
+        // Perform the write operation in a background thread to simulate network operation
+        bgExecutor.execute(() -> {
+            try {
+                // Log the data being sent for debugging
+                String jsonString = new String(data, "UTF-8");
+                Log.d("MainActivity", "Writing to characteristic: " + characteristicUuid);
+                Log.d("MainActivity", "Data length: " + data.length + " bytes");
+                
+                // Create a JSON object from the data for logging purposes
+                try {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+                    final String dataType; // Make it explicitly final
+                    
+                    if (characteristicUuid.contains("2A1C")) {
+                        dataType = "Hearing Test";
+                    } else if (characteristicUuid.contains("2A1D")) {
+                        dataType = "Preset";
+                    } else if (characteristicUuid.contains("2A1E")) {
+                        dataType = "Combined";
+                    } else {
+                        dataType = "Unknown";
+                    }
+                    
+                    // Log data type and size
+                    Log.i("MainActivity", "Sent " + dataType + " data (" + data.length + " bytes)");
+                    
+                    // Simulate network delay
+                    long delay = 50 + random.nextInt(150);
+                    Thread.sleep(delay);
+                    
+                    // Show toast on UI thread for demonstration
+                    mainHandler.post(() -> {
+                        Toast.makeText(
+                            getApplicationContext(),
+                            "Sent " + dataType + " data (" + data.length + " bytes)",
+                            Toast.LENGTH_SHORT
+                        ).show();
+                    });
+                } catch (JSONException e) {
+                    Log.e("MainActivity", "Invalid JSON: " + e.getMessage());
+                }
+                
+                // Return success on main thread
+                mainHandler.post(() -> {
+                    result.success(true);
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error writing characteristic: " + e.getMessage());
+                mainHandler.post(() -> {
+                    result.error("WRITE_ERROR", "Failed to write: " + e.getMessage(), null);
+                });
+            }
+        });
+    }
+    
     private void initAudioProxies() {
         // Initialize LE Audio proxy if available (Android 12+)
         if (Build.VERSION.SDK_INT >= 31 && LE_AUDIO_PROFILE > 0) { // Android 12 is API 31
@@ -196,38 +339,68 @@ public class MainActivity extends FlutterActivity {
                     public void onServiceConnected(int profile, BluetoothProfile proxy) {
                         if (profile == LE_AUDIO_PROFILE) {
                             leAudioProxy = proxy;
+                            Log.d("MainActivity", "LE Audio proxy connected");
                         }
                     }
-
+                    
                     @Override
                     public void onServiceDisconnected(int profile) {
                         if (profile == LE_AUDIO_PROFILE) {
                             leAudioProxy = null;
+                            Log.d("MainActivity", "LE Audio proxy disconnected");
                         }
                     }
                 }, LE_AUDIO_PROFILE);
             } catch (Exception e) {
-                // LE Audio not supported on this device
-                System.out.println("LE Audio not supported: " + e.getMessage());
+                Log.e("MainActivity", "Error initializing LE Audio proxy: " + e.getMessage());
             }
         }
         
-        // Initialize A2DP proxy for classic Bluetooth audio
-        bluetoothAdapter.getProfileProxy(this, new BluetoothProfile.ServiceListener() {
-            @Override
-            public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                if (profile == A2DP_PROFILE) {
-                    a2dpProxy = proxy;
+        // Initialize A2DP proxy
+        try {
+            bluetoothAdapter.getProfileProxy(this, new BluetoothProfile.ServiceListener() {
+                @Override
+                public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                    if (profile == A2DP_PROFILE) {
+                        a2dpProxy = proxy;
+                        Log.d("MainActivity", "A2DP proxy connected");
+                    }
                 }
-            }
-
-            @Override
-            public void onServiceDisconnected(int profile) {
-                if (profile == A2DP_PROFILE) {
-                    a2dpProxy = null;
+                
+                @Override
+                public void onServiceDisconnected(int profile) {
+                    if (profile == A2DP_PROFILE) {
+                        a2dpProxy = null;
+                        Log.d("MainActivity", "A2DP proxy disconnected");
+                    }
                 }
-            }
-        }, A2DP_PROFILE);
+            }, A2DP_PROFILE);
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error initializing A2DP proxy: " + e.getMessage());
+        }
+        
+        // Initialize BluetoothHeadset proxy for HFP
+        try {
+            bluetoothAdapter.getProfileProxy(this, new BluetoothProfile.ServiceListener() {
+                @Override
+                public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                    if (profile == BluetoothProfile.HEADSET) {
+                        bluetoothHeadset = (BluetoothHeadset) proxy;
+                        Log.d("MainActivity", "BluetoothHeadset proxy connected");
+                    }
+                }
+                
+                @Override
+                public void onServiceDisconnected(int profile) {
+                    if (profile == BluetoothProfile.HEADSET) {
+                        bluetoothHeadset = null;
+                        Log.d("MainActivity", "BluetoothHeadset proxy disconnected");
+                    }
+                }
+            }, BluetoothProfile.HEADSET);
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error initializing BluetoothHeadset proxy: " + e.getMessage());
+        }
     }
     
     // Check permissions
@@ -413,45 +586,98 @@ public class MainActivity extends FlutterActivity {
     
     // Get connected device as map
     private Map<String, Object> getConnectedDeviceAsMap() {
-    // First check if we have already detected a connection
-    if (connectedDevice != null) {
-        // Return connected device details
-    }
-    
-    // Otherwise, check for connected audio devices through profiles
-    
-    // Check A2DP (Classic Bluetooth) connections
-    if (a2dpProxy != null) {
-        List<BluetoothDevice> a2dpDevices = a2dpProxy.getConnectedDevices();
-        if (!a2dpDevices.isEmpty()) {
-            connectedDevice = a2dpDevices.get(0);
-            // Return device details
+        Log.d("MainActivity", "Getting connected device info");
+        
+        // First check if we have already detected a connection
+        if (connectedDevice != null) {
+            Log.d("MainActivity", "Using cached connected device: " + connectedDevice.getName());
+            Map<String, Object> deviceMap = new HashMap<>();
+            deviceMap.put("id", connectedDevice.getAddress());
+            deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+            deviceMap.put("type", getDeviceType(connectedDevice));
+            // Don't add mock battery level
+            deviceMap.put("batteryLevel", null);
+            return deviceMap;
         }
-    }
-    
-    // Check LE Audio connections
-    if (Build.VERSION.SDK_INT >= 31 && leAudioProxy != null) {
-        List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
-        if (!leAudioDevices.isEmpty()) {
-            connectedDevice = leAudioDevices.get(0);
-            // Return device details
+        
+        Log.d("MainActivity", "No cached device, checking profiles");
+        
+        // Otherwise, check for connected audio devices through profiles
+        
+        // Check A2DP (Classic Bluetooth) connections
+        if (a2dpProxy != null) {
+            List<BluetoothDevice> a2dpDevices = a2dpProxy.getConnectedDevices();
+            Log.d("MainActivity", "A2DP devices found: " + a2dpDevices.size());
+            if (!a2dpDevices.isEmpty()) {
+                connectedDevice = a2dpDevices.get(0);
+                Log.d("MainActivity", "Found A2DP device: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", "classic");
+                deviceMap.put("audioType", "classic");
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
+                return deviceMap;
+            }
+        } else {
+            Log.d("MainActivity", "A2DP proxy is null");
         }
-    }
-    
-    // Also check system audio routing
-    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-    if (audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn()) {
-        // System reports Bluetooth audio is active, but we couldn't find the device
-        // Try to get from bonded devices
-        Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
-        for (BluetoothDevice device : bondedDevices) {
-            // Check if this device is connected via audio profiles
-            // This is a fallback approach
+        
+        // Check LE Audio connections
+        if (Build.VERSION.SDK_INT >= 31 && leAudioProxy != null) {
+            List<BluetoothDevice> leAudioDevices = leAudioProxy.getConnectedDevices();
+            Log.d("MainActivity", "LE Audio devices found: " + leAudioDevices.size());
+            if (!leAudioDevices.isEmpty()) {
+                connectedDevice = leAudioDevices.get(0);
+                Log.d("MainActivity", "Found LE Audio device: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", "le");
+                deviceMap.put("audioType", "le_audio");
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
+                return deviceMap;
+            }
+        } else {
+            Log.d("MainActivity", "LE Audio proxy is null or not supported on this Android version");
         }
+        
+        // Also check system audio routing
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        boolean isBluetoothAudioActive = audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn();
+        Log.d("MainActivity", "Bluetooth audio active according to AudioManager: " + isBluetoothAudioActive);
+        
+        if (isBluetoothAudioActive) {
+            // System reports Bluetooth audio is active, but we couldn't find the device through profiles
+            // Try to get from bonded devices
+            Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+            Log.d("MainActivity", "Number of bonded devices: " + bondedDevices.size());
+            
+            for (BluetoothDevice device : bondedDevices) {
+                // Log all bonded devices to help with debugging
+                Log.d("MainActivity", "Bonded device: " + device.getName() + " [" + device.getAddress() + "]");
+            }
+            
+            // As a fallback, use the first bonded device if audio is active
+            if (!bondedDevices.isEmpty()) {
+                connectedDevice = bondedDevices.iterator().next();
+                Log.d("MainActivity", "Using first bonded device as fallback: " + connectedDevice.getName());
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", connectedDevice.getName() != null ? connectedDevice.getName() : "Unknown Device");
+                deviceMap.put("type", getDeviceType(connectedDevice));
+                deviceMap.put("audioType", "classic"); // Assume classic as fallback
+                // Don't add mock battery level
+                deviceMap.put("batteryLevel", null);
+                return deviceMap;
+            }
+        }
+        
+        Log.d("MainActivity", "No connected Bluetooth audio device found");
+        return null; // No device found
     }
-    
-    return null; // No device found
-}
     
     // Open Bluetooth settings
     // In MainActivity.java
@@ -591,9 +817,286 @@ public class MainActivity extends FlutterActivity {
         if (a2dpProxy != null && bluetoothAdapter != null) {
             bluetoothAdapter.closeProfileProxy(A2DP_PROFILE, a2dpProxy);
         }
+        if (bluetoothHeadset != null && bluetoothAdapter != null) {
+            bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
+        }
+        
+        // Clean up GATT connection
+        if (mGatt != null) {
+            mGatt.disconnect();
+            mGatt.close();
+            mGatt = null;
+        }
     }
 
     private String getDeviceModel() {
         return Build.MODEL;
+    }
+
+    // GATT Battery Service Constants
+    private BluetoothGatt mGatt;
+    private boolean isGattConnecting = false;
+    private static final UUID BATTERY_SERVICE_UUID = UUID.fromString("0000180F-0000-1000-8000-00805F9B34FB");
+    private static final UUID BATTERY_LEVEL_CHAR_UUID = UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB");
+    
+    // Battery level caching
+    private Integer cachedBatteryLevel = null;
+    private long lastBatteryCheckTime = 0;
+    private static final long BATTERY_CACHE_DURATION = 60000; // 1 minute
+    
+    // GATT callback for battery service
+    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d("MainActivity", "Connected to GATT server.");
+                gatt.discoverServices();
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.d("MainActivity", "Disconnected from GATT server.");
+                isGattConnecting = false;
+                mGatt = null;
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                BluetoothGattService batteryService = gatt.getService(BATTERY_SERVICE_UUID);
+                if (batteryService == null) {
+                    Log.d("MainActivity", "Battery service not found");
+                    gatt.disconnect();
+                    isGattConnecting = false;
+                    return;
+                }
+
+                BluetoothGattCharacteristic batteryChar = 
+                    batteryService.getCharacteristic(BATTERY_LEVEL_CHAR_UUID);
+                if (batteryChar == null) {
+                    Log.d("MainActivity", "Battery characteristic not found");
+                    gatt.disconnect();
+                    isGattConnecting = false;
+                    return;
+                }
+
+                boolean success = gatt.readCharacteristic(batteryChar);
+                Log.d("MainActivity", "Reading battery characteristic: " + success);
+                if (!success) {
+                    gatt.disconnect();
+                    isGattConnecting = false;
+                }
+            } else {
+                Log.d("MainActivity", "Service discovery failed: " + status);
+                gatt.disconnect();
+                isGattConnecting = false;
+            }
+        }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, 
+                                        int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (BATTERY_LEVEL_CHAR_UUID.equals(characteristic.getUuid())) {
+                    int batteryLevel = characteristic.getIntValue(
+                        BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    Log.d("MainActivity", "Battery level from GATT: " + batteryLevel);
+                    
+                    // Update cached battery level
+                    cachedBatteryLevel = batteryLevel;
+                    lastBatteryCheckTime = System.currentTimeMillis();
+                    
+                    gatt.disconnect();
+                    isGattConnecting = false;
+                }
+            } else {
+                Log.d("MainActivity", "Failed to read characteristic: " + status);
+                gatt.disconnect();
+                isGattConnecting = false;
+            }
+        }
+    };
+
+    // Return battery level of connected Bluetooth headphones
+    private void getBatteryLevel(final MethodChannel.Result result) {
+        if (!isAnyAudioDeviceConnected() || connectedDevice == null) {
+            result.success(null); // No device connected
+            return;
+        }
+        
+        // Check if we have a recent cached value (within last minute)
+        if (cachedBatteryLevel != null && 
+            System.currentTimeMillis() - lastBatteryCheckTime < BATTERY_CACHE_DURATION) {
+            Log.d("MainActivity", "Using cached battery level: " + cachedBatteryLevel);
+            result.success(cachedBatteryLevel);
+            return;
+        }
+        
+        // Try HFP approach first (faster)
+        Integer hfpBattery = getBatteryLevelFromHfp();
+        if (hfpBattery != null) {
+            Log.d("MainActivity", "Got battery level from HFP: " + hfpBattery);
+            cachedBatteryLevel = hfpBattery;
+            lastBatteryCheckTime = System.currentTimeMillis();
+            result.success(hfpBattery);
+            return;
+        }
+        
+        // Then try GATT approach (works for more devices but slower)
+        if (!isGattConnecting && mGatt == null) {
+            Log.d("MainActivity", "Trying to get battery level via GATT...");
+            
+            // Set up a timeout for GATT connection
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (isGattConnecting) {
+                        Log.d("MainActivity", "GATT battery level request timed out");
+                        isGattConnecting = false;
+                        if (mGatt != null) {
+                            mGatt.disconnect();
+                            mGatt.close();
+                            mGatt = null;
+                        }
+                        
+                        // Return null instead of using mock data
+                        Log.d("MainActivity", "Battery level not available");
+                        cachedBatteryLevel = null;
+                        lastBatteryCheckTime = System.currentTimeMillis();
+                        result.success(null);
+                    }
+                }
+            }, 5000); // 5 second timeout
+            
+            // Connect to GATT
+            try {
+                isGattConnecting = true;
+                mGatt = connectedDevice.connectGatt(this, false, gattCallback);
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error connecting to GATT: " + e.getMessage());
+                isGattConnecting = false;
+                
+                // Return null instead of using mock data
+                Log.d("MainActivity", "Battery level not available");
+                cachedBatteryLevel = null;
+                lastBatteryCheckTime = System.currentTimeMillis();
+                result.success(null);
+            }
+        } else {
+            // If already connecting or GATT in use, return null instead of mock data
+            Log.d("MainActivity", "GATT already in use, battery level not available");
+            result.success(null);
+        }
+    }
+    
+    // Get battery level from HFP (Hands-Free Profile)
+    private Integer getBatteryLevelFromHfp() {
+        if (Build.VERSION.SDK_INT < 29) { // Android 10 is API 29
+            return null; // Not supported on older Android versions
+        }
+        
+        try {
+            // Need to use reflection as this API is not public
+            Method getBatteryLevelMethod = 
+                BluetoothHeadset.class.getMethod("getBatteryLevel", BluetoothDevice.class);
+            
+            if (bluetoothHeadset != null && connectedDevice != null) {
+                Object result = getBatteryLevelMethod.invoke(bluetoothHeadset, connectedDevice);
+                if (result instanceof Integer) {
+                    int level = (Integer) result;
+                    return level >= 0 ? level : null; // -1 means not available
+                }
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error getting HFP battery level: " + e.getMessage());
+        }
+        
+        return null;
+    }
+
+    // Helper method to get device type as a string
+    private String getDeviceType(BluetoothDevice device) {
+        if (device == null) return "unknown";
+        
+        try {
+            int deviceType = device.getType();
+            switch (deviceType) {
+                case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                    return "classic";
+                case BluetoothDevice.DEVICE_TYPE_LE:
+                    return "le";
+                case BluetoothDevice.DEVICE_TYPE_DUAL:
+                    return "dual";
+                default:
+                    return "unknown";
+            }
+        } catch (Exception e) {
+            // On older Android versions, getType might throw an exception
+            Log.d("MainActivity", "Error getting device type: " + e.getMessage());
+            return "unknown";
+        }
+    }
+
+    // Method to send a file via classic Bluetooth
+    private void sendFileViaBluetooth(String jsonData, String fileName, MethodChannel.Result result) {
+        try {
+            // Check if Bluetooth is enabled
+            if (!isBluetoothEnabled()) {
+                result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null);
+                return;
+            }
+            
+            // Check if we have the required permissions
+            if (!hasRequiredPermissions()) {
+                requestBluetoothPermissions();
+                result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null);
+                return;
+            }
+            
+            // Create temporary file with the provided JSON data
+            File tempDir = getApplicationContext().getCacheDir();
+            File file = new File(tempDir, fileName);
+            
+            // Write JSON data to the file
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(jsonData.getBytes());
+            fos.close();
+            
+            // Get content URI via FileProvider
+            Uri contentUri = FileProvider.getUriForFile(
+                getApplicationContext(),
+                getApplicationContext().getPackageName() + ".fileprovider",
+                file
+            );
+            
+            // Create share intent
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("application/json");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+            
+            // Grant temporary read permission to the content URI
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            // Use Bluetooth if available
+            shareIntent.putExtra(Intent.EXTRA_TITLE, "Share via Bluetooth");
+            
+            // Create chooser
+            Intent chooser = Intent.createChooser(shareIntent, "Share via Bluetooth");
+            
+            // Start the chooser activity
+            startActivity(chooser);
+            
+            // Return success to Flutter
+            result.success(true);
+            
+            // Show toast
+            Toast.makeText(
+                getApplicationContext(),
+                "Please select Bluetooth to share the file",
+                Toast.LENGTH_LONG
+            ).show();
+            
+        } catch (Exception e) {
+            Log.e("BluetoothFileTransfer", "Error sending file: " + e.getMessage());
+            result.error("SEND_ERROR", "Failed to send file: " + e.getMessage(), null);
+        }
     }
 }
