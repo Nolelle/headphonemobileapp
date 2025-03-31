@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
 
         final customDarkTheme = darkTheme.copyWith(
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color.fromRGBO(93, 59, 129, 1.00),
+            backgroundColor: Color.fromRGBO(104, 92, 162, 1.00),
             foregroundColor: Colors.white,
             centerTitle: true,
             elevation: 4.0,
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           home: const BluetoothWrapper(
-            child: MainNavigation(),
+            child: MainNavigation(presetData: {},),
           ),
         );
       },

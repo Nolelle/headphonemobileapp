@@ -32,7 +32,6 @@ class LanguageDemo extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(

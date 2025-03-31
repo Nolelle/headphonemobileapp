@@ -9,7 +9,7 @@ import '../features/bluetooth/providers/bluetooth_provider.dart';
 import '../l10n/app_localizations.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  const MainNavigation({super.key, required Map<String, dynamic> presetData});
 
   @override
   _MainNavigationState createState() => _MainNavigationState();
@@ -41,8 +41,12 @@ class _MainNavigationState extends State<MainNavigation> {
 
     final List<Widget> pages = [
       Consumer<SoundTestProvider>(
-        builder: (context, provider, _) => SoundTestPage(
-          soundTestProvider: provider,
+        builder: (context, provider, _) => WillPopScope(
+          onWillPop: () async =>
+              false, // Prevent back button from popping this page
+          child: SoundTestPage(
+            soundTestProvider: provider,
+          ),
         ),
       ),
       Consumer<PresetProvider>(

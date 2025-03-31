@@ -15,6 +15,8 @@ class BluetoothProvider extends ChangeNotifier {
   bool _bypassBluetoothCheck = false;
   BluetoothAudioType _audioType = BluetoothAudioType.none;
   Timer? _bluetoothStateTimer;
+  int? _batteryLevel;
+  Timer? _batteryCheckTimer;
 
   // Getters
   bool get isDeviceConnected =>
@@ -33,6 +35,7 @@ class BluetoothProvider extends ChangeNotifier {
   BluetoothDevice? get connectedDevice => _connectedDevice;
   BluetoothAudioType get audioType => _audioType;
   bool get isUsingLEAudio => _audioType == BluetoothAudioType.leAudio;
+  int? get batteryLevel => _isEmulatorTestMode ? 85 : _batteryLevel;
 
   // Constructor
   BluetoothProvider({
@@ -48,6 +51,7 @@ class BluetoothProvider extends ChangeNotifier {
       _isDeviceConnected = true;
       _isBluetoothEnabled = true;
       _connectedDeviceName = "Emulator Test Device";
+      _batteryLevel = 85;
       return;
     }
 
@@ -61,6 +65,13 @@ class BluetoothProvider extends ChangeNotifier {
     // Setup periodic check for Bluetooth state
     _bluetoothStateTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkBluetoothState();
+    });
+
+    // Setup periodic check for battery level
+    _batteryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_isDeviceConnected) {
+        _updateBatteryLevel();
+      }
     });
 
     // Initial checks with delay to let Bluetooth system initialize
@@ -79,6 +90,11 @@ class BluetoothProvider extends ChangeNotifier {
       // If connected, no need for further checks
       if (_isDeviceConnected) break;
     }
+
+    // Initial battery level check if connected
+    if (_isDeviceConnected) {
+      await _updateBatteryLevel();
+    }
   }
 
   // Check Bluetooth state
@@ -96,6 +112,7 @@ class BluetoothProvider extends ChangeNotifier {
         _isDeviceConnected = false;
         _connectedDeviceName = "No Device";
         _connectedDevice = null;
+        _batteryLevel = null;
         notifyListeners();
       }
     }
@@ -110,12 +127,16 @@ class BluetoothProvider extends ChangeNotifier {
         await prefs.setString('connected_device_name', _connectedDeviceName);
         await prefs.setBool('is_device_connected', _isDeviceConnected);
         await prefs.setInt('audio_type', _audioType.index);
+        if (_batteryLevel != null) {
+          await prefs.setInt('battery_level', _batteryLevel!);
+        }
       } else {
         // Clear connection data
         await prefs.remove('connected_device_id');
         await prefs.remove('connected_device_name');
         await prefs.setBool('is_device_connected', false);
         await prefs.setInt('audio_type', BluetoothAudioType.none.index);
+        await prefs.remove('battery_level');
       }
     } catch (e) {
       print('Error saving connection state: $e');
@@ -133,11 +154,13 @@ class BluetoothProvider extends ChangeNotifier {
       final storedDeviceName =
           prefs.getString('connected_device_name') ?? "No Device";
       final storedAudioTypeIndex = prefs.getInt('audio_type') ?? 0;
+      final storedBatteryLevel = prefs.getInt('battery_level');
 
       // Only set these as initial values, we'll verify with system after
       _connectedDeviceName = storedDeviceName;
       _isDeviceConnected = storedConnected;
       _audioType = BluetoothAudioType.values[storedAudioTypeIndex];
+      _batteryLevel = storedBatteryLevel;
 
       // If we have a stored ID, remember it (this helps with reconnection)
       if (storedDeviceId != null) {
@@ -147,6 +170,7 @@ class BluetoothProvider extends ChangeNotifier {
           type: BluetoothDeviceType
               .unknown, // We don't know the type from storage
           audioType: BluetoothAudioType.values[storedAudioTypeIndex],
+          batteryLevel: storedBatteryLevel,
         );
       }
 
@@ -156,6 +180,27 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  // Update battery level
+  Future<void> _updateBatteryLevel() async {
+    if (!_isDeviceConnected) return;
+
+    try {
+      final batteryLevel = await BluetoothPlatform.getBatteryLevel();
+      if (batteryLevel != _batteryLevel) {
+        _batteryLevel = batteryLevel;
+        notifyListeners();
+        await saveConnectionState();
+      }
+    } catch (e) {
+      print('Error updating battery level: $e');
+    }
+  }
+
+  // Force battery level update
+  Future<void> refreshBatteryLevel() async {
+    await _updateBatteryLevel();
+  }
+
   // Method to update connection from another class
   Future<void> updateConnectionFromDevice(
       BluetoothDevice device, BluetoothAudioType audioType) async {
@@ -163,8 +208,12 @@ class BluetoothProvider extends ChangeNotifier {
     _isDeviceConnected = true;
     _connectedDeviceName = device.name;
     _audioType = audioType;
+    _batteryLevel = device.batteryLevel;
     await saveConnectionState();
     notifyListeners();
+
+    // Update battery level after connection
+    await _updateBatteryLevel();
   }
 
   Future<void> forceAudioRouting() async {
@@ -601,6 +650,7 @@ class BluetoothProvider extends ChangeNotifier {
   @override
   void dispose() {
     _bluetoothStateTimer?.cancel();
+    _batteryCheckTimer?.cancel();
     super.dispose();
   }
 }

@@ -1,0 +1,23 @@
+// This script fixes the InvalidUserCodeException issues with Kotlin unit tests
+// Apply this to each project in the root build.gradle
+
+// Configure Kotlin UnitTest tasks directly
+tasks.matching { task ->
+    task.name.startsWith('compile') && task.name.endsWith('UnitTestKotlin')
+}.configureEach { task ->
+    // Disable test compilation during IDE synchronization
+    task.onlyIf {
+        gradle.startParameter.taskNames.any { it.contains('test') }
+    }
+    
+    // Handle potential errors with provider access
+    task.doFirst {
+        // Create empty input files if they don't exist
+        task.inputs.files.files.each { file ->
+            if (!file.exists() && file.name.endsWith('.jar')) {
+                file.parentFile.mkdirs()
+                file.createNewFile()
+            }
+        }
+    }
+} 

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:projects/features/sound_test/views/screens/test_page.dart';
 import '../../providers/sound_test_provider.dart';
 import '../../models/sound_test.dart';
+import '../../widgets/audiogram.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../features/bluetooth/services/ble_data_service.dart';
+import '../../../../features/bluetooth/services/bluetooth_file_service.dart';
+import '../../../../features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:provider/provider.dart';
 
 class SoundTestPage extends StatefulWidget {
   final SoundTestProvider soundTestProvider;
@@ -20,6 +26,8 @@ class _SoundTestPageState extends State<SoundTestPage> {
   bool _hasTestBeenTaken = false;
   bool _isResetting = false;
   bool _isInitializing = true;
+  final BLEDataService _bleDataService = BLEDataService();
+  final BluetoothFileService _btFileService = BluetoothFileService();
 
   @override
   void initState() {
@@ -50,6 +58,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    widget.soundTestProvider.removeListener(_updateState);
     widget.soundTestProvider.addListener(_updateState);
   }
 
@@ -68,52 +77,192 @@ class _SoundTestPageState extends State<SoundTestPage> {
         _hasTestBeenTaken = false;
         activeSoundTestId = null;
       } else {
-        activeSoundTestId = widget.soundTestProvider.activeSoundTestId ?? soundTests.keys.first;
+        activeSoundTestId =
+            widget.soundTestProvider.activeSoundTestId ?? soundTests.keys.first;
         final currentTest = soundTests[activeSoundTestId!];
-        _hasTestBeenTaken = currentTest != null && 
+        _hasTestBeenTaken = currentTest != null &&
             currentTest.soundTestData.values.any((v) => v > 0);
       }
     });
   }
 
+<<<<<<< HEAD
   Future<bool> _showResetConfirmationDialog(BuildContext context) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Reset'),
-          content: const Text('Are you sure you want to reset to default values?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Reset'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
-  }
-
-  Future<bool> _showDeleteConfirmationDialog(
-      BuildContext context, String soundTestName) async {
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Confirm Delete'),
-              content:
-                  Text('Are you sure you want to delete "$soundTestName"?'),
+              title: const Text('Confirm Reset'),
+              content: const Text(
+                  'Are you sure you want to reset to default values?'),
               actions: <Widget>[
                 TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
                   child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Reset'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+=======
+  Future<void> _showTestCompletionDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(appLocalizations.translate('test_completed')),
+          content: Text(
+            appLocalizations.translate('test_completed_message'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(appLocalizations.translate('ok')),
+            ),
+          ],
+        );
+      },
+    );
+>>>>>>> d79eab9ba2351e153fcee6fc1b2f7e334ddb8621
+  }
+
+  Future<void> _showValuesSavedDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(appLocalizations.translate('values_saved')),
+          content: Text(appLocalizations.translate('values_saved_message')),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(appLocalizations.translate('ok')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendHearingTestData({bool silent = true}) async {
+    if (activeSoundTestId == null) return;
+
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
+    if (soundTest == null) return;
+
+    final bluetoothProvider =
+        Provider.of<BluetoothProvider>(context, listen: false);
+
+    // Only send if device is connected
+    if (bluetoothProvider.isDeviceConnected) {
+      try {
+        // NOTE: The BLE service sends data silently already, but the notification
+        // is coming from the platform code, not from this method
+        await _bleDataService.sendHearingTestData(soundTest);
+
+        // We'll handle notifications here instead
+        if (!silent && mounted) {
+          // Show notification only if not in silent mode
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).translate('sent_to_device')),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        // Silently log error without showing to user
+        print('Error sending hearing test data: $e');
+      }
+    }
+  }
+
+  Future<void> _shareViaBluetoothFile() async {
+    if (activeSoundTestId == null) return;
+
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
+    if (soundTest == null) return;
+
+    try {
+      final success = await _btFileService.sendHearingTestFile(soundTest);
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)
+                .translate('file_sent_successfully')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error sharing via Bluetooth: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                AppLocalizations.of(context).translate('file_send_failed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool> _showResetConfirmationDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(appLocalizations.translate('confirm_reset')),
+              content:
+                  Text(appLocalizations.translate('confirm_reset_message')),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(appLocalizations.translate('cancel')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(appLocalizations.translate('reset')),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  Future<bool> _showDeleteConfirmationDialog(
+      BuildContext context, String soundTestName) async {
+    final appLocalizations = AppLocalizations.of(context);
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(appLocalizations.translate('confirm_delete')),
+              content: Text(
+                  '${appLocalizations.translate('confirm_delete_message')} "$soundTestName"?'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text(appLocalizations.translate('cancel')),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
                 TextButton(
-                  child: const Text('Delete'),
+                  child: Text(appLocalizations.translate('delete')),
                   onPressed: () => Navigator.of(context).pop(true),
                 ),
               ],
@@ -133,6 +282,12 @@ class _SoundTestPageState extends State<SoundTestPage> {
 
     try {
       await widget.soundTestProvider.resetSoundTest(activeSoundTestId!);
+      if (mounted) {
+        // No dialog needed - silently reset
+
+        // Send reset data to device silently
+        _sendHearingTestData(silent: true);
+      }
     } finally {
       if (mounted) {
         setState(() => _isResetting = false);
@@ -140,42 +295,12 @@ class _SoundTestPageState extends State<SoundTestPage> {
     }
   }
 
-  Widget _buildInstructions(Color textColor, Color iconColor) {
-    return Column(
-      children: [
-        Text(
-          'Some instructions before starting the test:',
-          style: TextStyle(fontSize: 20, color: textColor),
-        ),
-        ListBody(
-          children: [
-            ListTile(
-              leading: Icon(Icons.keyboard_arrow_right, color: iconColor),
-              title: Text(
-                'Sit in a quiet environment.',
-                style: TextStyle(color: textColor),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.keyboard_arrow_right, color: iconColor),
-              title: Text(
-                'Wear your headphones correctly and comfortably.',
-                style: TextStyle(color: textColor),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.keyboard_arrow_right, color: iconColor),
-              title: Text(
-                'Press the button when you hear the sound.',
-                style: TextStyle(color: textColor),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  Future<void> _startNewTest(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context);
+    final soundTestId = activeSoundTestId ??
+        'soundTest_${DateTime.now().millisecondsSinceEpoch}';
 
+<<<<<<< HEAD
   Widget _buildTestResults(SoundTest soundTest) {
     double getBandValue(String key) => soundTest.soundTestData[key] ?? 0.0;
 
@@ -190,16 +315,26 @@ class _SoundTestPageState extends State<SoundTestPage> {
           children: [
             _buildTestResultRow('Left Band 1', getBandValue('L_user_250Hz_dB')),
             _buildTestResultRow('Left Band 2', getBandValue('L_user_500Hz_dB')),
-            _buildTestResultRow('Left Band 3', getBandValue('L_user_1000Hz_dB')),
-            _buildTestResultRow('Left Band 4', getBandValue('L_user_2000Hz_dB')),
-            _buildTestResultRow('Left Band 5', getBandValue('L_user_4000Hz_dB')),
-            _buildTestResultRow('Left Band 6', getBandValue('L_user_8000Hz_dB')),
-            _buildTestResultRow('Right Band 1', getBandValue('R_user_250Hz_dB')),
-            _buildTestResultRow('Right Band 2', getBandValue('R_user_500Hz_dB')),
-            _buildTestResultRow('Right Band 3', getBandValue('R_user_1000Hz_dB')),
-            _buildTestResultRow('Right Band 4', getBandValue('R_user_2000Hz_dB')),
-            _buildTestResultRow('Right Band 5', getBandValue('R_user_4000Hz_dB')),
-            _buildTestResultRow('Right Band 6', getBandValue('R_user_8000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 3', getBandValue('L_user_1000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 4', getBandValue('L_user_2000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 5', getBandValue('L_user_4000Hz_dB')),
+            _buildTestResultRow(
+                'Left Band 6', getBandValue('L_user_8000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 1', getBandValue('R_user_250Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 2', getBandValue('R_user_500Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 3', getBandValue('R_user_1000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 4', getBandValue('R_user_2000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 5', getBandValue('R_user_4000Hz_dB')),
+            _buildTestResultRow(
+                'Right Band 6', getBandValue('R_user_8000Hz_dB')),
           ],
         ),
         const SizedBox(height: 20),
@@ -221,31 +356,188 @@ class _SoundTestPageState extends State<SoundTestPage> {
           Text(
             '${value.toStringAsFixed(2)} dB',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+=======
+    if (context.mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TestPage(
+            soundTestId: soundTestId,
+            soundTestName: appLocalizations.translate('audio_profile'),
+            soundTestProvider: widget.soundTestProvider,
+>>>>>>> d79eab9ba2351e153fcee6fc1b2f7e334ddb8621
           ),
-        ],
+        ),
+      );
+
+      if (context.mounted) {
+        await widget.soundTestProvider.fetchSoundTests();
+        setState(() {
+          activeSoundTestId = soundTestId;
+        });
+
+        // Add a brief delay to prevent resource conflicts with audio assets
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Send the updated hearing test data
+        _sendHearingTestData();
+      }
+    }
+  }
+
+  void _resetToBaseline() {
+    final defaultTest =
+        SoundTest.defaultTest(activeSoundTestId!, context: context);
+    widget.soundTestProvider.updateSoundTest(defaultTest);
+    setState(() {});
+
+    // Send reset data to device silently
+    _sendHearingTestData(silent: true);
+
+    // Show a simple notification without mentioning data being sent
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context).translate('reset_successful')),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _retakeTest() {
+    _startNewTest(context);
+  }
+
+  Widget _buildAudiogramSection() {
+    final appLocalizations = AppLocalizations.of(context);
+    final soundTest =
+        widget.soundTestProvider.getSoundTestById(activeSoundTestId!);
+    if (soundTest == null) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              appLocalizations.translate('your_audiogram'),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              appLocalizations.translate('audiogram_description'),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Audiogram(
+              leftEarData: soundTest.soundTestData,
+              rightEarData: soundTest.soundTestData,
+              leftEarLabel: appLocalizations.translate('left_ear'),
+              rightEarLabel: appLocalizations.translate('right_ear'),
+              frequencyLabel: appLocalizations.translate('frequency'),
+              hearingLevelLabel: appLocalizations.translate('hearing_level'),
+              normalHearingLabel: appLocalizations.translate('normal_hearing'),
+              mildLossLabel: appLocalizations.translate('mild_loss'),
+              moderateLossLabel: appLocalizations.translate('moderate_loss'),
+              severeLossLabel: appLocalizations.translate('severe_loss'),
+              profoundLossLabel: appLocalizations.translate('profound_loss'),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _resetToBaseline,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          appLocalizations.translate('reset_to_baseline'),
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _retakeTest,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          appLocalizations.translate('retake_test'),
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _shareViaBluetoothFile,
+                icon: const Icon(Icons.share, size: 18),
+                label: Text(
+                  appLocalizations.translate('share_via_bluetooth'),
+                  style: const TextStyle(fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color textColor = isDarkMode ? Colors.white : Colors.black;
-    final Color iconColor = isDarkMode ? Colors.white70 : Colors.black87;
-
-    if (_isInitializing) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
+    final appLocalizations = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Sound Test'),
+        title: Text(appLocalizations.translate('hearing_test')),
       ),
+<<<<<<< HEAD
       body: _isResetting
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -258,23 +550,11 @@ class _SoundTestPageState extends State<SoundTestPage> {
                         padding: const EdgeInsets.all(20),
                         child: ElevatedButton(
                           onPressed: () async {
-                            final audioProfileCount =
-                                widget.soundTestProvider.soundTests.length;
-                            if (audioProfileCount >= 3) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'You can only have a maximum of 3 audio profiles!'),
-                                ),
-                              );
-                              return;
-                            }
 
                             final newId =
                                 'soundTest_${DateTime.now().millisecondsSinceEpoch}';
                             final newSoundTest = SoundTest(
                               id: newId,
-                              name: 'Audio Profile #${audioProfileCount + 1}',
                               dateCreated: DateTime.now(),
                               soundTestData: {
                                 'L_user_250Hz_dB': 0.0,
@@ -290,7 +570,6 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                 'R_user_4000Hz_dB': 0.0,
                                 'R_user_8000Hz_dB': 0.0,
                               },
-                              icon: Icons.music_note,
                             );
 
                             await widget.soundTestProvider
@@ -303,13 +582,14 @@ class _SoundTestPageState extends State<SoundTestPage> {
                                   builder: (context) => TestPage(
                                     soundTestId: newId,
                                     soundTestName:
-                                        'Audio Profile #${audioProfileCount + 1}',
+                                        '',
                                     soundTestProvider: widget.soundTestProvider,
                                   ),
                                 ),
                               );
                               if (context.mounted) {
-                                await widget.soundTestProvider.fetchSoundTests();
+                                await widget.soundTestProvider
+                                    .fetchSoundTests();
                               }
                             }
                           },
@@ -319,138 +599,81 @@ class _SoundTestPageState extends State<SoundTestPage> {
                       _buildInstructions(textColor, iconColor),
                       // Show test results if available for the active profile
                       if (_hasTestBeenTaken && activeSoundTestId != null)
-                        _buildTestResults(widget.soundTestProvider.soundTests[activeSoundTestId!]!),
+                        _buildTestResults(widget
+                            .soundTestProvider.soundTests[activeSoundTestId!]!),
                     ],
                   ),
                 ),
-                // Title of 'Audio Presets' with counter
-                Consumer<SoundTestProvider>(builder: (context, provider, child) {
-                  final audioProfileCount = provider.soundTests.length;
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Audio Profiles: $audioProfileCount/3',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: theme.textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.bold,
-                      ),
+              ],
+=======
+      body: activeSoundTestId != null
+          ? _buildAudiogramSection()
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Center(
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.hearing,
+                          size: 48,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          appLocalizations.translate('welcome_hearing_test'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          appLocalizations
+                              .translate('take_hearing_test_message'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _startNewTest(context),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              appLocalizations.translate('start_test'),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }),
-                // The audio profiles
-                Expanded(
-                  child: Consumer<SoundTestProvider>(
-                    builder: (context, provider, child) {
-                      final soundTests = provider.soundTests.values.toList();
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: soundTests.length,
-                        itemBuilder: (context, index) {
-                          final soundTest = soundTests[index];
-                          final isActive = soundTest.id == provider.activeSoundTestId;
-
-                          return Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          activeSoundTestId = soundTest.id;
-                                        });
-
-                                        provider.setActiveSoundTest(soundTest.id);
-
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                  '${soundTest.name} Successfully Applied!'),
-                                              duration: const Duration(seconds: 3),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: isActive
-                                            ? theme.colorScheme.secondary
-                                            : theme.primaryColor,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(5),
-                                        ),
-                                        minimumSize: const Size(double.infinity, 50),
-                                      ),
-                                      child: Align(
-                                        alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.fromLTRB(
-                                                              0, 0, 10, 0),
-                                                      child: Icon(
-                                                        soundTest.icon,
-                                                        color: Colors.white,
-                                                        size: 25,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      soundTest.name,
-                                                      style: const TextStyle(
-                                                        fontSize: 20,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ]),
-                                              IconButton(
-                                                onPressed: () async {
-                                                  final shouldDelete =
-                                                      await _showDeleteConfirmationDialog(
-                                                          context, soundTest.name);
-                                                  if (shouldDelete) {
-                                                    provider.deleteSoundTest(
-                                                        soundTest.id);
-                                                    setState(() {
-                                                      activeSoundTestId = null;
-                                                    });
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                            '${soundTest.name} deleted successfully!'),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                icon: const Icon(
-                                                  Icons.delete_forever,
-                                                  color: Colors.white,
-                                                  size: 30,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ]));
-                        },
-                      );
-                    },
                   ),
                 ),
-              ],
+              ),
+>>>>>>> d79eab9ba2351e153fcee6fc1b2f7e334ddb8621
             ),
     );
   }
