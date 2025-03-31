@@ -823,26 +823,19 @@ class _PresetPageState extends State<PresetPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
       alignment: Alignment.center,
-      child: ElevatedButton(
+      child: FilledButton.icon(
         onPressed: _sharePresetFile,
-        style: ElevatedButton.styleFrom(
+        icon: const Icon(Icons.share, size: 18),
+        label: Text(
+          appLocalizations.translate('share_preset'),
+          style: const TextStyle(fontSize: 14),
+        ),
+        style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          minimumSize: const Size(200, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          minimumSize: const Size(200, 48),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.share, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              appLocalizations.translate('share_preset'),
-              style: const TextStyle(fontSize: 14),
-            ),
-          ],
         ),
       ),
     );
