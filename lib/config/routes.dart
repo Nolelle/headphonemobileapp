@@ -22,7 +22,7 @@ Map<String, Widget Function(BuildContext)> appRoutes(
         ChangeNotifierProvider.value(value: presetProvider),
         ChangeNotifierProvider.value(value: soundTestProvider),
       ],
-      child: MainNavigation(presetData: presetData),
+      child: MainNavigation(),
     ),
 
     // Presets list route
