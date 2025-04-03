@@ -304,20 +304,77 @@ class _TestPageState extends State<TestPage> {
   void _showTestCompletionDialog(BuildContext context) {
     final appLocalizations = AppLocalizations.of(context);
 
+    // Double-check test_completed flag is set
+    debugPrint("Showing completion dialog - test_completed: $test_completed");
+
+    // Make sure we can navigate away from this page
+    setState(() {
+      test_completed = true;
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(appLocalizations.translate('test_complete')),
           content: Text(appLocalizations.translate('test_complete_message')),
           actions: [
             TextButton(
               onPressed: () {
-                // First pop the dialog
-                Navigator.of(context).pop();
-                // Then pop the test page to return to sound test page
-                Navigator.of(context).pop();
+                debugPrint("OK button pressed, attempting navigation");
+
+                // Close the dialog first
+                Navigator.of(dialogContext).pop();
+
+                // Use a variety of navigation techniques with increasing delays
+                debugPrint("Navigation attempt 1: Standard pop with delay");
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (context.mounted) {
+                    try {
+                      Navigator.of(context).pop();
+                      debugPrint("Standard navigation executed");
+                    } catch (e) {
+                      debugPrint("Error in standard navigation: $e");
+                    }
+                  }
+                });
+
+                // Try with the root navigator as fallback
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 2: Using root navigator");
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      debugPrint("Error in root navigation: $e");
+                    }
+                  }
+                });
+
+                // Try using maybePop as another fallback
+                Future.delayed(const Duration(milliseconds: 450), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 3: Using maybePop");
+                      Navigator.of(context).maybePop();
+                    } catch (e) {
+                      debugPrint("Error in maybePop: $e");
+                    }
+                  }
+                });
+
+                // Final brute force approach
+                Future.delayed(const Duration(milliseconds: 600), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 4: Using popUntil");
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    } catch (e) {
+                      debugPrint("Error in popUntil: $e");
+                    }
+                  }
+                });
               },
               child: Text(appLocalizations.translate('ok')),
             ),
