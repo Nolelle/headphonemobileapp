@@ -4,47 +4,56 @@ import 'package:projects/features/sound_test/models/sound_test.dart';
 
 void main() {
   group('SoundTest Model Tests', () {
-    test('SoundTest data validation test', () {
-      // Create a sound test with extreme values
+    test('SoundTest creates with valid data', () {
+      final testTime = DateTime.now();
       final soundTest = SoundTest(
         id: 'test_id',
         name: 'Test Profile',
-        dateCreated: DateTime.now(),
+        dateCreated: testTime,
         soundTestData: {
-          'L_user_250Hz_dB': 100.0,
-          'L_user_500Hz_dB': -10.0,
-          'R_user_1000Hz_dB': 150.0,
-          'R_user_2000Hz_dB': -20.0,
+          'L_user_250Hz_dB': 50.0,
+          'L_user_500Hz_dB': 55.0,
+          'L_user_1000Hz_dB': 60.0,
+          'L_user_2000Hz_dB': 65.0,
+          'L_user_4000Hz_dB': 70.0,
+          'R_user_250Hz_dB': 45.0,
+          'R_user_500Hz_dB': 50.0,
+          'R_user_1000Hz_dB': 55.0,
+          'R_user_2000Hz_dB': 60.0,
+          'R_user_4000Hz_dB': 65.0,
         },
         icon: Icons.hearing,
       );
 
-      // Create a validated version of the sound test
-      final validatedData = Map<String, dynamic>.from(soundTest.soundTestData);
-
-      // Clamp values to valid ranges (0.0 to 90.0 dB)
-      soundTest.soundTestData.forEach((key, value) {
-        if (key.endsWith('Hz_dB') && value is num) {
-          validatedData[key] = (value).clamp(0.0, 90.0);
-        }
-      });
-
-      final validatedSoundTest = SoundTest(
-        id: soundTest.id,
-        name: soundTest.name,
-        dateCreated: soundTest.dateCreated,
-        soundTestData: validatedData,
-        icon: soundTest.icon,
-      );
-
-      // Assert values are clamped to valid ranges
-      expect(validatedSoundTest.soundTestData['L_user_250Hz_dB'], 90.0);
-      expect(validatedSoundTest.soundTestData['L_user_500Hz_dB'], 0.0);
-      expect(validatedSoundTest.soundTestData['R_user_1000Hz_dB'], 90.0);
-      expect(validatedSoundTest.soundTestData['R_user_2000Hz_dB'], 0.0);
+      expect(soundTest.id, 'test_id');
+      expect(soundTest.name, 'Test Profile');
+      expect(soundTest.dateCreated, testTime);
+      expect(soundTest.soundTestData['L_user_250Hz_dB'], 50.0);
+      expect(soundTest.soundTestData['R_user_4000Hz_dB'], 65.0);
+      expect(soundTest.icon, Icons.hearing);
     });
 
-    test('SoundTest serialization test', () {
+    test('SoundTest.defaultTest should create test with baseline values', () {
+      final defaultTest = SoundTest.defaultTest('default_id');
+
+      // Check that all required frequencies exist with baseline value
+      const baselineValue = -10.0;
+      expect(defaultTest.id, 'default_id');
+      expect(defaultTest.name, 'Default Audio Profile');
+      expect(defaultTest.soundTestData['L_user_250Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['L_user_500Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['L_user_1000Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['L_user_2000Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['L_user_4000Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['R_user_250Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['R_user_500Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['R_user_1000Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['R_user_2000Hz_dB'], baselineValue);
+      expect(defaultTest.soundTestData['R_user_4000Hz_dB'], baselineValue);
+      expect(defaultTest.icon, Icons.hearing);
+    });
+
+    test('SoundTest serialization and deserialization test', () {
       final dateTime = DateTime(2023, 1, 1, 12, 0);
       final soundTest = SoundTest(
         id: 'test_id',
@@ -52,7 +61,15 @@ void main() {
         dateCreated: dateTime,
         soundTestData: {
           'L_user_250Hz_dB': 50.0,
-          'R_user_500Hz_dB': 60.0,
+          'L_user_500Hz_dB': 55.0,
+          'L_user_1000Hz_dB': 60.0,
+          'L_user_2000Hz_dB': 65.0,
+          'L_user_4000Hz_dB': 70.0,
+          'R_user_250Hz_dB': 45.0,
+          'R_user_500Hz_dB': 50.0,
+          'R_user_1000Hz_dB': 55.0,
+          'R_user_2000Hz_dB': 60.0,
+          'R_user_4000Hz_dB': 65.0,
         },
         icon: Icons.hearing,
       );
@@ -64,8 +81,45 @@ void main() {
       expect(restored.name, 'Test Profile');
       expect(restored.dateCreated, dateTime);
       expect(restored.soundTestData['L_user_250Hz_dB'], 50.0);
-      expect(restored.soundTestData['R_user_500Hz_dB'], 60.0);
-      expect(restored.icon.codePoint, Icons.hearing.codePoint);
+      expect(restored.soundTestData['L_user_500Hz_dB'], 55.0);
+      expect(restored.soundTestData['L_user_1000Hz_dB'], 60.0);
+      expect(restored.soundTestData['L_user_2000Hz_dB'], 65.0);
+      expect(restored.soundTestData['L_user_4000Hz_dB'], 70.0);
+      expect(restored.soundTestData['R_user_250Hz_dB'], 45.0);
+      expect(restored.soundTestData['R_user_500Hz_dB'], 50.0);
+      expect(restored.soundTestData['R_user_1000Hz_dB'], 55.0);
+      expect(restored.soundTestData['R_user_2000Hz_dB'], 60.0);
+      expect(restored.soundTestData['R_user_4000Hz_dB'], 65.0);
+      expect(restored.icon?.codePoint, Icons.hearing.codePoint);
+    });
+
+    test('SoundTest.fromJson handles missing data with defaults', () {
+      final dateTime = DateTime(2023, 1, 1, 12, 0);
+      final incompleteJson = {
+        'name': 'Incomplete Profile',
+        'dateCreated': dateTime.toIso8601String(),
+        'soundTestData': {
+          'L_user_250Hz_dB': 50.0,
+          // Other frequencies missing
+        },
+      };
+
+      final restored = SoundTest.fromJson('test_id', incompleteJson);
+
+      expect(restored.id, 'test_id');
+      expect(restored.name, 'Incomplete Profile');
+      expect(restored.dateCreated, dateTime);
+      expect(restored.soundTestData['L_user_250Hz_dB'], 50.0);
+      // Check that missing values default to -10.0
+      expect(restored.soundTestData['L_user_500Hz_dB'], -10.0);
+      expect(restored.soundTestData['L_user_1000Hz_dB'], -10.0);
+      expect(restored.soundTestData['L_user_2000Hz_dB'], -10.0);
+      expect(restored.soundTestData['L_user_4000Hz_dB'], -10.0);
+      expect(restored.soundTestData['R_user_250Hz_dB'], -10.0);
+      expect(restored.soundTestData['R_user_500Hz_dB'], -10.0);
+      expect(restored.soundTestData['R_user_1000Hz_dB'], -10.0);
+      expect(restored.soundTestData['R_user_2000Hz_dB'], -10.0);
+      expect(restored.soundTestData['R_user_4000Hz_dB'], -10.0);
     });
   });
 }

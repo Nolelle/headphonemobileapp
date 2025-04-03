@@ -33,8 +33,19 @@ void main() {
           id: 'test1',
           name: 'Test Sound Test 1',
           dateCreated: DateTime(2024, 3, 10),
-          soundTestData: {'db_valueOV': 0.0},
-          icon: Icons.music_note,
+          soundTestData: {
+            'L_user_250Hz_dB': 50.0,
+            'L_user_500Hz_dB': 55.0,
+            'L_user_1000Hz_dB': 60.0,
+            'L_user_2000Hz_dB': 65.0,
+            'L_user_4000Hz_dB': 70.0,
+            'R_user_250Hz_dB': 45.0,
+            'R_user_500Hz_dB': 50.0,
+            'R_user_1000Hz_dB': 55.0,
+            'R_user_2000Hz_dB': 60.0,
+            'R_user_4000Hz_dB': 65.0,
+          },
+          icon: Icons.hearing,
         ),
       };
 
@@ -48,6 +59,7 @@ void main() {
       expect(provider.isLoading, isFalse);
       expect(provider.error, isNull);
       expect(provider.soundTests, equals(testSoundTests));
+      expect(provider.activeSoundTestId, equals('test1'));
       verify(mockRepository.getAllSoundTests()).called(1);
     });
 
@@ -66,6 +78,42 @@ void main() {
       verify(mockRepository.getAllSoundTests()).called(1);
     });
 
+    test('fetchSoundTests should keep only the most recent profile', () async {
+      // Arrange
+      final oldTest = SoundTest(
+        id: 'old',
+        name: 'Old Test',
+        dateCreated: DateTime(2024, 1, 1),
+        soundTestData: createStandardTestData(30.0),
+      );
+
+      final recentTest = SoundTest(
+        id: 'recent',
+        name: 'Recent Test',
+        dateCreated: DateTime(2024, 3, 15),
+        soundTestData: createStandardTestData(40.0),
+      );
+
+      final testSoundTests = {
+        'old': oldTest,
+        'recent': recentTest,
+      };
+
+      when(mockRepository.getAllSoundTests())
+          .thenAnswer((_) async => testSoundTests);
+      when(mockRepository.deleteSoundTest(any)).thenAnswer((_) async {});
+
+      // Act
+      await provider.fetchSoundTests();
+
+      // Assert
+      expect(provider.soundTests.length, 1);
+      expect(provider.soundTests.containsKey('recent'), isTrue);
+      expect(provider.soundTests.containsKey('old'), isFalse);
+      expect(provider.activeSoundTestId, 'recent');
+      verify(mockRepository.deleteSoundTest('old')).called(1);
+    });
+
     test('createSoundTest should call repository and update state on success',
         () async {
       // Arrange
@@ -73,7 +121,7 @@ void main() {
         id: 'new',
         name: 'New Sound Test',
         dateCreated: DateTime(2024, 3, 15),
-        soundTestData: {'db_valueOV': 5.0},
+        soundTestData: createStandardTestData(50.0),
       );
 
       final updatedSoundTests = {
@@ -82,6 +130,7 @@ void main() {
 
       when(mockRepository.addSoundTest(testSoundTest)).thenAnswer((_) async {});
 
+      // The test emulates that fetchSoundTests is called inside createSoundTest
       when(mockRepository.getAllSoundTests())
           .thenAnswer((_) async => updatedSoundTests);
 
@@ -103,18 +152,11 @@ void main() {
         id: 'test1',
         name: 'Updated Sound Test',
         dateCreated: DateTime(2024, 3, 15),
-        soundTestData: {'db_valueOV': 7.5},
+        soundTestData: createStandardTestData(60.0),
       );
-
-      final updatedSoundTests = {
-        'test1': updatedSoundTest,
-      };
 
       when(mockRepository.updateSoundTest(updatedSoundTest))
           .thenAnswer((_) async {});
-
-      when(mockRepository.getAllSoundTests())
-          .thenAnswer((_) async => updatedSoundTests);
 
       // Act
       await provider.updateSoundTest(updatedSoundTest);
@@ -122,89 +164,27 @@ void main() {
       // Assert
       expect(provider.isLoading, isFalse);
       expect(provider.error, isNull);
-      expect(provider.soundTests, equals(updatedSoundTests));
+      expect(provider.soundTests['test1'], equals(updatedSoundTest));
+      expect(provider.activeSoundTestId, equals('test1'));
       verify(mockRepository.updateSoundTest(updatedSoundTest)).called(1);
-      verify(mockRepository.getAllSoundTests()).called(1);
     });
 
-    test('deleteSoundTest should call repository and update state on success',
-        () async {
+    test('resetSoundTest should replace test with defaults', () async {
       // Arrange
       const testId = 'test1';
-      final emptyMap = <String, SoundTest>{};
+      final defaultTest = SoundTest.defaultTest(testId);
 
-      // Set an active sound test to ensure it gets cleared
-      provider.setActiveSoundTest(testId);
-
-      when(mockRepository.deleteSoundTest(testId)).thenAnswer((_) async {});
-
-      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => emptyMap);
+      when(mockRepository.updateSoundTest(any)).thenAnswer((_) async {});
 
       // Act
-      await provider.deleteSoundTest(testId);
+      await provider.resetSoundTest(testId);
 
       // Assert
       expect(provider.isLoading, isFalse);
       expect(provider.error, isNull);
-      expect(provider.soundTests, isEmpty);
-      expect(provider.activeSoundTestId, isNull);
-      verify(mockRepository.deleteSoundTest(testId)).called(1);
-      verify(mockRepository.getAllSoundTests()).called(1);
-    });
-
-    test('setActiveSoundTest should update the active sound test ID', () async {
-      // Arrange
-      final testSoundTests = {
-        'test1': SoundTest(
-          id: 'test1',
-          name: 'Test Sound Test 1',
-          dateCreated: DateTime(2024, 3, 10),
-          soundTestData: {'db_valueOV': 0.0},
-        ),
-      };
-
-      // Mock repository to return test sound tests
-      when(mockRepository.getAllSoundTests())
-          .thenAnswer((_) async => testSoundTests);
-
-      // Load sound tests into provider
-      await provider.fetchSoundTests();
-
-      // Act
-      provider.setActiveSoundTest('test1');
-
-      // Assert
-      expect(provider.activeSoundTestId, equals('test1'));
-      expect(provider.activeSoundTest, equals(testSoundTests['test1']));
-    });
-
-    test('clearActiveSoundTest should set active sound test ID to null',
-        () async {
-      // Arrange - Set an active sound test
-      final testSoundTests = {
-        'test1': SoundTest(
-          id: 'test1',
-          name: 'Test Sound Test 1',
-          dateCreated: DateTime(2024, 3, 10),
-          soundTestData: {'db_valueOV': 0.0},
-        ),
-      };
-
-      // Mock repository to return test sound tests
-      when(mockRepository.getAllSoundTests())
-          .thenAnswer((_) async => testSoundTests);
-
-      // Load sound tests into provider and set active
-      await provider.fetchSoundTests();
-      provider.setActiveSoundTest('test1');
-      expect(provider.activeSoundTestId, equals('test1'));
-
-      // Act
-      provider.clearActiveSoundTest();
-
-      // Assert
-      expect(provider.activeSoundTestId, isNull);
-      expect(provider.activeSoundTest, isNull);
+      // Can't directly compare the objects because the creation dates might differ
+      expect(provider.soundTests[testId]?.id, equals(testId));
+      verify(mockRepository.updateSoundTest(any)).called(1);
     });
 
     test('getSoundTestById should return correct sound test', () async {
@@ -213,7 +193,7 @@ void main() {
         id: 'test1',
         name: 'Test Sound Test 1',
         dateCreated: DateTime(2024, 3, 10),
-        soundTestData: {'db_valueOV': 0.0},
+        soundTestData: createStandardTestData(40.0),
       );
 
       final testSoundTests = {'test1': testSoundTest};
@@ -248,4 +228,20 @@ void main() {
       expect(provider.error, isNull);
     });
   });
+}
+
+// Helper function to create standard test data with the same value for all frequencies
+Map<String, double> createStandardTestData(double value) {
+  return {
+    'L_user_250Hz_dB': value,
+    'L_user_500Hz_dB': value,
+    'L_user_1000Hz_dB': value,
+    'L_user_2000Hz_dB': value,
+    'L_user_4000Hz_dB': value,
+    'R_user_250Hz_dB': value,
+    'R_user_500Hz_dB': value,
+    'R_user_1000Hz_dB': value,
+    'R_user_2000Hz_dB': value,
+    'R_user_4000Hz_dB': value,
+  };
 }
