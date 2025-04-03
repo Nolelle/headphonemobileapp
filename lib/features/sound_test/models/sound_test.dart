@@ -36,10 +36,18 @@ class SoundTest {
   }
 
   factory SoundTest.fromJson(String id, Map<String, dynamic> json) {
-    final rawData = json['soundTestData'] as Map<String, dynamic>;
+    // Safely handle the soundTestData which might be null or not a valid map
+    Map<String, dynamic>? rawData;
+    try {
+      rawData = json['soundTestData'] as Map<String, dynamic>?;
+    } catch (e) {
+      rawData = null;
+    }
+
+    rawData = rawData ?? {}; // Default to empty map if null
     final soundTestData = <String, double>{};
 
-    // Explicit conversion for each field
+    // Explicit conversion for each field with fallback
     soundTestData['L_user_250Hz_dB'] =
         (rawData['L_user_250Hz_dB'] as num?)?.toDouble() ?? -10.0;
     soundTestData['L_user_500Hz_dB'] =

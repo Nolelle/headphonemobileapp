@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projects/features/sound_test/models/sound_test.dart';
 
@@ -57,6 +56,29 @@ void main() {
 
       // Verify default values are applied for missing frequencies
       expect(soundTest.soundTestData['L_user_250Hz_dB'], 50.0);
+      expect(soundTest.soundTestData['L_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_4000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_4000Hz_dB'], -10.0);
+    });
+
+    test('fromJson should handle empty soundTestData', () {
+      final json = {
+        'name': 'Empty Data Profile',
+        'dateCreated': DateTime(2023, 1, 1).toIso8601String(),
+        'soundTestData': {},
+      };
+
+      // This should not throw an exception
+      final soundTest = SoundTest.fromJson('test_id', json);
+
+      // Verify default values are applied for all frequencies
+      expect(soundTest.soundTestData['L_user_250Hz_dB'], -10.0);
       expect(soundTest.soundTestData['L_user_500Hz_dB'], -10.0);
       expect(soundTest.soundTestData['L_user_1000Hz_dB'], -10.0);
       expect(soundTest.soundTestData['L_user_2000Hz_dB'], -10.0);

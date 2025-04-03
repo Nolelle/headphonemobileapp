@@ -145,9 +145,25 @@ void main() {
       verify(mockRepository.getAllSoundTests()).called(1);
     });
 
-    test('updateSoundTest should call repository and update state on success',
+    test(
+        'updateSoundTest should call repository and update state for existing ID',
         () async {
       // Arrange
+      // First, set up the provider with an existing sound test
+      final existingSoundTest = SoundTest(
+        id: 'test1',
+        name: 'Existing Sound Test',
+        dateCreated: DateTime(2024, 3, 10),
+        soundTestData: createStandardTestData(40.0),
+      );
+
+      // Add the sound test to the provider's state
+      provider = SoundTestProvider(mockRepository);
+      when(mockRepository.getAllSoundTests())
+          .thenAnswer((_) async => {'test1': existingSoundTest});
+      await provider.fetchSoundTests();
+
+      // Now prepare the updated test
       final updatedSoundTest = SoundTest(
         id: 'test1',
         name: 'Updated Sound Test',
@@ -167,6 +183,30 @@ void main() {
       expect(provider.soundTests['test1'], equals(updatedSoundTest));
       expect(provider.activeSoundTestId, equals('test1'));
       verify(mockRepository.updateSoundTest(updatedSoundTest)).called(1);
+    });
+
+    test('updateSoundTest should call addSoundTest if ID does not exist',
+        () async {
+      // Arrange - Don't add anything to the provider's state, so the test ID doesn't exist
+
+      final newSoundTest = SoundTest(
+        id: 'new_id',
+        name: 'New Sound Test',
+        dateCreated: DateTime(2024, 3, 15),
+        soundTestData: createStandardTestData(60.0),
+      );
+
+      when(mockRepository.addSoundTest(newSoundTest)).thenAnswer((_) async {});
+
+      // Act
+      await provider.updateSoundTest(newSoundTest);
+
+      // Assert
+      expect(provider.isLoading, isFalse);
+      expect(provider.error, isNull);
+      expect(provider.soundTests['new_id'], equals(newSoundTest));
+      expect(provider.activeSoundTestId, equals('new_id'));
+      verify(mockRepository.addSoundTest(newSoundTest)).called(1);
     });
 
     test('resetSoundTest should replace test with defaults', () async {
