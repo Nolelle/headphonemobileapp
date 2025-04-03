@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 import 'package:projects/features/sound_test/views/screens/test_page.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:audioplayers/audioplayers.dart';
 

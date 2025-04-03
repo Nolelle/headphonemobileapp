@@ -25,11 +25,11 @@ import 'package:projects/features/settings/providers/language_provider.dart'
     as _i17;
 import 'package:projects/features/settings/providers/theme_provider.dart'
     as _i15;
-import 'package:projects/features/sound_test/models/sound_test.dart' as _i10;
+import 'package:projects/features/sound_test/models/sound_test.dart' as _i11;
 import 'package:projects/features/sound_test/providers/sound_test_provider.dart'
-    as _i11;
-import 'package:projects/features/sound_test/repositories/sound_test_repository.dart'
     as _i9;
+import 'package:projects/features/sound_test/repositories/sound_test_repository.dart'
+    as _i10;
 import 'package:shared_preferences/shared_preferences.dart' as _i19;
 
 // ignore_for_file: type=lint
@@ -204,6 +204,24 @@ class MockPresetProvider extends _i1.Mock implements _i8.PresetProvider {
   );
 
   @override
+  _i4.Future<bool> sendActivePresetToDevice() =>
+      (super.noSuchMethod(
+            Invocation.method(#sendActivePresetToDevice, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> sendCombinedDataToDevice(
+    _i9.SoundTestProvider? soundTestProvider,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendCombinedDataToDevice, [soundTestProvider]),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   void clearActivePreset() => super.noSuchMethod(
     Invocation.method(#clearActivePreset, []),
     returnValueForMissingStub: null,
@@ -264,23 +282,23 @@ class MockPresetProvider extends _i1.Mock implements _i8.PresetProvider {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSoundTestRepository extends _i1.Mock
-    implements _i9.SoundTestRepository {
+    implements _i10.SoundTestRepository {
   MockSoundTestRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<Map<String, _i10.SoundTest>> getAllSoundTests() =>
+  _i4.Future<Map<String, _i11.SoundTest>> getAllSoundTests() =>
       (super.noSuchMethod(
             Invocation.method(#getAllSoundTests, []),
-            returnValue: _i4.Future<Map<String, _i10.SoundTest>>.value(
-              <String, _i10.SoundTest>{},
+            returnValue: _i4.Future<Map<String, _i11.SoundTest>>.value(
+              <String, _i11.SoundTest>{},
             ),
           )
-          as _i4.Future<Map<String, _i10.SoundTest>>);
+          as _i4.Future<Map<String, _i11.SoundTest>>);
 
   @override
-  _i4.Future<void> saveAllSoundTests(Map<String, _i10.SoundTest>? soundTests) =>
+  _i4.Future<void> saveAllSoundTests(Map<String, _i11.SoundTest>? soundTests) =>
       (super.noSuchMethod(
             Invocation.method(#saveAllSoundTests, [soundTests]),
             returnValue: _i4.Future<void>.value(),
@@ -289,7 +307,7 @@ class MockSoundTestRepository extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> addSoundTest(_i10.SoundTest? soundTest) =>
+  _i4.Future<void> addSoundTest(_i11.SoundTest? soundTest) =>
       (super.noSuchMethod(
             Invocation.method(#addSoundTest, [soundTest]),
             returnValue: _i4.Future<void>.value(),
@@ -298,7 +316,7 @@ class MockSoundTestRepository extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> updateSoundTest(_i10.SoundTest? soundTest) =>
+  _i4.Future<void> updateSoundTest(_i11.SoundTest? soundTest) =>
       (super.noSuchMethod(
             Invocation.method(#updateSoundTest, [soundTest]),
             returnValue: _i4.Future<void>.value(),
@@ -319,18 +337,18 @@ class MockSoundTestRepository extends _i1.Mock
 /// A class which mocks [SoundTestProvider].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSoundTestProvider extends _i1.Mock implements _i11.SoundTestProvider {
+class MockSoundTestProvider extends _i1.Mock implements _i9.SoundTestProvider {
   MockSoundTestProvider() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  Map<String, _i10.SoundTest> get soundTests =>
+  Map<String, _i11.SoundTest> get soundTests =>
       (super.noSuchMethod(
             Invocation.getter(#soundTests),
-            returnValue: <String, _i10.SoundTest>{},
+            returnValue: <String, _i11.SoundTest>{},
           )
-          as Map<String, _i10.SoundTest>);
+          as Map<String, _i11.SoundTest>);
 
   @override
   bool get isLoading =>
@@ -352,7 +370,7 @@ class MockSoundTestProvider extends _i1.Mock implements _i11.SoundTestProvider {
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> createSoundTest(_i10.SoundTest? soundTest) =>
+  _i4.Future<void> createSoundTest(_i11.SoundTest? soundTest) =>
       (super.noSuchMethod(
             Invocation.method(#createSoundTest, [soundTest]),
             returnValue: _i4.Future<void>.value(),
@@ -361,7 +379,7 @@ class MockSoundTestProvider extends _i1.Mock implements _i11.SoundTestProvider {
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> updateSoundTest(_i10.SoundTest? soundTest) =>
+  _i4.Future<void> updateSoundTest(_i11.SoundTest? soundTest) =>
       (super.noSuchMethod(
             Invocation.method(#updateSoundTest, [soundTest]),
             returnValue: _i4.Future<void>.value(),
@@ -370,9 +388,9 @@ class MockSoundTestProvider extends _i1.Mock implements _i11.SoundTestProvider {
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> deleteSoundTest(String? id) =>
+  _i4.Future<void> resetSoundTest(String? id) =>
       (super.noSuchMethod(
-            Invocation.method(#deleteSoundTest, [id]),
+            Invocation.method(#resetSoundTest, [id]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -391,9 +409,9 @@ class MockSoundTestProvider extends _i1.Mock implements _i11.SoundTestProvider {
   );
 
   @override
-  _i10.SoundTest? getSoundTestById(String? id) =>
+  _i11.SoundTest? getSoundTestById(String? id) =>
       (super.noSuchMethod(Invocation.method(#getSoundTestById, [id]))
-          as _i10.SoundTest?);
+          as _i11.SoundTest?);
 
   @override
   void clearError() => super.noSuchMethod(
@@ -508,6 +526,15 @@ class MockBluetoothProvider extends _i1.Mock implements _i12.BluetoothProvider {
   _i4.Future<void> loadConnectionState() =>
       (super.noSuchMethod(
             Invocation.method(#loadConnectionState, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> refreshBatteryLevel() =>
+      (super.noSuchMethod(
+            Invocation.method(#refreshBatteryLevel, []),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -841,6 +868,20 @@ class MockAudioPlayer extends _i1.Mock implements _i3.AudioPlayer {
           as String);
 
   @override
+  _i3.PlayerState get desiredState =>
+      (super.noSuchMethod(
+            Invocation.getter(#desiredState),
+            returnValue: _i3.PlayerState.stopped,
+          )
+          as _i3.PlayerState);
+
+  @override
+  set desiredState(_i3.PlayerState? _desiredState) => super.noSuchMethod(
+    Invocation.setter(#desiredState, _desiredState),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i4.Completer<void> get creatingCompleter =>
       (super.noSuchMethod(
             Invocation.getter(#creatingCompleter),
@@ -951,6 +992,13 @@ class MockAudioPlayer extends _i1.Mock implements _i3.AudioPlayer {
             returnValue: _i4.Stream<String>.empty(),
           )
           as _i4.Stream<String>);
+
+  @override
+  set positionUpdater(_i3.PositionUpdater? positionUpdater) =>
+      super.noSuchMethod(
+        Invocation.setter(#positionUpdater, positionUpdater),
+        returnValueForMissingStub: null,
+      );
 
   @override
   _i4.Future<void> play(
@@ -1087,36 +1135,40 @@ class MockAudioPlayer extends _i1.Mock implements _i3.AudioPlayer {
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> setSourceUrl(String? url) =>
+  _i4.Future<void> setSourceUrl(String? url, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceUrl, [url]),
+            Invocation.method(#setSourceUrl, [url], {#mimeType: mimeType}),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> setSourceDeviceFile(String? path) =>
+  _i4.Future<void> setSourceDeviceFile(String? path, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceDeviceFile, [path]),
+            Invocation.method(
+              #setSourceDeviceFile,
+              [path],
+              {#mimeType: mimeType},
+            ),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> setSourceAsset(String? path) =>
+  _i4.Future<void> setSourceAsset(String? path, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceAsset, [path]),
+            Invocation.method(#setSourceAsset, [path], {#mimeType: mimeType}),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> setSourceBytes(_i18.Uint8List? bytes) =>
+  _i4.Future<void> setSourceBytes(_i18.Uint8List? bytes, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceBytes, [bytes]),
+            Invocation.method(#setSourceBytes, [bytes], {#mimeType: mimeType}),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

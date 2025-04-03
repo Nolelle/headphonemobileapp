@@ -4,14 +4,16 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
-import 'dart:ui' as _i5;
+import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:projects/features/presets/models/preset.dart' as _i3;
 import 'package:projects/features/presets/providers/preset_provider.dart'
     as _i2;
 import 'package:projects/features/presets/repositories/preset_repository.dart'
-    as _i6;
+    as _i7;
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart'
+    as _i5;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -104,6 +106,24 @@ class MockPresetProvider extends _i1.Mock implements _i2.PresetProvider {
   );
 
   @override
+  _i4.Future<bool> sendActivePresetToDevice() =>
+      (super.noSuchMethod(
+            Invocation.method(#sendActivePresetToDevice, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> sendCombinedDataToDevice(
+    _i5.SoundTestProvider? soundTestProvider,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendCombinedDataToDevice, [soundTestProvider]),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   void clearActivePreset() => super.noSuchMethod(
     Invocation.method(#clearActivePreset, []),
     returnValueForMissingStub: null,
@@ -136,13 +156,13 @@ class MockPresetProvider extends _i1.Mock implements _i2.PresetProvider {
           as _i4.Future<void>);
 
   @override
-  void addListener(_i5.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i5.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -163,7 +183,7 @@ class MockPresetProvider extends _i1.Mock implements _i2.PresetProvider {
 /// A class which mocks [PresetRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPresetRepository extends _i1.Mock implements _i6.PresetRepository {
+class MockPresetRepository extends _i1.Mock implements _i7.PresetRepository {
   MockPresetRepository() {
     _i1.throwOnMissingStub(this);
   }
