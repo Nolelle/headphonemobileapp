@@ -99,6 +99,13 @@ final Map<String, String> frTranslations = {
   'instruction_1': 'Asseyez-vous dans un environnement calme.',
   'instruction_2': 'Portez vos écouteurs correctement et confortablement.',
   'instruction_3': 'Appuyez sur le bouton lorsque vous entendez le son.',
+  'some_instructions_before_starting':
+      'Quelques instructions avant de commencer le test:',
+  'sit_in_quiet_environment': 'Asseyez-vous dans un environnement calme.',
+  'set_max_volume': 'Réglez le volume de votre appareil au maximum.',
+  'wear_headphones_properly':
+      'Portez vos écouteurs correctement et confortablement pour qu\'ils s\'adaptent parfaitement à vos oreilles.',
+  'test_duration_minutes': 'Cela ne prendra que ~5 minutes',
   'audio_profiles': 'Profils audio:',
   'max_profiles': 'Vous ne pouvez avoir qu\'un maximum de 3 profils audio!',
   'successfully_applied': 'Appliqué avec succès!',
