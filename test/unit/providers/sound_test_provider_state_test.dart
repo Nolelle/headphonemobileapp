@@ -59,10 +59,11 @@ void main() {
       await provider.fetchSoundTests();
 
       // Assert
-      // Check that loading state changes from true to false
-      // First notification: isLoading = true
-      // Second notification: isLoading = false after successful fetch
-      expect(stateChanges, [true, false, false]);
+      // Check that loading state changes correctly
+      // First notification: isLoading = true (when fetching starts)
+      // Second notification: isLoading = true (when all tests are fetched and before processing)
+      // Third notification: isLoading = false (when complete)
+      expect(stateChanges, [true, true, false]);
       expect(provider.isLoading, isFalse);
     });
 

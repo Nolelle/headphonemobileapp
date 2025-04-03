@@ -57,19 +57,22 @@ void main() {
         },
       );
 
-      // Mock existing data
+      // Initial state with existing test
       when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {
             'existing': existingSoundTest,
           });
 
-      // Mock operations
-      when(mockRepository.deleteSoundTest(any)).thenAnswer((_) async {});
-      when(mockRepository.addSoundTest(any)).thenAnswer((_) async {});
+      // Load the provider with initial data
+      await provider.fetchSoundTests();
 
-      // After creating, fetchSoundTests is called which should return just the new test
+      // Reset the mock to provide the updated data after creation
       when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {
             'new': newSoundTest,
           });
+
+      // Mock repository operations
+      when(mockRepository.deleteSoundTest(any)).thenAnswer((_) async {});
+      when(mockRepository.addSoundTest(any)).thenAnswer((_) async {});
 
       // Act
       await provider.createSoundTest(newSoundTest);
@@ -104,8 +107,11 @@ void main() {
         },
       );
 
-      // Mock empty existing data
+      // Mock initial empty state
       when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {});
+
+      // Load the provider with initial data
+      await provider.fetchSoundTests();
 
       // Mock error during add
       when(mockRepository.addSoundTest(any))
