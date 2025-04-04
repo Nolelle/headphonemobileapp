@@ -51,7 +51,7 @@ class _TestPageState extends State<TestPage> {
   // Updated constants for proper dB SPL mapping
   final double MAX_DB_SPL = 85.0; // Maximum volume in dB SPL
   final double MIN_DB_SPL = 30.0; // Minimum volume in dB SPL
-  final double INITIAL_DB_SPL = 65.0; // Starting volume in dB SPL
+  final double INITIAL_DB_SPL = 90.0; // Starting volume in dB SPL
   final double STEP_DOWN_DB = 10.0; // Step down size in dB
   final double STEP_UP_DB = 5.0; // Step up size in dB
 
@@ -182,45 +182,90 @@ class _TestPageState extends State<TestPage> {
     return (20 * log(volume) / ln10 + MAX_DB_SPL).clamp(MIN_DB_SPL, MAX_DB_SPL);
   }
 
+  // Convert dB SPL to dB HL using standard Reference Equivalent Threshold SPL values
+  double convertDBSPLtoDBHL(double dbSPL, int frequency) {
+    // RETSPL values for each frequency (simplified approximation)
+    final Map<int, double> retsplValues = {
+      250: 14.0,
+      500: 6.0,
+      1000: 6.0,
+      2000: 8.0,
+      4000: 9.0,
+    };
+
+    // Get the appropriate RETSPL value based on frequency
+    final double retspl =
+        retsplValues[frequency] ?? 7.0; // Default if not found
+
+    // Convert dB SPL to dB HL
+    return dbSPL - retspl;
+  }
+
   void updateFrequency_dB_Value() {
     double capturedVolume = current_volume;
-    double dbValue = convertVolumeToDBSPL(capturedVolume);
+    double dbSPLValue = convertVolumeToDBSPL(capturedVolume);
+    double dbHLValue;
+
+    // Get the current frequency for conversion
+    int currentFrequency = 1000; // Default
+    switch (current_sound_stage) {
+      case 1:
+        currentFrequency = 250;
+        break;
+      case 2:
+        currentFrequency = 500;
+        break;
+      case 3:
+        currentFrequency = 1000;
+        break;
+      case 4:
+        currentFrequency = 2000;
+        break;
+      case 5:
+        currentFrequency = 4000;
+        break;
+    }
+
+    // Convert to dB HL
+    dbHLValue = convertDBSPLtoDBHL(dbSPLValue, currentFrequency);
 
     if (current_ear == "L") {
       switch (current_sound_stage) {
         case 1:
           debugPrint("Current volume for frequency: $capturedVolume");
-          L_user_250Hz_dB = dbValue;
+          debugPrint(
+              "dB SPL: ${dbSPLValue.toStringAsFixed(1)}, dB HL: ${dbHLValue.toStringAsFixed(1)}");
+          L_user_250Hz_dB = dbHLValue;
           break;
         case 2:
-          L_user_500Hz_dB = dbValue;
+          L_user_500Hz_dB = dbHLValue;
           break;
         case 3:
-          L_user_1000Hz_dB = dbValue;
+          L_user_1000Hz_dB = dbHLValue;
           break;
         case 4:
-          L_user_2000Hz_dB = dbValue;
+          L_user_2000Hz_dB = dbHLValue;
           break;
         case 5:
-          L_user_4000Hz_dB = dbValue;
+          L_user_4000Hz_dB = dbHLValue;
           break;
       }
     } else if (current_ear == "R") {
       switch (current_sound_stage) {
         case 1:
-          R_user_250Hz_dB = dbValue;
+          R_user_250Hz_dB = dbHLValue;
           break;
         case 2:
-          R_user_500Hz_dB = dbValue;
+          R_user_500Hz_dB = dbHLValue;
           break;
         case 3:
-          R_user_1000Hz_dB = dbValue;
+          R_user_1000Hz_dB = dbHLValue;
           break;
         case 4:
-          R_user_2000Hz_dB = dbValue;
+          R_user_2000Hz_dB = dbHLValue;
           break;
         case 5:
-          R_user_4000Hz_dB = dbValue;
+          R_user_4000Hz_dB = dbHLValue;
           break;
       }
     }
@@ -644,9 +689,23 @@ class _TestPageState extends State<TestPage> {
       if (is_finding_threshold) {
         // User confirmed they can hear it - save the threshold
         updateFrequency_dB_Value();
-        _showCustomToast(
-            context,
-            'Threshold confirmed for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz: ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)} dB SPL');
+
+        // Get frequency text and dB values for the toast
+        String frequencyText = current_sound_stage == 1
+            ? "250"
+            : current_sound_stage == 2
+                ? "500"
+                : current_sound_stage == 3
+                    ? "1000"
+                    : current_sound_stage == 4
+                        ? "2000"
+                        : "4000";
+        int frequency = int.parse(frequencyText);
+        double dbSPLValue = convertVolumeToDBSPL(current_volume);
+        double dbHLValue = convertDBSPLtoDBHL(dbSPLValue, frequency);
+
+        _showCustomToast(context,
+            'Threshold for ${current_ear == "L" ? "Left" : "Right"} ear at ${frequencyText}Hz: ${dbHLValue.toStringAsFixed(1)} dB HL (${dbSPLValue.toStringAsFixed(1)} dB SPL)');
 
         // Stop current tone
         stopSound();
