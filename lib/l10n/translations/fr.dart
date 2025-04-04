@@ -32,9 +32,9 @@ final Map<String, String> frTranslations = {
 
   // FAQ Section
   'faq': 'Questions Fréquemment Posées',
-  'faq_clean': 'Comment nettoyer et entretenir mes écouteurs?',
+  'faq_clean': 'Que signifient les valeurs sur l\'audiogramme?',
   'faq_clean_answer':
-      'Un nettoyage régulier est essentiel. Utilisez un chiffon doux et sec pour essuyer l\'extérieur quotidiennement. Pour un nettoyage plus profond, suivez les instructions du fabricant. Nous recommandons un nettoyage professionnel tous les quelques mois pour des performances et une longévité optimales de vos écouteurs.',
+      'L\'audiogramme montre vos seuils auditifs mesurés en dB HL (Niveau d\'Audition). Pendant le test, des sons sont joués à différentes valeurs de dB SPL (Niveau de Pression Sonore), qui sont ensuite convertis en dB HL à l\'aide de valeurs de référence standard. L\'échelle dB HL est utilisée par les audiologistes où 0-20 dB représente une audition normale, 20-40 dB une perte légère, 40-70 dB une perte modérée, 70-90 dB une perte sévère, et >90 dB une perte profonde.',
   'faq_adjust': 'Comment puis-je ajuster les paramètres de mes écouteurs?',
   'faq_adjust_answer':
       'Connectez vos écouteurs via Bluetooth, puis allez dans l\'onglet Préréglages. Vous pouvez ajuster les niveaux de volume, les fréquences de basses, médiums et aigus, et activer des fonctionnalités comme la réduction de bruit de fond. Les modifications sont envoyées à vos écouteurs lorsque vous appliquez un préréglage.',
@@ -43,7 +43,7 @@ final Map<String, String> frTranslations = {
       'Allez dans l\'onglet Test Auditif et appuyez sur COMMENCER LE TEST SONORE. Vous entendrez des sons à différentes fréquences qui deviennent progressivement plus forts. Appuyez sur le bouton dès que vous entendez chaque son. Le test évalue les deux oreilles et crée un préréglage personnalisé basé sur votre profil auditif qui peut être appliqué à vos écouteurs.',
   'faq_multiple': 'Puis-je sauvegarder plusieurs résultats de tests auditifs?',
   'faq_multiple_answer':
-      'Oui! Vous pouvez effectuer plusieurs tests auditifs et chacun crée un nouveau préréglage. Cela vous permet d\'avoir différents préréglages pour divers environnements d\'écoute comme la musique, les conversations ou les environnements bruyants. Vous pouvez stocker jusqu\'à 10 préréglages et passer facilement de l\'un à l\'autre.',
+      'Vous pouvez effectuer le test auditif plusieurs fois, mais l\'application ne sauvegarde que votre résultat de test le plus récent. Chaque nouveau test remplacera votre résultat de test précédent. Cela vous permet de mettre à jour votre profil auditif au besoin, mais l\'application ne conserve pas d\'historique des résultats de tests antérieurs. Chaque test évalue les deux oreilles à différentes fréquences (250Hz, 500Hz, 1kHz, 2kHz et 4kHz) et affiche ces résultats dans votre audiogramme.',
 
   // About
   'about': 'À propos',
