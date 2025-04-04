@@ -369,16 +369,6 @@ class _SoundTestPageState extends State<SoundTestPage> {
               severeLossLabel: appLocalizations.translate('severe_loss'),
               profoundLossLabel: appLocalizations.translate('profound_loss'),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Note: Values displayed in dB HL (Hearing Level)',
-              style: const TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

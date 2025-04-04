@@ -355,7 +355,7 @@ class AudiogramPainter extends CustomPainter {
   void _drawYAxisLegend(Canvas canvas, Size size, double leftPadding) {
     final textPainter = TextPainter(
       text: TextSpan(
-        text: hearingLevelLabel,
+        text: "$hearingLevelLabel (dB HL)", // Using proper format "dB HL"
         style: TextStyle(
           color: theme.textTheme.bodyMedium?.color,
           fontSize: 10 * scaleFactor * (isSmallScreen ? 0.9 : 1.0),

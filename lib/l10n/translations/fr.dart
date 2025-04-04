@@ -167,7 +167,7 @@ final Map<String, String> frTranslations = {
 
   // Audiogram labels
   'frequency': 'Fréquence (Hz)',
-  'hearing_level': 'Niveau d\'Audition (dB)',
+  'hearing_level': 'Niveau d\'Audition',
   'normal_hearing': 'Normal',
   'mild_loss': 'Léger',
   'moderate_loss': 'Modéré',

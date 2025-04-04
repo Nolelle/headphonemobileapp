@@ -160,7 +160,7 @@ final Map<String, String> enTranslations = {
 
   // Audiogram labels
   'frequency': 'Frequency (Hz)',
-  'hearing_level': 'Hearing Level (dB)',
+  'hearing_level': 'Hearing Level',
   'normal_hearing': 'Normal',
   'mild_loss': 'Mild',
   'moderate_loss': 'Moderate',
