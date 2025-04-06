@@ -6,6 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:projects/features/presets/models/preset.dart';
 import 'package:projects/features/presets/providers/preset_provider.dart';
 import 'package:projects/features/presets/views/screens/preset_page.dart';
+import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
+import 'package:projects/features/sound_test/models/sound_test.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
 // Mock classes
@@ -27,6 +30,30 @@ class MockPresetProvider extends Mock implements PresetProvider {
     _presets[preset.id] = preset;
     return Future.value();
   }
+
+  @override
+  void setActivePreset(String id) {
+    // Mock implementation
+  }
+
+  @override
+  Future<bool> sendCombinedDataToDevice(
+      SoundTestProvider soundTestProvider) async {
+    // Mock implementation
+    return Future.value(true);
+  }
+}
+
+// Mock BluetoothProvider
+class MockBluetoothProvider extends Mock implements BluetoothProvider {
+  @override
+  bool get isDeviceConnected => false;
+}
+
+// Mock SoundTestProvider
+class MockSoundTestProvider extends Mock implements SoundTestProvider {
+  @override
+  SoundTest? get activeSoundTest => null;
 }
 
 // Mock AppLocalizations for testing
@@ -71,11 +98,15 @@ void main() {
 
   group('PresetPage Notification Tests', () {
     late MockPresetProvider presetProvider;
+    late MockBluetoothProvider bluetoothProvider;
+    late MockSoundTestProvider soundTestProvider;
     const String testPresetId = 'test-preset-1';
     const String testPresetName = 'Test Preset';
 
     setUp(() {
       presetProvider = MockPresetProvider();
+      bluetoothProvider = MockBluetoothProvider();
+      soundTestProvider = MockSoundTestProvider();
       presetProvider.updatePresetCalled = false;
 
       // Add a test preset
@@ -116,8 +147,15 @@ void main() {
             Locale('en'),
             Locale('fr'),
           ],
-          home: ChangeNotifierProvider<PresetProvider>.value(
-            value: presetProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                  value: presetProvider),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                  value: bluetoothProvider),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                  value: soundTestProvider),
+            ],
             child: PresetPage(
               presetId: testPresetId,
               presetName: testPresetName,
@@ -165,8 +203,15 @@ void main() {
             Locale('en'),
             Locale('fr'),
           ],
-          home: ChangeNotifierProvider<PresetProvider>.value(
-            value: presetProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                  value: presetProvider),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                  value: bluetoothProvider),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                  value: soundTestProvider),
+            ],
             child: PresetPage(
               presetId: testPresetId,
               presetName: testPresetName,
@@ -227,8 +272,15 @@ void main() {
             Locale('en'),
             Locale('fr'),
           ],
-          home: ChangeNotifierProvider<PresetProvider>.value(
-            value: presetProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                  value: presetProvider),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                  value: bluetoothProvider),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                  value: soundTestProvider),
+            ],
             child: PresetPage(
               presetId: testPresetId,
               presetName: testPresetName,
@@ -277,8 +329,15 @@ void main() {
             Locale('en'),
             Locale('fr'),
           ],
-          home: ChangeNotifierProvider<PresetProvider>.value(
-            value: presetProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                  value: presetProvider),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                  value: bluetoothProvider),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                  value: soundTestProvider),
+            ],
             child: PresetPage(
               presetId: testPresetId,
               presetName: testPresetName,

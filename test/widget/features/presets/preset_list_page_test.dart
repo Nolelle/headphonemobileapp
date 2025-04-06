@@ -6,10 +6,26 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:projects/features/presets/models/preset.dart';
 import 'package:projects/features/presets/providers/preset_provider.dart';
 import 'package:projects/features/presets/views/screens/preset_list_page.dart';
+import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
 
 // Mock classes for localization
 import 'package:projects/l10n/app_localizations.dart';
 import '../../../unit/mocks/mock_preset_provider.mocks.dart';
+
+// Mock BluetoothProvider
+class MockBluetoothProvider extends Mock implements BluetoothProvider {
+  @override
+  bool get isDeviceConnected => false;
+
+  @override
+  String get connectedDeviceName => 'MockDevice';
+}
+
+// Mock SoundTestProvider
+class MockSoundTestProvider extends Mock implements SoundTestProvider {
+  // Add necessary default behaviors or stubs if needed
+}
 
 // Mock AppLocalizations for testing
 class MockAppLocalizations implements AppLocalizations {
@@ -64,9 +80,13 @@ void main() {
 
   group('PresetsListPage Widget Tests', () {
     late MockPresetProvider mockPresetProvider;
+    late MockBluetoothProvider mockBluetoothProvider;
+    late MockSoundTestProvider mockSoundTestProvider;
 
     setUp(() {
       mockPresetProvider = MockPresetProvider();
+      mockBluetoothProvider = MockBluetoothProvider();
+      mockSoundTestProvider = MockSoundTestProvider();
     });
 
     Widget createTestableWidget(Widget child) {
@@ -81,9 +101,21 @@ void main() {
           Locale('en'),
           Locale('fr'),
         ],
-        home: ChangeNotifierProvider<PresetProvider>.value(
-          value: mockPresetProvider,
-          child: child,
+        home: Scaffold(
+          body: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                value: mockPresetProvider,
+              ),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                value: mockBluetoothProvider,
+              ),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                value: mockSoundTestProvider,
+              ),
+            ],
+            child: child,
+          ),
         ),
       );
     }
@@ -149,24 +181,47 @@ void main() {
       };
 
       when(mockPresetProvider.presets).thenReturn(mockPresets);
-      when(mockPresetProvider.activePresetId).thenReturn('preset1');
+      // Start with no active preset initially
+      when(mockPresetProvider.activePresetId).thenReturn(null);
+      // Mock the behavior when setActivePreset is called
+      when(mockPresetProvider.setActivePreset('preset1')).thenAnswer((_) async {
+        // Simulate the provider updating its state *after* being called
+        when(mockPresetProvider.activePresetId).thenReturn('preset1');
+        print(
+            "[TEST LOG] Mock setActivePreset('preset1') called, updated provider state");
+      });
+      // Mock sendCombinedDataToDevice as it's called in onPressed
+      when(mockPresetProvider.sendCombinedDataToDevice(any))
+          .thenAnswer((_) async => true);
 
-      // Act
+      // Act: Initial pump
+      print('[TEST LOG] Pumping widget initially (no active preset)...');
       await tester.pumpWidget(createTestableWidget(
         PresetsListPage(presetProvider: mockPresetProvider),
       ));
+      await tester.pumpAndSettle();
 
-      // First pump to build the widget
-      await tester.pump();
+      // Assert: Buttons should NOT be visible yet
+      print('[TEST LOG] Verifying buttons are NOT present initially...');
+      expect(find.text('Edit'), findsNothing);
+      expect(find.text('Delete'), findsNothing);
 
-      // Find and tap the preset button to set it as active
+      // Act: Tap the preset button to make it active
+      print('[TEST LOG] Tapping preset \'Test Preset 1\'...');
       await tester.tap(find.text('Test Preset 1'));
-      await tester.pump();
+      // Pump and settle to allow setState and rebuild
+      print('[TEST LOG] Pumping after tap...');
+      await tester.pumpAndSettle();
 
-      // Assert - look for text on buttons instead of icons
-      expect(find.text('Test Preset 1'), findsOneWidget);
-      expect(find.text('Edit'), findsOneWidget);
-      expect(find.text('Delete'), findsOneWidget);
+      // Assert: Buttons SHOULD be visible now
+      print('[TEST LOG] Verifying buttons ARE present after tap...');
+      expect(
+          find.text('Test Preset 1'), findsOneWidget); // Preset still visible
+      expect(find.text('Edit'), findsOneWidget); // Edit button now visible
+      expect(find.text('Delete'), findsOneWidget); // Delete button now visible
+
+      // Verify setActivePreset was called
+      verify(mockPresetProvider.setActivePreset('preset1')).called(1);
     });
 
     testWidgets('should set active preset when tapped',
@@ -182,7 +237,19 @@ void main() {
       };
 
       when(mockPresetProvider.presets).thenReturn(mockPresets);
-      when(mockPresetProvider.activePresetId).thenReturn(null);
+      when(mockPresetProvider.activePresetId)
+          .thenReturn(null); // Start inactive
+      when(mockPresetProvider.setActivePreset('preset1')).thenAnswer((_) async {
+        print("[TEST LOG] setActivePreset('preset1') called");
+      });
+      when(mockPresetProvider.sendCombinedDataToDevice(any))
+          .thenAnswer((invocation) async {
+        print(
+            "[TEST LOG] sendCombinedDataToDevice called with args: ${invocation.positionalArguments}");
+        await Future.delayed(const Duration(milliseconds: 10));
+        print("[TEST LOG] sendCombinedDataToDevice finished");
+        return true;
+      });
 
       // Act
       await tester.pumpWidget(createTestableWidget(
@@ -190,12 +257,15 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Tap on the preset
+      print('[TEST LOG] Tapping on Test Preset 1...');
       await tester.tap(find.text('Test Preset 1'));
+      print('[TEST LOG] Tapped. Pumping and settling...');
       await tester.pumpAndSettle();
+      print('[TEST LOG] Pumped and settled. Running verifications...');
 
       // Assert
       verify(mockPresetProvider.setActivePreset('preset1')).called(1);
+      verify(mockPresetProvider.sendCombinedDataToDevice(any)).called(1);
     });
   });
 }
