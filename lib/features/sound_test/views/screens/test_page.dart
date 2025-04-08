@@ -151,17 +151,11 @@ class _TestPageState extends State<TestPage> {
       frequency_player.onPlayerStateChanged
           .listen(null); // Remove listener first
       frequency_player.stop();
-      Future.delayed(const Duration(milliseconds: 200), () {
-        try {
-          if (!mounted) {
-            frequency_player.release();
-            frequency_player.dispose();
-            debugPrint("Audio player resources successfully released");
-          }
-        } catch (innerError) {
-          debugPrint("Error in delayed cleanup: $innerError");
-        }
-      });
+
+      // Remove the delayed cleanup which causes timer leaks in tests
+      frequency_player.release();
+      frequency_player.dispose();
+      debugPrint("Audio player resources successfully released");
     } catch (e) {
       debugPrint("Error disposing audio player: $e");
     }

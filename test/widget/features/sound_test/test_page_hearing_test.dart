@@ -15,44 +15,34 @@ import 'package:projects/l10n/app_localizations.dart';
 import 'test_page_hearing_test.mocks.dart';
 
 class MockAppLocalizations extends Mock implements AppLocalizations {
+  // Add a mock implementation of _localizedStrings to prevent LateInitializationError
+  late final Map<String, String> _localizedStrings = {
+    'start_test': 'Start Test',
+    'begin_sound_test': 'Begin Sound Test',
+    'how_it_works': 'How It Works',
+    'i_can_hear_it': 'I can hear it',
+    'i_cannot_hear_it': 'I cannot hear it',
+    'left_ear': 'Left Ear',
+    'right_ear': 'Right Ear',
+    'test_complete': 'Test Complete',
+    'test_complete_message': 'You have completed the hearing test',
+    'hearing_test_in_progress': 'Hearing Test in Progress',
+    'prepare_for_hearing_test': 'Prepare for Hearing Test',
+    'some_instructions_before_starting': 'Some Instructions Before Starting',
+    'sit_in_quiet_environment': 'Sit in a quiet environment',
+    'set_max_volume': 'Set maximum volume',
+    'wear_headphones_properly': 'Wear headphones properly',
+    'ok': 'OK',
+  };
+
+  @override
+  Future<bool> load() async {
+    return true;
+  }
+
   @override
   String translate(String key) {
-    switch (key) {
-      case 'start_test':
-        return 'Start Test';
-      case 'begin_sound_test':
-        return 'Begin Sound Test';
-      case 'how_it_works':
-        return 'How It Works';
-      case 'i_can_hear_it':
-        return 'I can hear it';
-      case 'i_cannot_hear_it':
-        return 'I cannot hear it';
-      case 'left_ear':
-        return 'Left Ear';
-      case 'right_ear':
-        return 'Right Ear';
-      case 'test_complete':
-        return 'Test Complete';
-      case 'test_complete_message':
-        return 'You have completed the hearing test';
-      case 'hearing_test_in_progress':
-        return 'Hearing Test in Progress';
-      case 'prepare_for_hearing_test':
-        return 'Prepare for Hearing Test';
-      case 'some_instructions_before_starting':
-        return 'Some Instructions Before Starting';
-      case 'sit_in_quiet_environment':
-        return 'Sit in a quiet environment';
-      case 'set_max_volume':
-        return 'Set maximum volume';
-      case 'wear_headphones_properly':
-        return 'Wear headphones properly';
-      case 'ok':
-        return 'OK';
-      default:
-        return key;
-    }
+    return _localizedStrings[key] ?? key;
   }
 }
 

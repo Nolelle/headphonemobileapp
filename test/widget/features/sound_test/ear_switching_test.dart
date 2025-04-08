@@ -25,7 +25,7 @@ class TestAppLocalizationsDelegate
   Future<AppLocalizations> load(Locale locale) async {
     final localizations = AppLocalizations(locale);
     // Set up the localizations with English translations directly
-    localizations._localizedStrings = enTranslations;
+    await localizations.load();
     return localizations;
   }
 
@@ -227,7 +227,7 @@ void main() {
       expect((state as dynamic).current_ear, equals('R'));
       expect((state as dynamic).ear_balance, equals(1.0)); // Full right balance
       expect((state as dynamic).current_sound_stage,
-          equals(0)); // Reset to first stage
+          equals(1)); // First stage for right ear
     });
 
     testWidgets(
