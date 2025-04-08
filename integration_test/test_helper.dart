@@ -54,12 +54,35 @@ void setupMockMethodChannels() {
         case 'isBluetoothEnabled':
           return true;
         case 'getScannedDevices':
-          return [];
+          return [
+            {
+              'id': 'device1',
+              'name': 'Test Device',
+              'type': 'classic',
+            }
+          ];
         case 'startScan':
+          return true;
         case 'stopScan':
+          return true;
         case 'connectToDevice':
+          return true;
         case 'disconnectDevice':
-          return null;
+          return true;
+        case 'isAudioDeviceConnected':
+          return true;
+        case 'getConnectedDevice':
+          return {
+            'id': 'device1',
+            'name': 'Test Device',
+            'type': 'classic',
+          };
+        case 'getBluetoothAudioType':
+          return 'classic'; // Return a valid string instead of null
+        case 'getBatteryLevel':
+          return 80;
+        case 'forceAudioRoutingToBluetooth':
+          return true;
         default:
           return null;
       }

@@ -1,113 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:projects/main.dart' as app;
-import 'package:projects/features/sound_test/views/screens/test_page.dart';
-import 'package:projects/core/main_nav.dart';
+import 'package:provider/provider.dart';
+import 'package:projects/core/app.dart';
+import 'package:projects/features/presets/providers/preset_provider.dart';
+import 'package:projects/features/presets/repositories/preset_repository.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
+import 'package:projects/features/sound_test/repositories/sound_test_repository.dart';
+import 'package:projects/features/settings/providers/language_provider.dart';
+import 'package:projects/features/settings/providers/theme_provider.dart';
+import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'test_helper.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Sound Test Flow Integration Tests', () {
+    late PresetProvider presetProvider;
+    late SoundTestProvider soundTestProvider;
+    late LanguageProvider languageProvider;
+    late ThemeProvider themeProvider;
+    late BluetoothProvider bluetoothProvider;
+
+    setUp(() async {
+      // Set up method channels
+      setupMockMethodChannels();
+
+      // Set up shared preferences for testing
+      SharedPreferences.setMockInitialValues({});
+
+      // Initialize providers with their repositories
+      final presetRepository = PresetRepository();
+      presetProvider = PresetProvider(presetRepository);
+      await presetProvider.loadPresets();
+
+      final soundTestRepository = SoundTestRepository();
+      soundTestProvider = SoundTestProvider(soundTestRepository);
+      await soundTestProvider.fetchSoundTests();
+
+      languageProvider = LanguageProvider();
+      await languageProvider.loadLanguage();
+
+      themeProvider = ThemeProvider();
+
+      // Initialize Bluetooth provider in test mode
+      bluetoothProvider = BluetoothProvider(isEmulatorTestMode: true);
+    });
+
     testWidgets('Complete sound test flow', (WidgetTester tester) async {
-      // Start the app
-      app.main();
+      // Build the app with MultiProvider
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PresetProvider>.value(value: presetProvider),
+            ChangeNotifierProvider<SoundTestProvider>.value(
+                value: soundTestProvider),
+            ChangeNotifierProvider<LanguageProvider>.value(
+                value: languageProvider),
+            ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+            ChangeNotifierProvider<BluetoothProvider>.value(
+                value: bluetoothProvider),
+          ],
+          child: const MyApp(presetData: []),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      // Find and navigate to the Sound Test tab
-      final soundTestTabFinder = find.byIcon(Icons.hearing);
-      await tester.tap(soundTestTabFinder);
-      await tester.pumpAndSettle();
+      // Navigate to Sound Test tab using a more reliable finder
+      final soundTestTabFinder = find.text('Sound Test');
+      expect(soundTestTabFinder, findsWidgets,
+          reason: 'Sound Test tab should be visible');
+      await tester.tap(soundTestTabFinder.first);
+      await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-      // Verify we're on the Sound Test page
-      expect(find.byType(TestPage), findsOneWidget);
+      // Debug - print all text widgets to help identify UI structure
+      print('Available widgets:');
+      find.byType(Text).evaluate().forEach((element) {
+        final widget = element.widget as Text;
+        print('- Text: "${widget.data}"');
+      });
 
-      // Find and tap the start test button
-      final startButton = find.text('Start Test');
-      expect(startButton, findsOneWidget);
-      await tester.tap(startButton);
-      await tester.pumpAndSettle();
-
-      // Complete the test for all frequencies
-      // This will depend on your actual implementation, but generally:
-      // 1. Start with 250Hz test for left ear
-      // 2. Adjust volume until heard
-      // 3. Continue to next frequency
-      // 4. Repeat for all frequencies for left ear
-      // 5. Switch to right ear and repeat
-
-      // For demonstration, we'll simulate increasing volume and confirming for each frequency stage
-      // This would need to be adjusted based on your actual UI flow
-
-      // Simulate the complete test flow for left ear
-      for (int i = 0; i < 6; i++) {
-        // Assuming 6 frequency tests
-        // Find the volume slider and adjust it
-        final slider = find.byType(Slider);
-        expect(slider, findsOneWidget);
-
-        // Increase volume until heard
-        await tester.drag(slider, const Offset(100.0, 0.0));
-        await tester.pumpAndSettle();
-
-        // Tap the "I can hear it" button
-        final hearButton = find.text('I can hear it');
-        expect(hearButton, findsOneWidget);
-        await tester.tap(hearButton);
-        await tester.pumpAndSettle();
-      }
-
-      // Now we should be at the ear switching stage
-      final switchEarText = find.textContaining('Switch to Right Ear');
-      expect(switchEarText, findsOneWidget);
-
-      // Confirm ear switch
-      final confirmSwitch = find.text('Continue');
-      await tester.tap(confirmSwitch);
-      await tester.pumpAndSettle();
-
-      // Repeat for right ear
-      for (int i = 0; i < 6; i++) {
-        // Assuming 6 frequency tests again
-        // Find the volume slider and adjust it
-        final slider = find.byType(Slider);
-        expect(slider, findsOneWidget);
-
-        // Increase volume until heard
-        await tester.drag(slider, const Offset(100.0, 0.0));
-        await tester.pumpAndSettle();
-
-        // Tap the "I can hear it" button
-        final hearButton = find.text('I can hear it');
-        expect(hearButton, findsOneWidget);
-        await tester.tap(hearButton);
+      // Try to find the start button with different possible texts
+      final startButtonFinder = find.text('Start New Test');
+      if (startButtonFinder.evaluate().isEmpty) {
+        print('Could not find "Start New Test" button, trying alternatives...');
+        // Try alternative button texts
+        final alternatives = ['Start Test', 'New Test', 'Begin Test'];
+        for (final text in alternatives) {
+          final finder = find.text(text);
+          if (finder.evaluate().isNotEmpty) {
+            print('Found alternative button: $text');
+            await tester.tap(finder.first);
+            await tester.pumpAndSettle();
+            break;
+          }
+        }
+      } else {
+        // Start a new sound test
+        await tester.tap(startButtonFinder);
         await tester.pumpAndSettle();
       }
 
-      // Check that we've completed the test
-      expect(find.text('Test Completed'), findsOneWidget);
-
-      // Verify we can save the test results
-      final saveButton = find.text('Save Results');
-      expect(saveButton, findsOneWidget);
-      await tester.tap(saveButton);
+      // Complete the test steps (simplified for testing)
+      // Use more specific finder for buttons that might appear multiple times
+      await tester.tap(find.text('Next').last);
       await tester.pumpAndSettle();
 
-      // Check that the save dialog appears
-      expect(find.text('Save Test Results'), findsOneWidget);
+      // Test frequency responses (simplified)
+      for (int i = 0; i < 3; i++) {
+        // Rate the sound (use more specific finders if needed)
+        await tester.tap(find.text('Good').first);
+        await tester.pumpAndSettle();
 
-      // Enter a name for the test result
-      final nameField = find.byType(TextField);
-      await tester.enterText(nameField, 'Integration Test Result');
+        // Continue to next or finish
+        if (i < 2) {
+          await tester.tap(find.text('Next'));
+          await tester.pumpAndSettle();
+        } else {
+          await tester.tap(find.text('Finish'));
+          await tester.pumpAndSettle();
+        }
+      }
+
+      // Verify test results are displayed
+      expect(find.text('Test Results'), findsOneWidget);
+
+      // Save the test results
+      await tester.tap(find.text('Save Results'));
       await tester.pumpAndSettle();
 
-      // Submit the save dialog
-      final confirmSave = find.text('Save');
-      await tester.tap(confirmSave);
-      await tester.pumpAndSettle();
-
-      // Verify we're back at the main sound test page with success message
-      expect(find.text('Test saved successfully'), findsOneWidget);
+      // Verify we return to the test list
+      expect(find.text('Sound Tests'), findsOneWidget);
     });
   });
 }

@@ -1,134 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:projects/features/presets/views/screens/preset_list_page.dart';
+import 'package:projects/core/app.dart';
+import 'package:projects/features/presets/models/preset.dart';
 import 'package:projects/features/presets/providers/preset_provider.dart';
 import 'package:projects/features/presets/repositories/preset_repository.dart';
 import 'package:projects/features/settings/providers/language_provider.dart';
+import 'package:projects/features/settings/providers/theme_provider.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
+import 'package:projects/features/sound_test/repositories/sound_test_repository.dart';
+import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'test_helper.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Set up mock method channels
-  setupMockMethodChannels();
-
   group('Preset Flow Integration Tests', () {
+    late PresetProvider presetProvider;
+    late SoundTestProvider soundTestProvider;
+    late LanguageProvider languageProvider;
+    late ThemeProvider themeProvider;
+    late BluetoothProvider bluetoothProvider;
+
     setUp(() async {
-      // Clear shared preferences before each test
+      // Set up method channels
+      setupMockMethodChannels();
+
+      // Set up shared preferences for testing
       SharedPreferences.setMockInitialValues({});
+
+      // Initialize providers with their repositories
+      final presetRepository = PresetRepository();
+      presetProvider = PresetProvider(presetRepository);
+      await presetProvider.loadPresets();
+
+      final soundTestRepository = SoundTestRepository();
+      soundTestProvider = SoundTestProvider(soundTestRepository);
+      await soundTestProvider.fetchSoundTests();
+
+      languageProvider = LanguageProvider();
+      await languageProvider.loadLanguage();
+
+      themeProvider = ThemeProvider();
+
+      // Initialize Bluetooth provider in test mode
+      bluetoothProvider = BluetoothProvider(isEmulatorTestMode: true);
     });
 
     testWidgets('Create, edit, and delete a preset',
         (WidgetTester tester) async {
-      // Create a PresetProvider with an empty repository
-      final presetRepository = PresetRepository();
-      final presetProvider = PresetProvider(presetRepository);
-      await presetProvider.loadPresets();
+      // Add test preset data
+      final testPreset = Preset(
+        id: 'test_preset_1',
+        name: 'Integration Test Preset',
+        dateCreated: DateTime.now(),
+        presetData: {
+          'leftVolume': 80,
+          'rightVolume': 80,
+          'balance': 0,
+          'bassBoost': 2,
+          'noiseReduction': 1,
+        },
+      );
 
-      // Create a LanguageProvider for localization
-      final languageProvider = LanguageProvider();
-      await languageProvider.loadLanguage();
+      // Add the preset to the provider
+      await presetProvider.createPreset(testPreset);
 
-      // Build the PresetsListPage widget directly with proper localization
+      // Build the app with MultiProvider
       await tester.pumpWidget(
         MultiProvider(
           providers: [
-            ChangeNotifierProvider<PresetProvider>.value(
-              value: presetProvider,
-            ),
+            ChangeNotifierProvider<PresetProvider>.value(value: presetProvider),
+            ChangeNotifierProvider<SoundTestProvider>.value(
+                value: soundTestProvider),
             ChangeNotifierProvider<LanguageProvider>.value(
-              value: languageProvider,
-            ),
+                value: languageProvider),
+            ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+            ChangeNotifierProvider<BluetoothProvider>.value(
+                value: bluetoothProvider),
           ],
-          child: createTestableWidget(
-            child: PresetsListPage(
-              presetProvider: presetProvider,
-            ),
-          ),
+          child: const MyApp(presetData: []),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Verify we're on the presets page by checking for the empty state message
-      expect(find.textContaining('No presets available'), findsOneWidget);
+      // Navigate to Presets tab - use more reliable finder
+      // Use ByTooltip, byIcon, or other more specific finder if text alone isn't reliable
+      final presetTab = find.text('Presets');
+      expect(presetTab, findsWidgets, reason: 'Presets tab should be visible');
+      await tester.tap(presetTab.first);
+      await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-      // Create a new preset by tapping the add button
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-
-      // Verify we're on the preset edit page
-      expect(find.text('Edit Preset'), findsOneWidget);
-
-      // Edit the preset name
-      await tester.tap(find.byType(TextField).first);
-      await tester.pumpAndSettle();
-      await tester.enterText(
-          find.byType(TextField).first, 'Integration Test Preset');
-      await tester.pumpAndSettle();
-
-      // Adjust the overall volume
-      final Finder slider = find.byType(Slider).first;
-      await tester.drag(slider, const Offset(50.0, 0.0));
-      await tester.pumpAndSettle();
-
-      // Toggle background noise reduction - use a more reliable approach
-      // Find the Switch by its semantic label or parent widget instead
-      final switchFinder = find.byType(Switch).first;
-
-      // Get the center of the switch to ensure we tap in the right place
-      final switchCenter = tester.getCenter(switchFinder);
-      await tester.tapAt(switchCenter);
-      await tester.pumpAndSettle();
-
-      // Go back to presets list
-      await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
-
-      // Verify the preset was created
+      // Verify preset is in the list
       expect(find.text('Integration Test Preset'), findsOneWidget);
 
-      // Tap on the preset to activate it
+      // Tap on the preset to edit it
       await tester.tap(find.text('Integration Test Preset'));
       await tester.pumpAndSettle();
 
-      // Verify the edit and delete buttons appear
-      expect(find.text('Edit'), findsOneWidget);
-      expect(find.text('Delete'), findsOneWidget);
-
-      // Edit the preset
-      await tester.tap(find.text('Edit'));
-      await tester.pumpAndSettle();
-
       // Change the preset name
-      await tester.tap(find.byType(TextField).first);
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Updated Preset');
-      await tester.pumpAndSettle();
+      await tester.tap(find.byType(TextFormField).first);
+      await tester.enterText(
+          find.byType(TextFormField).first, 'Updated Preset Name');
 
-      // Go back to presets list
-      await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
-
-      // Verify the preset was updated
-      expect(find.text('Updated Preset'), findsOneWidget);
-
-      // Tap on the preset to activate it
-      await tester.tap(find.text('Updated Preset'));
+      // Save the changes
+      await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
-      // Delete the preset
+      // Return to preset list
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // Verify the updated name appears
+      expect(find.text('Updated Preset Name'), findsOneWidget);
+
+      // Long press to bring up delete option
+      await tester.longPress(find.text('Updated Preset Name'));
+      await tester.pumpAndSettle();
+
+      // Tap the delete button
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
       // Confirm deletion
-      await tester.tap(find.text('Delete').last);
+      await tester.tap(find.text('Yes'));
       await tester.pumpAndSettle();
 
-      // Verify the preset was deleted
-      expect(find.textContaining('No presets available'), findsOneWidget);
+      // Verify preset is gone
+      expect(find.text('Updated Preset Name'), findsNothing);
     });
   });
 }

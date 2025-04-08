@@ -131,7 +131,27 @@ void main() {
       await tester.pumpAndSettle();
 
       // Navigate to Settings
-      await tester.tap(find.text('Settings').first);
+      final settingsTab = find.text('Settings');
+      expect(settingsTab, findsWidgets,
+          reason: 'Settings tab should be visible');
+      await tester.tap(settingsTab.first);
+      await tester.pumpAndSettle();
+
+      // Debug - print all text widgets to identify the correct Bluetooth settings button
+      print('Available settings options:');
+      find.byType(Text).evaluate().forEach((element) {
+        final widget = element.widget as Text;
+        print('- Text: "${widget.data}"');
+      });
+
+      // Try to find the Bluetooth settings with different possible texts
+      final bluetoothSettings = find.textContaining('Bluetooth');
+      expect(bluetoothSettings, findsWidgets,
+          reason: 'Should find a Bluetooth settings option');
+
+      print(
+          'Found ${bluetoothSettings.evaluate().length} Bluetooth-related options');
+      await tester.tap(bluetoothSettings.first);
       await tester.pumpAndSettle();
 
       // Navigate to Bluetooth Settings
