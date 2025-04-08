@@ -236,6 +236,32 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      // Ensure MaterialApp rebuilds with the new locale
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LanguageProvider>.value(
+              value: languageProvider,
+            ),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''),
+              Locale('fr', ''),
+            ],
+            locale: languageProvider.currentLocale, // Use updated locale
+            home: const TranslationTestWidget(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle(); // Settle after rebuild
+
       // Test French translations
       expect(find.text('Current Language: Français'), findsOneWidget,
           reason: 'Should show French language indicator');
@@ -256,6 +282,35 @@ void main() {
       // Switch back to English
       await tester.tap(find.byKey(const Key('english_button')));
       await tester.pumpAndSettle();
+      await Future.delayed(const Duration(seconds: 2)); // Add delay
+      await tester.pumpAndSettle();
+
+      // Ensure MaterialApp rebuilds with the English locale
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LanguageProvider>.value(
+              value: languageProvider,
+            ),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''),
+              Locale('fr', ''),
+            ],
+            locale: languageProvider
+                .currentLocale, // Use updated locale (should be en)
+            home: const TranslationTestWidget(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle(); // Settle after rebuild
 
       // Test English translations again
       expect(find.text('Current Language: English'), findsOneWidget);

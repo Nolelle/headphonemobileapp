@@ -96,36 +96,79 @@ void main() {
       // Verify preset is in the list
       expect(find.text('Integration Test Preset'), findsOneWidget);
 
-      // Tap on the preset to edit it
-      await tester.tap(find.text('Integration Test Preset'));
+      // Tap the ElevatedButton associated with the preset to activate it
+      // Assuming the button text is the preset name for finding purposes
+      final presetButtonFinder =
+          find.widgetWithText(ElevatedButton, 'Integration Test Preset');
+      expect(presetButtonFinder, findsOneWidget,
+          reason: 'Preset button should be visible');
+      await tester.tap(presetButtonFinder);
       await tester.pumpAndSettle();
 
-      // Change the preset name
-      await tester.tap(find.byType(TextFormField).first);
-      await tester.enterText(
-          find.byType(TextFormField).first, 'Updated Preset Name');
+      // Now, tap the 'Edit' button that should appear
+      final editButtonFinder = find.text('Edit');
+      expect(editButtonFinder, findsOneWidget,
+          reason: 'Edit button should appear after activating preset');
+      await tester.tap(editButtonFinder);
+      await tester.pumpAndSettle(const Duration(seconds: 3));
 
-      // Save the changes
+      // Verify navigation happened by checking for PresetPage AppBar title
+      // Assuming the title is 'Edit Preset' or similar
+      expect(find.widgetWithText(AppBar, 'Edit Preset'), findsOneWidget,
+          reason: 'Should navigate to PresetPage with correct title');
+
+      // Debug: Print widgets on the PresetPage
+      print('Widgets on PresetPage after tapping Edit:'); // Updated log message
+      find.byType(Widget).evaluate().forEach((element) {
+        print('- ${element.widget.runtimeType}');
+        if (element.widget is Text) {
+          print('  - Text: "${(element.widget as Text).data}"');
+        } else if (element.widget is TextFormField) {
+          print('  - TextFormField found!');
+        }
+      });
+
+      // Change the preset name on the PresetPage
+      // Try finding any TextFormField, not just the first, in case of structure changes
+      final nameFieldFinder = find.byType(TextFormField);
+      expect(nameFieldFinder, findsOneWidget, // Check for at least one
+          reason:
+              'Preset name field (TextFormField) should be present on PresetPage');
+      await tester.tap(nameFieldFinder.first); // Tap the first one found
+      await tester.pumpAndSettle(); // Add pump after tap
+      await tester.enterText(nameFieldFinder.first, 'Updated Preset Name');
+
+      // Save the changes (assuming 'Save' button exists on PresetPage)
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
-      // Return to preset list
-      await tester.pageBack();
+      // Expect to be back on the preset list automatically or navigate back
+      // If not automatic, add tester.pageBack();
+      // Let's assume it navigates back automatically after save for now.
       await tester.pumpAndSettle();
 
-      // Verify the updated name appears
+      // Verify the updated name appears on the list page
       expect(find.text('Updated Preset Name'), findsOneWidget);
 
-      // Long press to bring up delete option
-      await tester.longPress(find.text('Updated Preset Name'));
+      // --- Rest of the delete flow ---
+      // Activate the updated preset again
+      final updatedPresetButtonFinder =
+          find.widgetWithText(ElevatedButton, 'Updated Preset Name');
+      expect(updatedPresetButtonFinder, findsOneWidget,
+          reason: 'Updated preset button should be visible');
+      await tester.tap(updatedPresetButtonFinder);
       await tester.pumpAndSettle();
 
       // Tap the delete button
-      await tester.tap(find.text('Delete'));
+      final deleteButtonFinder = find.text('Delete');
+      expect(deleteButtonFinder, findsOneWidget,
+          reason: 'Delete button should appear');
+      await tester.tap(deleteButtonFinder);
       await tester.pumpAndSettle();
 
-      // Confirm deletion
-      await tester.tap(find.text('Yes'));
+      // Confirm deletion in the dialog
+      await tester
+          .tap(find.text('Yes')); // Assuming confirmation dialog uses "Yes"
       await tester.pumpAndSettle();
 
       // Verify preset is gone

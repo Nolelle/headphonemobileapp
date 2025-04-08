@@ -49,23 +49,50 @@ void main() {
     });
 
     testWidgets('Complete sound test flow', (WidgetTester tester) async {
-      // Build the app with MultiProvider
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<PresetProvider>.value(value: presetProvider),
-            ChangeNotifierProvider<SoundTestProvider>.value(
-                value: soundTestProvider),
-            ChangeNotifierProvider<LanguageProvider>.value(
-                value: languageProvider),
-            ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-            ChangeNotifierProvider<BluetoothProvider>.value(
-                value: bluetoothProvider),
-          ],
-          child: const MyApp(presetData: []),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // Build the app with MultiProvider within a try-catch
+      try {
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<PresetProvider>.value(
+                  value: presetProvider),
+              ChangeNotifierProvider<SoundTestProvider>.value(
+                  value: soundTestProvider),
+              ChangeNotifierProvider<LanguageProvider>.value(
+                  value: languageProvider),
+              ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+              ChangeNotifierProvider<BluetoothProvider>.value(
+                  value: bluetoothProvider),
+            ],
+            child: const MyApp(presetData: []),
+          ),
+        );
+        await tester.pumpAndSettle();
+        // await Future.delayed(const Duration(seconds: 5)); // Keep increased initial delay
+
+        // Try pumping repeatedly to force UI build if delay isn't enough
+        for (int i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 500));
+          if (find.text('Sound Test').evaluate().isNotEmpty) {
+            print('Sound Test tab found after pumping ${i + 1} times.');
+            break;
+          }
+        }
+        await tester.pumpAndSettle(); // Final settle
+      } catch (e, stackTrace) {
+        print('ERROR during pumpWidget (sound_test_flow_test): $e');
+        print('Stack trace: $stackTrace');
+        fail('Exception thrown during initial widget build: $e');
+      }
+
+      // Debug: Print initial widgets
+      print('Initial widgets after app load (sound_test_flow_test):');
+      find.byType(Widget).evaluate().forEach((element) {
+        print('- ${element.widget.runtimeType}');
+        if (element.widget is Text) {
+          print('  - Text: "${(element.widget as Text).data}"');
+        }
+      });
 
       // Navigate to Sound Test tab using a more reliable finder
       final soundTestTabFinder = find.text('Sound Test');
