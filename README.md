@@ -1,15 +1,16 @@
 # Mobile Audio Companion App
 
-A Flutter application designed to enhance the user experience of audio headphone devices through precise preset management, sound testing, and Bluetooth connectivity.
+A Flutter application designed to enhance the user experience of audio headphone devices through precise preset management, sound testing, and Bluetooth connectivity. This app supports both Classic Bluetooth and LE Audio devices (Android 12+).
 
 ## Project Overview
 
 This mobile application serves as a companion for audio headphone devices, allowing users to:
 
-- Create and manage custom audio presets
-- Perform hearing tests to generate personalized audio profiles
-- Connect to Bluetooth headphone devices
-- Customize application settings including themes and languages
+- Create and manage custom audio presets with fine-tuned EQ settings
+- Perform hearing tests across multiple frequencies to generate personalized audio profiles
+- Connect to Bluetooth headphone devices with support for both Classic and LE Audio (Android 12+)
+- Monitor headphone battery levels (where supported by the device)
+- Customize application settings including themes and languages (English/French)
 
 ## Project Structure
 
@@ -26,7 +27,9 @@ lib/
 │
 ├── features/                  # Feature modules
 │   ├── bluetooth/           # Bluetooth connectivity feature
+│   │   ├── platform/        # Platform-specific Bluetooth implementation
 │   │   ├── providers/       # Bluetooth state management
+│   │   ├── services/        # BLE data services
 │   │   └── views/           # Bluetooth UI components
 │   │
 │   ├── presets/              # Core preset management feature
@@ -45,7 +48,7 @@ lib/
 │       ├── models/         # Sound test data models
 │       ├── repositories/   # Sound test data access
 │       ├── providers/      # Sound test state management
-│       └── views/         # Sound test UI components
+│       └── views/          # Sound test UI components
 │
 ├── l10n/                    # Localization resources
 │   ├── app_localizations.dart  # Localization manager
@@ -95,35 +98,43 @@ The application follows these key architectural principles:
 
 - Create, edit, and delete audio presets
 - Adjust volume, sound balance, and enhancement settings
+- Fine-tune bass, mid-range, and treble frequencies
+- Enable/disable features like background noise reduction and wind noise reduction
 - Real-time feedback with optimized notifications
 - Intelligent auto-save functionality
 
 ### Bluetooth Connectivity
 
 - Connect to Bluetooth headphone devices
-- Send preset configurations to connected devices
-- Monitor connection status
-- Handle device reconnection gracefully
-- Multi-phase connection detection for reliable device pairing
+- Support for both Classic Bluetooth and LE Audio (on Android 12+)
+- Send preset configurations to connected devices using BLE characteristics
+- Retrieve battery level information from supported devices
+- Monitor connection status with automatic reconnection
+- Force audio routing for reliable audio playback
+- Handle device reconnection gracefully across app lifecycle
 
 ### Sound Testing
 
-- Perform hearing tests across multiple frequencies (250Hz-8000Hz)
+- Perform hearing tests across multiple frequencies (250Hz, 500Hz, 1kHz, 2kHz, 4kHz)
+- Audiogram visualization showing hearing thresholds by frequency
+- User-friendly interface with clear guidance throughout the test
 - Generate personalized audio profiles based on test results
-- Create presets optimized for user's hearing profile
-- Visualize hearing test results
+- Convert test results between dB SPL and dB HL for audiological accuracy
+- Create presets optimized for user's specific hearing profile
 
 ### Theme Support
 
 - Light and dark mode themes
-- Consistent UI elements across themes
-- Persistent theme preferences
+- Consistent UI elements across themes with proper contrast
+- Responsive design that adapts to different screen sizes
+- Persistent theme preferences across app sessions
 
 ### Multilingual Support
 
-- English and French language options
-- Complete translations for all UI elements
+- English and French language options with complete translations
+- Dynamic language switching without app restart
 - Persistent language preferences
+- Internationalized number formatting and date handling
 
 ## Setup and Development
 
@@ -212,6 +223,7 @@ flutter test integration_test
    - Write unit tests for business logic
    - Create widget tests for UI components
    - Implement integration tests for features
+   - Use mock Bluetooth services for headphone interaction testing
 
 ## Building for Production
 
@@ -241,6 +253,21 @@ The app relies on the following key dependencies:
 - **Flutter Localizations**: For language support
 - **URL Launcher**: For opening external links
 - **Path Provider**: For file system access
+
+## Platform-Specific Implementation
+
+### Android
+
+The app implements native Bluetooth functionality through `MethodChannel` to communicate with the Android Bluetooth APIs. It supports:
+
+- Classic Bluetooth audio (A2DP profile)
+- LE Audio (on Android 12+ devices)
+- Battery level monitoring via GATT services
+- Permission handling for Android 12+ Bluetooth permissions
+
+### iOS
+
+The app uses Flutter plugins to interface with iOS Bluetooth APIs, with standard CoreBluetooth and AVAudioSession handling.
 
 ## Contributing
 
