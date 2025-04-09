@@ -78,6 +78,7 @@ flutter:
     - assets/audio/4000Hz.wav
     - assets/audio/8000Hz.wav
     - assets/audio/
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../providers/bluetooth_provider.dart';
 import 'package:flutter/services.dart';
 import '../../../bluetooth/platform/bluetooth_platform.dart';
+import '../../../../shared/widgets/app_splash_screen.dart';
+import '../../../../features/settings/providers/theme_provider.dart';
 
 class BluetoothWrapper extends StatefulWidget {
   final Widget child;
@@ -15,14 +17,63 @@ class BluetoothWrapper extends StatefulWidget {
   State<BluetoothWrapper> createState() => _BluetoothWrapperState();
 }
 
-class _BluetoothWrapperState extends State<BluetoothWrapper> {
+class _BluetoothWrapperState extends State<BluetoothWrapper>
+    with SingleTickerProviderStateMixin {
   bool _isAttemptingConnection = false;
   String _statusMessage = '';
+  bool _showSplashScreen = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    // Start the transition after a delay
+    Future.delayed(const Duration(seconds: 4), () {
+      // Only hide splash if mounted
+      if (mounted) {
+        _animationController.forward().then((_) {
+          setState(() {
+            _showSplashScreen = false;
+          });
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Consumer<BluetoothProvider>(
       builder: (context, bluetoothProvider, _) {
+        // Show splash screen during initial load
+        if (_showSplashScreen) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: AppSplashScreen(isDarkMode: isDarkMode),
+          );
+        }
+
+        // Show connection screen if not connected
         if (!bluetoothProvider.isDeviceConnected) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -73,7 +124,17 @@ class _BluetoothWrapperState extends State<BluetoothWrapper> {
             ),
           );
         }
-        return widget.child;
+
+        // Show main app if connected
+        return FadeTransition(
+          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(
+              parent: _animationController,
+              curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
+            ),
+          ),
+          child: widget.child,
+        );
       },
     );
   }
