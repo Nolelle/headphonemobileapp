@@ -16,12 +16,13 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+  // Default to presets tab (index 1) instead of sound test (index 0)
+  int _selectedIndex = 1;
 
   @override
   void initState() {
     super.initState();
-    // Check Bluetooth connection when app starts
+    // Check Bluetooth connection when app starts and navigate to presets
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<BluetoothProvider>(context, listen: false);
       provider.checkBluetoothConnection();
