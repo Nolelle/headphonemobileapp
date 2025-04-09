@@ -970,19 +970,19 @@ class _TestPageState extends State<TestPage> {
 
     // Create lists for the left and right ear values
     final List<double> leftEarDBValues = [
-      L_user_250Hz_dB.abs(),
-      L_user_500Hz_dB.abs(),
-      L_user_1000Hz_dB.abs(),
-      L_user_2000Hz_dB.abs(),
-      L_user_4000Hz_dB.abs(),
+      L_user_250Hz_dB,
+      L_user_500Hz_dB,
+      L_user_1000Hz_dB,
+      L_user_2000Hz_dB,
+      L_user_4000Hz_dB,
     ];
 
     final List<double> rightEarDBValues = [
-      R_user_250Hz_dB.abs(),
-      R_user_500Hz_dB.abs(),
-      R_user_1000Hz_dB.abs(),
-      R_user_2000Hz_dB.abs(),
-      R_user_4000Hz_dB.abs(),
+      R_user_250Hz_dB,
+      R_user_500Hz_dB,
+      R_user_1000Hz_dB,
+      R_user_2000Hz_dB,
+      R_user_4000Hz_dB,
     ];
 
     return Container(
@@ -1029,10 +1029,18 @@ class _TestPageState extends State<TestPage> {
                 children: List.generate(
                   frequencies.length,
                   (index) {
+                    // Lower dB values indicate better hearing, so we need to invert for bar height
+                    // Higher bars should represent better hearing (lower dB values)
+                    // Assuming normal hearing range is 0-30dB and using 60dB as max scale
+                    final normalizedLeftValue =
+                        max(0, 60 - leftEarDBValues[index]);
+                    final normalizedRightValue =
+                        max(0, 60 - rightEarDBValues[index]);
+
                     final leftBarHeight =
-                        (leftEarDBValues[index] / 60) * barMaxHeight;
+                        (normalizedLeftValue / 60) * barMaxHeight;
                     final rightBarHeight =
-                        (rightEarDBValues[index] / 60) * barMaxHeight;
+                        (normalizedRightValue / 60) * barMaxHeight;
 
                     // Calculate bar width with proper scaling
                     final barWidth = (screenWidth * 0.02).clamp(4.0, 10.0);
