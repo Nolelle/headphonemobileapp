@@ -49,25 +49,25 @@ class SoundTest {
 
     // Explicit conversion for each field with fallback
     soundTestData['L_user_250Hz_dB'] =
-        (rawData['L_user_250Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['L_user_250Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['L_user_500Hz_dB'] =
-        (rawData['L_user_500Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['L_user_500Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['L_user_1000Hz_dB'] =
-        (rawData['L_user_1000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['L_user_1000Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['L_user_2000Hz_dB'] =
-        (rawData['L_user_2000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['L_user_2000Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['L_user_4000Hz_dB'] =
-        (rawData['L_user_4000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['L_user_4000Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['R_user_250Hz_dB'] =
-        (rawData['R_user_250Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['R_user_250Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['R_user_500Hz_dB'] =
-        (rawData['R_user_500Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['R_user_500Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['R_user_1000Hz_dB'] =
-        (rawData['R_user_1000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['R_user_1000Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['R_user_2000Hz_dB'] =
-        (rawData['R_user_2000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['R_user_2000Hz_dB'] as num?)?.toDouble() ?? 15.0;
     soundTestData['R_user_4000Hz_dB'] =
-        (rawData['R_user_4000Hz_dB'] as num?)?.toDouble() ?? -10.0;
+        (rawData['R_user_4000Hz_dB'] as num?)?.toDouble() ?? 15.0;
 
     return SoundTest(
       id: id,
@@ -79,9 +79,11 @@ class SoundTest {
   }
 
   factory SoundTest.defaultTest(String id, {BuildContext? context}) {
-    // Using baseline values around 10 dB which represents good hearing
+    // Using baseline values in the middle of normal hearing range (0-30 dB)
+    // A value of 15 dB is comfortably in the normal hearing range
     // Lower values (closer to 0) represent better hearing
-    const baselineValue = -10.0; // This will convert to about 10 dB in the UI
+    const baselineValue =
+        15.0; // This will show as 15 dB in the UI, in the normal hearing range
 
     String profileName = 'Default Audio Profile';
     if (context != null) {

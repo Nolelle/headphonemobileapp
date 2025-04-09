@@ -37,7 +37,7 @@ void main() {
       final defaultTest = SoundTest.defaultTest('default_id');
 
       // Check that all required frequencies exist with baseline value
-      const baselineValue = -10.0;
+      const baselineValue = 15.0;
       expect(defaultTest.id, 'default_id');
       expect(defaultTest.name, 'Default Audio Profile');
       expect(defaultTest.soundTestData['L_user_250Hz_dB'], baselineValue);
@@ -110,16 +110,16 @@ void main() {
       expect(restored.name, 'Incomplete Profile');
       expect(restored.dateCreated, dateTime);
       expect(restored.soundTestData['L_user_250Hz_dB'], 50.0);
-      // Check that missing values default to -10.0
-      expect(restored.soundTestData['L_user_500Hz_dB'], -10.0);
-      expect(restored.soundTestData['L_user_1000Hz_dB'], -10.0);
-      expect(restored.soundTestData['L_user_2000Hz_dB'], -10.0);
-      expect(restored.soundTestData['L_user_4000Hz_dB'], -10.0);
-      expect(restored.soundTestData['R_user_250Hz_dB'], -10.0);
-      expect(restored.soundTestData['R_user_500Hz_dB'], -10.0);
-      expect(restored.soundTestData['R_user_1000Hz_dB'], -10.0);
-      expect(restored.soundTestData['R_user_2000Hz_dB'], -10.0);
-      expect(restored.soundTestData['R_user_4000Hz_dB'], -10.0);
+      // Check that missing values default to 15.0
+      expect(restored.soundTestData['L_user_500Hz_dB'], 15.0);
+      expect(restored.soundTestData['L_user_1000Hz_dB'], 15.0);
+      expect(restored.soundTestData['L_user_2000Hz_dB'], 15.0);
+      expect(restored.soundTestData['L_user_4000Hz_dB'], 15.0);
+      expect(restored.soundTestData['R_user_250Hz_dB'], 15.0);
+      expect(restored.soundTestData['R_user_500Hz_dB'], 15.0);
+      expect(restored.soundTestData['R_user_1000Hz_dB'], 15.0);
+      expect(restored.soundTestData['R_user_2000Hz_dB'], 15.0);
+      expect(restored.soundTestData['R_user_4000Hz_dB'], 15.0);
     });
   });
 }

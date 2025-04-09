@@ -50,7 +50,7 @@ class _TestPageState extends State<TestPage> {
 
   // Updated constants for proper dB SPL mapping
   final double MAX_DB_SPL = 85.0; // Maximum volume in dB SPL
-  final double MIN_DB_SPL = 30.0; // Minimum volume in dB SPL
+  final double MIN_DB_SPL = 20.0; // Minimum volume in dB SPL
   final double INITIAL_DB_SPL = 90.0; // Starting volume in dB SPL
   final double STEP_DOWN_DB = 10.0; // Step down size in dB
   final double STEP_UP_DB = 5.0; // Step up size in dB
