@@ -75,6 +75,20 @@ class MockAudioPlayer extends _i1.Mock implements _i2.AudioPlayer {
           as String);
 
   @override
+  _i2.PlayerState get desiredState =>
+      (super.noSuchMethod(
+            Invocation.getter(#desiredState),
+            returnValue: _i2.PlayerState.stopped,
+          )
+          as _i2.PlayerState);
+
+  @override
+  set desiredState(_i2.PlayerState? _desiredState) => super.noSuchMethod(
+    Invocation.setter(#desiredState, _desiredState),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i3.Completer<void> get creatingCompleter =>
       (super.noSuchMethod(
             Invocation.getter(#creatingCompleter),
@@ -185,6 +199,13 @@ class MockAudioPlayer extends _i1.Mock implements _i2.AudioPlayer {
             returnValue: _i3.Stream<String>.empty(),
           )
           as _i3.Stream<String>);
+
+  @override
+  set positionUpdater(_i2.PositionUpdater? positionUpdater) =>
+      super.noSuchMethod(
+        Invocation.setter(#positionUpdater, positionUpdater),
+        returnValueForMissingStub: null,
+      );
 
   @override
   _i3.Future<void> play(
@@ -321,36 +342,40 @@ class MockAudioPlayer extends _i1.Mock implements _i2.AudioPlayer {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> setSourceUrl(String? url) =>
+  _i3.Future<void> setSourceUrl(String? url, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceUrl, [url]),
+            Invocation.method(#setSourceUrl, [url], {#mimeType: mimeType}),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> setSourceDeviceFile(String? path) =>
+  _i3.Future<void> setSourceDeviceFile(String? path, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceDeviceFile, [path]),
+            Invocation.method(
+              #setSourceDeviceFile,
+              [path],
+              {#mimeType: mimeType},
+            ),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> setSourceAsset(String? path) =>
+  _i3.Future<void> setSourceAsset(String? path, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceAsset, [path]),
+            Invocation.method(#setSourceAsset, [path], {#mimeType: mimeType}),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> setSourceBytes(_i5.Uint8List? bytes) =>
+  _i3.Future<void> setSourceBytes(_i5.Uint8List? bytes, {String? mimeType}) =>
       (super.noSuchMethod(
-            Invocation.method(#setSourceBytes, [bytes]),
+            Invocation.method(#setSourceBytes, [bytes], {#mimeType: mimeType}),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
@@ -436,9 +461,9 @@ class MockSoundTestProvider extends _i1.Mock implements _i6.SoundTestProvider {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> deleteSoundTest(String? id) =>
+  _i3.Future<void> resetSoundTest(String? id) =>
       (super.noSuchMethod(
-            Invocation.method(#deleteSoundTest, [id]),
+            Invocation.method(#resetSoundTest, [id]),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )

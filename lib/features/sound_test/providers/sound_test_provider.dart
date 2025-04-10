@@ -75,6 +75,9 @@ class SoundTestProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Failed to create sound test: $e';
       notifyListeners();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

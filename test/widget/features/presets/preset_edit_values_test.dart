@@ -6,6 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:projects/features/presets/models/preset.dart';
 import 'package:projects/features/presets/providers/preset_provider.dart';
 import 'package:projects/features/presets/views/screens/preset_page.dart';
+import 'package:projects/features/bluetooth/providers/bluetooth_provider.dart';
+import 'package:projects/features/sound_test/providers/sound_test_provider.dart';
+import 'package:projects/features/sound_test/models/sound_test.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
 // Mock classes
@@ -29,6 +32,30 @@ class MockPresetProvider extends Mock implements PresetProvider {
     _presets[preset.id] = preset;
     return Future.value();
   }
+
+  @override
+  void setActivePreset(String id) {
+    // Mock implementation
+  }
+
+  @override
+  Future<bool> sendCombinedDataToDevice(
+      SoundTestProvider soundTestProvider) async {
+    // Mock implementation
+    return Future.value(true);
+  }
+}
+
+// Mock BluetoothProvider
+class MockBluetoothProvider extends Mock implements BluetoothProvider {
+  @override
+  bool get isDeviceConnected => false;
+}
+
+// Mock SoundTestProvider
+class MockSoundTestProvider extends Mock implements SoundTestProvider {
+  @override
+  SoundTest? get activeSoundTest => null;
 }
 
 // Mock AppLocalizations for testing
@@ -73,11 +100,15 @@ void main() {
 
   group('PM-005: PresetPage Edit Values Tests', () {
     late MockPresetProvider mockProvider;
+    late MockBluetoothProvider mockBluetoothProvider;
+    late MockSoundTestProvider mockSoundTestProvider;
     const String testPresetId = 'preset1';
     const String testPresetName = 'Test Preset';
 
     setUp(() {
       mockProvider = MockPresetProvider();
+      mockBluetoothProvider = MockBluetoothProvider();
+      mockSoundTestProvider = MockSoundTestProvider();
       mockProvider.updatePresetCalled = false;
       mockProvider.lastUpdatedPreset = null;
 
@@ -107,8 +138,14 @@ void main() {
         supportedLocales: const [
           Locale('en'),
         ],
-        home: ChangeNotifierProvider<PresetProvider>.value(
-          value: mockProvider,
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PresetProvider>.value(value: mockProvider),
+            ChangeNotifierProvider<BluetoothProvider>.value(
+                value: mockBluetoothProvider),
+            ChangeNotifierProvider<SoundTestProvider>.value(
+                value: mockSoundTestProvider),
+          ],
           child: PresetPage(
             presetId: testPresetId,
             presetName: testPresetName,

@@ -20,6 +20,11 @@ class BLEDataService {
   // Maximum size for BLE transmission (MTU size - overhead)
   static const int MAX_CHUNK_SIZE = 512;
 
+  // Retry configuration
+  static const int MAX_RETRY_ATTEMPTS = 3;
+  static const int RETRY_DELAY_MS = 500;
+  static const int RETRY_BACKOFF_FACTOR = 2;
+
   // Send hearing test data over BLE
   Future<bool> sendHearingTestData(SoundTest soundTest) async {
     try {
@@ -167,42 +172,108 @@ class BLEDataService {
       // Check if we need to split into chunks
       if (bytes.length <= MAX_CHUNK_SIZE) {
         // Send in one go
-        return await _writeCharacteristic(
-            characteristicUuid, Uint8List.fromList(bytes), false);
+        int retryCount = 0;
+        bool success = false;
+
+        while (!success && retryCount < MAX_RETRY_ATTEMPTS) {
+          success = await _writeCharacteristic(
+              characteristicUuid, Uint8List.fromList(bytes), false);
+
+          if (!success) {
+            retryCount++;
+            if (retryCount < MAX_RETRY_ATTEMPTS) {
+              // Exponential backoff
+              int delayMs =
+                  RETRY_DELAY_MS * (RETRY_BACKOFF_FACTOR * retryCount);
+              await Future.delayed(Duration(milliseconds: delayMs));
+
+              // Check if connection is still valid before retrying
+              bool connectionReady = await isReadyForTransmission();
+              if (!connectionReady) {
+                // Wait for connection to be restored
+                await Future.delayed(Duration(milliseconds: 1000));
+                connectionReady = await isReadyForTransmission();
+                if (!connectionReady) {
+                  return false; // Give up if connection still not ready
+                }
+              }
+            }
+          }
+        }
+        return success;
       } else {
-        // Send in chunks with metadata
+        // We need to track which chunks were successfully sent
         int totalChunks = (bytes.length / MAX_CHUNK_SIZE).ceil();
-        bool success = true;
+        Set<int> successfulChunks = {};
+        int retryAttempts = 0;
+        int lastChunkIndex = -1;
 
-        for (int i = 0; i < totalChunks; i++) {
-          int start = i * MAX_CHUNK_SIZE;
-          int end = (start + MAX_CHUNK_SIZE < bytes.length)
-              ? start + MAX_CHUNK_SIZE
-              : bytes.length;
+        while (successfulChunks.length < totalChunks &&
+            retryAttempts < MAX_RETRY_ATTEMPTS) {
+          bool connectionLost = false;
 
-          // Add chunk metadata
-          List<int> chunkMetadata = [
-            i, // chunk index
-            totalChunks - 1, // last chunk index
-          ];
+          // Start from the beginning or the first missing chunk
+          for (int i = 0; i < totalChunks; i++) {
+            // Skip chunks we've already sent successfully
+            if (successfulChunks.contains(i)) {
+              continue;
+            }
 
-          // Create chunk with metadata
-          List<int> chunk = [...chunkMetadata, ...bytes.sublist(start, end)];
+            int start = i * MAX_CHUNK_SIZE;
+            int end = (start + MAX_CHUNK_SIZE < bytes.length)
+                ? start + MAX_CHUNK_SIZE
+                : bytes.length;
 
-          // Send chunk
-          bool chunkSent = await _writeCharacteristic(
-            characteristicUuid,
-            Uint8List.fromList(chunk),
-            i < totalChunks - 1, // Only wait for response on last chunk
-          );
+            // Add chunk metadata
+            List<int> chunkMetadata = [
+              i, // chunk index
+              totalChunks - 1, // last chunk index
+            ];
 
-          if (!chunkSent) {
-            success = false;
-            break;
+            // Create chunk with metadata
+            List<int> chunk = [...chunkMetadata, ...bytes.sublist(start, end)];
+
+            // Send chunk
+            bool chunkSent = await _writeCharacteristic(
+              characteristicUuid,
+              Uint8List.fromList(chunk),
+              i < totalChunks - 1, // Only wait for response on last chunk
+            );
+
+            if (chunkSent) {
+              successfulChunks.add(i);
+              lastChunkIndex = i;
+            } else {
+              connectionLost = true;
+              break; // Connection issue, break and retry
+            }
+          }
+
+          // If we had a connection issue, wait and check connection before retrying
+          if (connectionLost) {
+            retryAttempts++;
+
+            if (retryAttempts < MAX_RETRY_ATTEMPTS) {
+              // Exponential backoff
+              int delayMs =
+                  RETRY_DELAY_MS * (RETRY_BACKOFF_FACTOR * retryAttempts);
+              await Future.delayed(Duration(milliseconds: delayMs));
+
+              // Check if connection is ready before retrying
+              bool connectionReady = await isReadyForTransmission();
+              if (!connectionReady) {
+                // Wait a bit longer for connection to be restored
+                await Future.delayed(Duration(milliseconds: 1000));
+                connectionReady = await isReadyForTransmission();
+                if (!connectionReady) {
+                  return false; // Give up if connection still not ready
+                }
+              }
+            }
           }
         }
 
-        return success;
+        return successfulChunks.length == totalChunks;
       }
     } catch (e) {
       // Silently fail
@@ -210,7 +281,7 @@ class BLEDataService {
     }
   }
 
-  // Helper method to send JSON data over BLE
+  // Helper method to send JSON data over BLE (with logging)
   Future<bool> _sendJSONData(
       String characteristicUuid, Map<String, dynamic> data) async {
     try {
@@ -223,42 +294,143 @@ class BLEDataService {
       // Check if we need to split into chunks
       if (bytes.length <= MAX_CHUNK_SIZE) {
         // Send in one go
-        return await _writeCharacteristic(
-            characteristicUuid, Uint8List.fromList(bytes), false);
-      } else {
-        // Send in chunks with metadata
-        int totalChunks = (bytes.length / MAX_CHUNK_SIZE).ceil();
-        bool success = true;
+        int retryCount = 0;
+        bool success = false;
 
-        for (int i = 0; i < totalChunks; i++) {
-          int start = i * MAX_CHUNK_SIZE;
-          int end = (start + MAX_CHUNK_SIZE < bytes.length)
-              ? start + MAX_CHUNK_SIZE
-              : bytes.length;
+        while (!success && retryCount < MAX_RETRY_ATTEMPTS) {
+          success = await _writeCharacteristic(
+              characteristicUuid, Uint8List.fromList(bytes), false);
 
-          // Add chunk metadata
-          List<int> chunkMetadata = [
-            i, // chunk index
-            totalChunks - 1, // last chunk index
-          ];
+          if (!success) {
+            print(
+                "BLE transfer failed, retry attempt ${retryCount + 1}/$MAX_RETRY_ATTEMPTS");
+            retryCount++;
+            if (retryCount < MAX_RETRY_ATTEMPTS) {
+              // Exponential backoff
+              int delayMs =
+                  RETRY_DELAY_MS * (RETRY_BACKOFF_FACTOR * retryCount);
+              await Future.delayed(Duration(milliseconds: delayMs));
 
-          // Create chunk with metadata
-          List<int> chunk = [...chunkMetadata, ...bytes.sublist(start, end)];
-
-          // Send chunk
-          bool chunkSent = await _writeCharacteristic(
-            characteristicUuid,
-            Uint8List.fromList(chunk),
-            i < totalChunks - 1, // Only wait for response on last chunk
-          );
-
-          if (!chunkSent) {
-            success = false;
-            break;
+              // Check if connection is still valid before retrying
+              bool connectionReady = await isReadyForTransmission();
+              if (!connectionReady) {
+                print("BLE connection not ready, waiting for reconnection...");
+                await Future.delayed(Duration(milliseconds: 1000));
+                connectionReady = await isReadyForTransmission();
+                if (!connectionReady) {
+                  print("BLE connection not restored, giving up");
+                  return false; // Give up if connection still not ready
+                }
+                print("BLE connection restored, retrying transfer");
+              }
+            }
           }
         }
 
+        if (success) {
+          print(
+              "BLE transfer completed successfully after $retryCount retries");
+        } else {
+          print("BLE transfer failed after $MAX_RETRY_ATTEMPTS attempts");
+        }
+
         return success;
+      } else {
+        // We need to track which chunks were successfully sent
+        int totalChunks = (bytes.length / MAX_CHUNK_SIZE).ceil();
+        Set<int> successfulChunks = {};
+        int retryAttempts = 0;
+        int lastChunkIndex = -1;
+
+        print("Starting chunked BLE transfer with $totalChunks chunks");
+
+        while (successfulChunks.length < totalChunks &&
+            retryAttempts < MAX_RETRY_ATTEMPTS) {
+          bool connectionLost = false;
+
+          // Start from the beginning or the first missing chunk
+          for (int i = 0; i < totalChunks; i++) {
+            // Skip chunks we've already sent successfully
+            if (successfulChunks.contains(i)) {
+              continue;
+            }
+
+            int start = i * MAX_CHUNK_SIZE;
+            int end = (start + MAX_CHUNK_SIZE < bytes.length)
+                ? start + MAX_CHUNK_SIZE
+                : bytes.length;
+
+            // Add chunk metadata
+            List<int> chunkMetadata = [
+              i, // chunk index
+              totalChunks - 1, // last chunk index
+            ];
+
+            // Create chunk with metadata
+            List<int> chunk = [...chunkMetadata, ...bytes.sublist(start, end)];
+
+            // Send chunk
+            print("Sending chunk ${i + 1}/$totalChunks");
+            bool chunkSent = await _writeCharacteristic(
+              characteristicUuid,
+              Uint8List.fromList(chunk),
+              i < totalChunks - 1, // Only wait for response on last chunk
+            );
+
+            if (chunkSent) {
+              successfulChunks.add(i);
+              lastChunkIndex = i;
+              print("Chunk ${i + 1}/$totalChunks sent successfully");
+            } else {
+              print("Failed to send chunk ${i + 1}/$totalChunks");
+              connectionLost = true;
+              break; // Connection issue, break and retry
+            }
+          }
+
+          // If we had a connection issue, wait and check connection before retrying
+          if (connectionLost) {
+            retryAttempts++;
+
+            if (retryAttempts < MAX_RETRY_ATTEMPTS) {
+              print(
+                  "Connection issue detected, retry attempt $retryAttempts/$MAX_RETRY_ATTEMPTS");
+              // Exponential backoff
+              int delayMs =
+                  RETRY_DELAY_MS * (RETRY_BACKOFF_FACTOR * retryAttempts);
+              print("Waiting for ${delayMs}ms before retrying");
+              await Future.delayed(Duration(milliseconds: delayMs));
+
+              // Check if connection is ready before retrying
+              print("Checking if BLE connection is ready...");
+              bool connectionReady = await isReadyForTransmission();
+              if (!connectionReady) {
+                print("BLE connection not ready, waiting for reconnection...");
+                await Future.delayed(Duration(milliseconds: 1000));
+                connectionReady = await isReadyForTransmission();
+                if (!connectionReady) {
+                  print("BLE connection not restored, giving up");
+                  return false; // Give up if connection still not ready
+                }
+                print("BLE connection restored, resuming transfer");
+              }
+
+              print("Resuming from chunk ${lastChunkIndex + 1}");
+            } else {
+              print("Exceeded maximum retry attempts ($MAX_RETRY_ATTEMPTS)");
+            }
+          }
+        }
+
+        if (successfulChunks.length == totalChunks) {
+          print(
+              "BLE chunked transfer completed successfully after $retryAttempts retries");
+        } else {
+          print(
+              "BLE chunked transfer failed, only ${successfulChunks.length}/$totalChunks chunks sent");
+        }
+
+        return successfulChunks.length == totalChunks;
       }
     } catch (e) {
       print("Error sending JSON data: $e");

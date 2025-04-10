@@ -50,8 +50,8 @@ class _TestPageState extends State<TestPage> {
 
   // Updated constants for proper dB SPL mapping
   final double MAX_DB_SPL = 85.0; // Maximum volume in dB SPL
-  final double MIN_DB_SPL = 30.0; // Minimum volume in dB SPL
-  final double INITIAL_DB_SPL = 65.0; // Starting volume in dB SPL
+  final double MIN_DB_SPL = 20.0; // Minimum volume in dB SPL
+  final double INITIAL_DB_SPL = 90.0; // Starting volume in dB SPL
   final double STEP_DOWN_DB = 10.0; // Step down size in dB
   final double STEP_UP_DB = 5.0; // Step up size in dB
 
@@ -151,17 +151,11 @@ class _TestPageState extends State<TestPage> {
       frequency_player.onPlayerStateChanged
           .listen(null); // Remove listener first
       frequency_player.stop();
-      Future.delayed(const Duration(milliseconds: 200), () {
-        try {
-          if (!mounted) {
-            frequency_player.release();
-            frequency_player.dispose();
-            debugPrint("Audio player resources successfully released");
-          }
-        } catch (innerError) {
-          debugPrint("Error in delayed cleanup: $innerError");
-        }
-      });
+
+      // Remove the delayed cleanup which causes timer leaks in tests
+      frequency_player.release();
+      frequency_player.dispose();
+      debugPrint("Audio player resources successfully released");
     } catch (e) {
       debugPrint("Error disposing audio player: $e");
     }
@@ -182,45 +176,90 @@ class _TestPageState extends State<TestPage> {
     return (20 * log(volume) / ln10 + MAX_DB_SPL).clamp(MIN_DB_SPL, MAX_DB_SPL);
   }
 
+  // Convert dB SPL to dB HL using standard Reference Equivalent Threshold SPL values
+  double convertDBSPLtoDBHL(double dbSPL, int frequency) {
+    // RETSPL values for each frequency (simplified approximation)
+    final Map<int, double> retsplValues = {
+      250: 14.0,
+      500: 6.0,
+      1000: 6.0,
+      2000: 8.0,
+      4000: 9.0,
+    };
+
+    // Get the appropriate RETSPL value based on frequency
+    final double retspl =
+        retsplValues[frequency] ?? 7.0; // Default if not found
+
+    // Convert dB SPL to dB HL
+    return dbSPL - retspl;
+  }
+
   void updateFrequency_dB_Value() {
     double capturedVolume = current_volume;
-    double dbValue = convertVolumeToDBSPL(capturedVolume);
+    double dbSPLValue = convertVolumeToDBSPL(capturedVolume);
+    double dbHLValue;
+
+    // Get the current frequency for conversion
+    int currentFrequency = 1000; // Default
+    switch (current_sound_stage) {
+      case 1:
+        currentFrequency = 250;
+        break;
+      case 2:
+        currentFrequency = 500;
+        break;
+      case 3:
+        currentFrequency = 1000;
+        break;
+      case 4:
+        currentFrequency = 2000;
+        break;
+      case 5:
+        currentFrequency = 4000;
+        break;
+    }
+
+    // Convert to dB HL
+    dbHLValue = convertDBSPLtoDBHL(dbSPLValue, currentFrequency);
 
     if (current_ear == "L") {
       switch (current_sound_stage) {
         case 1:
           debugPrint("Current volume for frequency: $capturedVolume");
-          L_user_250Hz_dB = dbValue;
+          debugPrint(
+              "dB SPL: ${dbSPLValue.toStringAsFixed(1)}, dB HL: ${dbHLValue.toStringAsFixed(1)}");
+          L_user_250Hz_dB = dbHLValue;
           break;
         case 2:
-          L_user_500Hz_dB = dbValue;
+          L_user_500Hz_dB = dbHLValue;
           break;
         case 3:
-          L_user_1000Hz_dB = dbValue;
+          L_user_1000Hz_dB = dbHLValue;
           break;
         case 4:
-          L_user_2000Hz_dB = dbValue;
+          L_user_2000Hz_dB = dbHLValue;
           break;
         case 5:
-          L_user_4000Hz_dB = dbValue;
+          L_user_4000Hz_dB = dbHLValue;
           break;
       }
     } else if (current_ear == "R") {
       switch (current_sound_stage) {
         case 1:
-          R_user_250Hz_dB = dbValue;
+          R_user_250Hz_dB = dbHLValue;
           break;
         case 2:
-          R_user_500Hz_dB = dbValue;
+          R_user_500Hz_dB = dbHLValue;
           break;
         case 3:
-          R_user_1000Hz_dB = dbValue;
+          R_user_1000Hz_dB = dbHLValue;
           break;
         case 4:
-          R_user_2000Hz_dB = dbValue;
+          R_user_2000Hz_dB = dbHLValue;
           break;
         case 5:
-          R_user_4000Hz_dB = dbValue;
+          R_user_4000Hz_dB = dbHLValue;
           break;
       }
     }
@@ -304,20 +343,77 @@ class _TestPageState extends State<TestPage> {
   void _showTestCompletionDialog(BuildContext context) {
     final appLocalizations = AppLocalizations.of(context);
 
+    // Double-check test_completed flag is set
+    debugPrint("Showing completion dialog - test_completed: $test_completed");
+
+    // Make sure we can navigate away from this page
+    setState(() {
+      test_completed = true;
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(appLocalizations.translate('test_complete')),
           content: Text(appLocalizations.translate('test_complete_message')),
           actions: [
             TextButton(
               onPressed: () {
-                // First pop the dialog
-                Navigator.of(context).pop();
-                // Then pop the test page to return to sound test page
-                Navigator.of(context).pop();
+                debugPrint("OK button pressed, attempting navigation");
+
+                // Close the dialog first
+                Navigator.of(dialogContext).pop();
+
+                // Use a variety of navigation techniques with increasing delays
+                debugPrint("Navigation attempt 1: Standard pop with delay");
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (context.mounted) {
+                    try {
+                      Navigator.of(context).pop();
+                      debugPrint("Standard navigation executed");
+                    } catch (e) {
+                      debugPrint("Error in standard navigation: $e");
+                    }
+                  }
+                });
+
+                // Try with the root navigator as fallback
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 2: Using root navigator");
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      debugPrint("Error in root navigation: $e");
+                    }
+                  }
+                });
+
+                // Try using maybePop as another fallback
+                Future.delayed(const Duration(milliseconds: 450), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 3: Using maybePop");
+                      Navigator.of(context).maybePop();
+                    } catch (e) {
+                      debugPrint("Error in maybePop: $e");
+                    }
+                  }
+                });
+
+                // Final brute force approach
+                Future.delayed(const Duration(milliseconds: 600), () {
+                  if (context.mounted) {
+                    try {
+                      debugPrint("Navigation attempt 4: Using popUntil");
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    } catch (e) {
+                      debugPrint("Error in popUntil: $e");
+                    }
+                  }
+                });
               },
               child: Text(appLocalizations.translate('ok')),
             ),
@@ -587,9 +683,23 @@ class _TestPageState extends State<TestPage> {
       if (is_finding_threshold) {
         // User confirmed they can hear it - save the threshold
         updateFrequency_dB_Value();
-        _showCustomToast(
-            context,
-            'Threshold confirmed for ${current_ear == "L" ? "Left" : "Right"} ear at ${current_sound_stage == 1 ? "250" : current_sound_stage == 2 ? "500" : current_sound_stage == 3 ? "1000" : current_sound_stage == 4 ? "2000" : "4000"}Hz: ${convertVolumeToDBSPL(current_volume).toStringAsFixed(1)} dB SPL');
+
+        // Get frequency text and dB values for the toast
+        String frequencyText = current_sound_stage == 1
+            ? "250"
+            : current_sound_stage == 2
+                ? "500"
+                : current_sound_stage == 3
+                    ? "1000"
+                    : current_sound_stage == 4
+                        ? "2000"
+                        : "4000";
+        int frequency = int.parse(frequencyText);
+        double dbSPLValue = convertVolumeToDBSPL(current_volume);
+        double dbHLValue = convertDBSPLtoDBHL(dbSPLValue, frequency);
+
+        _showCustomToast(context,
+            'Threshold for ${current_ear == "L" ? "Left" : "Right"} ear at ${frequencyText}Hz: ${dbHLValue.toStringAsFixed(1)} dB HL (${dbSPLValue.toStringAsFixed(1)} dB SPL)');
 
         // Stop current tone
         stopSound();
@@ -860,19 +970,19 @@ class _TestPageState extends State<TestPage> {
 
     // Create lists for the left and right ear values
     final List<double> leftEarDBValues = [
-      L_user_250Hz_dB.abs(),
-      L_user_500Hz_dB.abs(),
-      L_user_1000Hz_dB.abs(),
-      L_user_2000Hz_dB.abs(),
-      L_user_4000Hz_dB.abs(),
+      L_user_250Hz_dB,
+      L_user_500Hz_dB,
+      L_user_1000Hz_dB,
+      L_user_2000Hz_dB,
+      L_user_4000Hz_dB,
     ];
 
     final List<double> rightEarDBValues = [
-      R_user_250Hz_dB.abs(),
-      R_user_500Hz_dB.abs(),
-      R_user_1000Hz_dB.abs(),
-      R_user_2000Hz_dB.abs(),
-      R_user_4000Hz_dB.abs(),
+      R_user_250Hz_dB,
+      R_user_500Hz_dB,
+      R_user_1000Hz_dB,
+      R_user_2000Hz_dB,
+      R_user_4000Hz_dB,
     ];
 
     return Container(
@@ -919,10 +1029,18 @@ class _TestPageState extends State<TestPage> {
                 children: List.generate(
                   frequencies.length,
                   (index) {
+                    // Lower dB values indicate better hearing, so we need to invert for bar height
+                    // Higher bars should represent better hearing (lower dB values)
+                    // Assuming normal hearing range is 0-30dB and using 60dB as max scale
+                    final normalizedLeftValue =
+                        max(0, 60 - leftEarDBValues[index]);
+                    final normalizedRightValue =
+                        max(0, 60 - rightEarDBValues[index]);
+
                     final leftBarHeight =
-                        (leftEarDBValues[index] / 60) * barMaxHeight;
+                        (normalizedLeftValue / 60) * barMaxHeight;
                     final rightBarHeight =
-                        (rightEarDBValues[index] / 60) * barMaxHeight;
+                        (normalizedRightValue / 60) * barMaxHeight;
 
                     // Calculate bar width with proper scaling
                     final barWidth = (screenWidth * 0.02).clamp(4.0, 10.0);

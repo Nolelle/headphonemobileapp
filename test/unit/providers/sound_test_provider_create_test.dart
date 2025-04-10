@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
@@ -16,48 +15,114 @@ void main() {
 
     setUp(() {
       mockRepository = MockSoundTestRepository();
-      // Mock default behavior
-      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {});
       provider = SoundTestProvider(mockRepository);
     });
 
-    test(
-        'testCreateSoundTest - provider should call repository method and update state',
+    test('createSoundTest should delete existing profiles and add new one',
         () async {
       // Arrange
-      final currentTime = DateTime.now();
-      final soundTest = SoundTest(
-        id: 'test_id',
-        name: 'Test Profile',
-        dateCreated: currentTime,
-        soundTestData: {'L_user_250Hz_dB': 0.5},
-        icon: Icons.hearing,
+      final existingSoundTest = SoundTest(
+        id: 'existing',
+        name: 'Existing Profile',
+        dateCreated: DateTime(2023, 1, 1),
+        soundTestData: {
+          'L_user_250Hz_dB': 10.0,
+          'L_user_500Hz_dB': 10.0,
+          'L_user_1000Hz_dB': 10.0,
+          'L_user_2000Hz_dB': 10.0,
+          'L_user_4000Hz_dB': 10.0,
+          'R_user_250Hz_dB': 10.0,
+          'R_user_500Hz_dB': 10.0,
+          'R_user_1000Hz_dB': 10.0,
+          'R_user_2000Hz_dB': 10.0,
+          'R_user_4000Hz_dB': 10.0,
+        },
       );
 
-      // Mock repository behavior for successful operation
+      final newSoundTest = SoundTest(
+        id: 'new',
+        name: 'New Profile',
+        dateCreated: DateTime(2023, 2, 1),
+        soundTestData: {
+          'L_user_250Hz_dB': 50.0,
+          'L_user_500Hz_dB': 55.0,
+          'L_user_1000Hz_dB': 60.0,
+          'L_user_2000Hz_dB': 65.0,
+          'L_user_4000Hz_dB': 70.0,
+          'R_user_250Hz_dB': 45.0,
+          'R_user_500Hz_dB': 50.0,
+          'R_user_1000Hz_dB': 55.0,
+          'R_user_2000Hz_dB': 60.0,
+          'R_user_4000Hz_dB': 65.0,
+        },
+      );
+
+      // Initial state with existing test
+      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {
+            'existing': existingSoundTest,
+          });
+
+      // Load the provider with initial data
+      await provider.fetchSoundTests();
+
+      // Reset the mock to provide the updated data after creation
+      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {
+            'new': newSoundTest,
+          });
+
+      // Mock repository operations
+      when(mockRepository.deleteSoundTest(any)).thenAnswer((_) async {});
       when(mockRepository.addSoundTest(any)).thenAnswer((_) async {});
 
-      // Track state changes
-      var stateChanged = false;
-      provider.addListener(() {
-        stateChanged = true;
-      });
-
       // Act
-      await provider.createSoundTest(soundTest);
+      await provider.createSoundTest(newSoundTest);
 
       // Assert
-      // Verify repository method called with correct parameters
-      verify(mockRepository.addSoundTest(soundTest)).called(1);
+      verify(mockRepository.deleteSoundTest('existing')).called(1);
+      verify(mockRepository.addSoundTest(newSoundTest)).called(1);
 
-      // Verify provider state updated correctly
-      // Note: Due to bug documented in sound_test_provider_state_test.dart,
-      // we don't check for isLoading = false after error conditions
-      expect(provider.isLoading, false,
-          reason: 'isLoading should be false after successful operation');
-      expect(provider.error, null,
-          reason: 'error should be null after successful operation');
-      expect(stateChanged, true, reason: 'Provider should notify listeners');
+      // Provider should have the new test and set it as active
+      expect(provider.soundTests.length, 1);
+      expect(provider.soundTests['new'], newSoundTest);
+      expect(provider.activeSoundTestId, 'new');
+    });
+
+    test('createSoundTest should handle errors', () async {
+      // Arrange
+      final newSoundTest = SoundTest(
+        id: 'new',
+        name: 'New Profile',
+        dateCreated: DateTime(2023, 2, 1),
+        soundTestData: {
+          'L_user_250Hz_dB': 50.0,
+          'L_user_500Hz_dB': 55.0,
+          'L_user_1000Hz_dB': 60.0,
+          'L_user_2000Hz_dB': 65.0,
+          'L_user_4000Hz_dB': 70.0,
+          'R_user_250Hz_dB': 45.0,
+          'R_user_500Hz_dB': 50.0,
+          'R_user_1000Hz_dB': 55.0,
+          'R_user_2000Hz_dB': 60.0,
+          'R_user_4000Hz_dB': 65.0,
+        },
+      );
+
+      // Mock initial empty state
+      when(mockRepository.getAllSoundTests()).thenAnswer((_) async => {});
+
+      // Load the provider with initial data
+      await provider.fetchSoundTests();
+
+      // Mock error during add
+      when(mockRepository.addSoundTest(any))
+          .thenThrow(Exception('Failed to save'));
+
+      // Act
+      await provider.createSoundTest(newSoundTest);
+
+      // Assert
+      expect(provider.error, contains('Failed to create sound test'));
+      expect(provider.isLoading, isFalse);
     });
   });
 }

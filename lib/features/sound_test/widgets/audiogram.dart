@@ -355,7 +355,7 @@ class AudiogramPainter extends CustomPainter {
   void _drawYAxisLegend(Canvas canvas, Size size, double leftPadding) {
     final textPainter = TextPainter(
       text: TextSpan(
-        text: hearingLevelLabel,
+        text: "$hearingLevelLabel (dB HL)", // Using proper format "dB HL"
         style: TextStyle(
           color: theme.textTheme.bodyMedium?.color,
           fontSize: 10 * scaleFactor * (isSmallScreen ? 0.9 : 1.0),
@@ -381,11 +381,36 @@ class AudiogramPainter extends CustomPainter {
 
   void _drawHearingLossRegions(Canvas canvas, Rect graphRect) {
     final regions = [
-      (_getHearingLossColor(theme, 0), 120.0, 100.0, normalHearingLabel),
-      (_getHearingLossColor(theme, 1), 100.0, 80.0, mildLossLabel),
-      (_getHearingLossColor(theme, 2), 80.0, 50.0, moderateLossLabel),
-      (_getHearingLossColor(theme, 3), 50.0, 30.0, severeLossLabel),
-      (_getHearingLossColor(theme, 4), 30.0, 0.0, profoundLossLabel),
+      (
+        _getHearingLossColor(theme, 0),
+        0.0,
+        25.0,
+        normalHearingLabel
+      ), // Normal hearing (0-25 dB)
+      (
+        _getHearingLossColor(theme, 1),
+        25.0,
+        40.0,
+        mildLossLabel
+      ), // Mild loss (25-40 dB)
+      (
+        _getHearingLossColor(theme, 2),
+        40.0,
+        70.0,
+        moderateLossLabel
+      ), // Moderate loss (40-70 dB)
+      (
+        _getHearingLossColor(theme, 3),
+        70.0,
+        90.0,
+        severeLossLabel
+      ), // Severe loss (70-90 dB)
+      (
+        _getHearingLossColor(theme, 4),
+        90.0,
+        120.0,
+        profoundLossLabel
+      ), // Profound loss (>90 dB)
     ];
 
     for (var region in regions) {
@@ -551,7 +576,7 @@ class AudiogramPainter extends CustomPainter {
 
       // Calculate x position with edge padding
       final x = graphRect.left + edgePadding + (i * xStep);
-      final y = _getYPosition(value.abs(), graphRect);
+      final y = _getYPosition(value, graphRect);
       final currentPoint = Offset(x, y);
       points.add(currentPoint);
 

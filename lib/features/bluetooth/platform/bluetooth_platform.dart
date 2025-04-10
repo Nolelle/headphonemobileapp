@@ -193,7 +193,13 @@ class BluetoothPlatform {
   // Get Bluetooth audio connection type
   static Future<BluetoothAudioType> getBluetoothAudioType() async {
     try {
-      final String result = await platform.invokeMethod('getBtConnectionType');
+      final String? result = await platform.invokeMethod('getBtConnectionType');
+
+      // Handle null result
+      if (result == null) {
+        return BluetoothAudioType.none;
+      }
+
       switch (result) {
         case 'le_audio':
           return BluetoothAudioType.leAudio;

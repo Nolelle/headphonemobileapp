@@ -11,7 +11,7 @@ import 'package:projects/features/sound_test/repositories/sound_test_repository.
 import 'sound_test_repository_save_test.mocks.dart';
 
 void main() {
-  group('SoundTestRepository Tests', () {
+  group('SoundTestRepository Save Tests', () {
     late MockSharedPreferences mockPrefs;
     late SoundTestRepository repository;
 
@@ -20,64 +20,153 @@ void main() {
       repository = SoundTestRepository(sharedPreferences: mockPrefs);
     });
 
-    test('testSaveSoundTest - should save test results with all frequency data',
-        () async {
+    test('saveAllSoundTests should properly serialize all tests', () async {
       // Arrange
       final testTime = DateTime.now();
-      final soundTest = SoundTest(
-        id: 'test_id',
-        name: 'Test Profile',
-        dateCreated: testTime,
+      final soundTests = {
+        'test1': SoundTest(
+          id: 'test1',
+          name: 'Test Profile 1',
+          dateCreated: testTime,
+          soundTestData: {
+            'L_user_250Hz_dB': 50.0,
+            'L_user_500Hz_dB': 55.0,
+            'L_user_1000Hz_dB': 60.0,
+            'L_user_2000Hz_dB': 65.0,
+            'L_user_4000Hz_dB': 70.0,
+            'R_user_250Hz_dB': 45.0,
+            'R_user_500Hz_dB': 50.0,
+            'R_user_1000Hz_dB': 55.0,
+            'R_user_2000Hz_dB': 60.0,
+            'R_user_4000Hz_dB': 65.0,
+          },
+          icon: Icons.hearing,
+        ),
+        'test2': SoundTest(
+          id: 'test2',
+          name: 'Test Profile 2',
+          dateCreated: testTime.add(const Duration(days: 1)),
+          soundTestData: {
+            'L_user_250Hz_dB': 40.0,
+            'L_user_500Hz_dB': 45.0,
+            'L_user_1000Hz_dB': 50.0,
+            'L_user_2000Hz_dB': 55.0,
+            'L_user_4000Hz_dB': 60.0,
+            'R_user_250Hz_dB': 35.0,
+            'R_user_500Hz_dB': 40.0,
+            'R_user_1000Hz_dB': 45.0,
+            'R_user_2000Hz_dB': 50.0,
+            'R_user_4000Hz_dB': 55.0,
+          },
+          icon: Icons.hearing,
+        ),
+      };
+
+      // Mock successful save
+      when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
+
+      // Act
+      await repository.saveAllSoundTests(soundTests);
+
+      // Assert
+      verify(mockPrefs.setString('soundTestsMap', argThat(
+        predicate<String>((jsonStr) {
+          final Map<String, dynamic> jsonMap = jsonDecode(jsonStr);
+
+          // Check if both test IDs exist
+          if (!jsonMap.containsKey('test1') || !jsonMap.containsKey('test2')) {
+            return false;
+          }
+
+          // Check a few values from each test
+          final test1Data = jsonMap['test1']['soundTestData'];
+          final test2Data = jsonMap['test2']['soundTestData'];
+
+          return test1Data['L_user_250Hz_dB'] == 50.0 &&
+              test1Data['R_user_4000Hz_dB'] == 65.0 &&
+              test2Data['L_user_250Hz_dB'] == 40.0 &&
+              test2Data['R_user_4000Hz_dB'] == 55.0;
+        }),
+      ))).called(1);
+    });
+
+    test('addSoundTest should add a single test to existing tests', () async {
+      // Arrange
+      final testTime = DateTime.now();
+
+      // Create existing sound tests
+      final existingJson = {
+        'existing1': {
+          'name': 'Existing Test 1',
+          'dateCreated': testTime.toIso8601String(),
+          'soundTestData': {
+            'L_user_250Hz_dB': 10.0,
+            'L_user_500Hz_dB': 10.0,
+            'L_user_1000Hz_dB': 10.0,
+            'L_user_2000Hz_dB': 10.0,
+            'L_user_4000Hz_dB': 10.0,
+            'R_user_250Hz_dB': 10.0,
+            'R_user_500Hz_dB': 10.0,
+            'R_user_1000Hz_dB': 10.0,
+            'R_user_2000Hz_dB': 10.0,
+            'R_user_4000Hz_dB': 10.0,
+          }
+        }
+      };
+
+      // Create new sound test
+      final newSoundTest = SoundTest(
+        id: 'new1',
+        name: 'New Test 1',
+        dateCreated: testTime.add(const Duration(days: 1)),
         soundTestData: {
           'L_user_250Hz_dB': 50.0,
           'L_user_500Hz_dB': 55.0,
           'L_user_1000Hz_dB': 60.0,
           'L_user_2000Hz_dB': 65.0,
           'L_user_4000Hz_dB': 70.0,
-          'L_user_8000Hz_dB': 75.0,
           'R_user_250Hz_dB': 45.0,
           'R_user_500Hz_dB': 50.0,
           'R_user_1000Hz_dB': 55.0,
           'R_user_2000Hz_dB': 60.0,
           'R_user_4000Hz_dB': 65.0,
-          'R_user_8000Hz_dB': 70.0,
         },
         icon: Icons.hearing,
       );
 
-      // Mock getting empty map first
-      when(mockPrefs.getString('soundTestsMap')).thenReturn(null);
+      // Mock retrieval of existing tests
+      when(mockPrefs.getString('soundTestsMap'))
+          .thenReturn(jsonEncode(existingJson));
 
       // Mock successful save
       when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
       // Act
-      await repository.addSoundTest(soundTest);
+      await repository.addSoundTest(newSoundTest);
 
       // Assert
-      // Verify setString was called once with the correct key
       verify(mockPrefs.setString('soundTestsMap', argThat(
         predicate<String>((jsonStr) {
           final Map<String, dynamic> jsonMap = jsonDecode(jsonStr);
-          // Check if the test_id key exists
-          if (!jsonMap.containsKey('test_id')) {
+
+          // Both existing and new tests should be present
+          if (!jsonMap.containsKey('existing1') ||
+              !jsonMap.containsKey('new1')) {
             return false;
           }
 
-          // Check if all frequency values are present
-          final testData = jsonMap['test_id']['soundTestData'];
-          return testData['L_user_250Hz_dB'] == 50.0 &&
-              testData['L_user_500Hz_dB'] == 55.0 &&
-              testData['L_user_1000Hz_dB'] == 60.0 &&
-              testData['L_user_2000Hz_dB'] == 65.0 &&
-              testData['L_user_4000Hz_dB'] == 70.0 &&
-              testData['L_user_8000Hz_dB'] == 75.0 &&
-              testData['R_user_250Hz_dB'] == 45.0 &&
-              testData['R_user_500Hz_dB'] == 50.0 &&
-              testData['R_user_1000Hz_dB'] == 55.0 &&
-              testData['R_user_2000Hz_dB'] == 60.0 &&
-              testData['R_user_4000Hz_dB'] == 65.0 &&
-              testData['R_user_8000Hz_dB'] == 70.0;
+          // Check values from new test
+          final newTestData = jsonMap['new1']['soundTestData'];
+          return newTestData['L_user_250Hz_dB'] == 50.0 &&
+              newTestData['L_user_500Hz_dB'] == 55.0 &&
+              newTestData['L_user_1000Hz_dB'] == 60.0 &&
+              newTestData['L_user_2000Hz_dB'] == 65.0 &&
+              newTestData['L_user_4000Hz_dB'] == 70.0 &&
+              newTestData['R_user_250Hz_dB'] == 45.0 &&
+              newTestData['R_user_500Hz_dB'] == 50.0 &&
+              newTestData['R_user_1000Hz_dB'] == 55.0 &&
+              newTestData['R_user_2000Hz_dB'] == 60.0 &&
+              newTestData['R_user_4000Hz_dB'] == 65.0;
         }),
       ))).called(1);
     });

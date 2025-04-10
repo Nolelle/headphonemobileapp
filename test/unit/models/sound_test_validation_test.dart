@@ -1,69 +1,116 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projects/features/sound_test/models/sound_test.dart';
 
 void main() {
-  group('SoundTest Model Data Validation Tests', () {
-    test(
-        'testSoundTestDataValidation - should clamp extreme values to valid ranges',
-        () {
-      // Create a sound test with extreme values
+  group('SoundTest Validation Tests', () {
+    test('toJson should include all frequency values', () {
       final soundTest = SoundTest(
         id: 'test_id',
         name: 'Test Profile',
-        dateCreated: DateTime.now(),
+        dateCreated: DateTime(2023, 1, 1),
         soundTestData: {
-          'L_user_250Hz_dB': 100.0, // Above max (should be clamped)
-          'L_user_500Hz_dB': -10.0, // Below min (should be clamped)
-          'R_user_1000Hz_dB': 150.0, // Extremely high (should be clamped)
-          'R_user_2000Hz_dB': -20.0, // Extremely low (should be clamped)
-          'L_user_4000Hz_dB': 85.0, // Within range (should stay same)
-          'R_user_8000Hz_dB': 5.0, // Within range (should stay same)
+          'L_user_250Hz_dB': 50.0,
+          'L_user_500Hz_dB': 55.0,
+          'L_user_1000Hz_dB': 60.0,
+          'L_user_2000Hz_dB': 65.0,
+          'L_user_4000Hz_dB': 70.0,
+          'R_user_250Hz_dB': 45.0,
+          'R_user_500Hz_dB': 50.0,
+          'R_user_1000Hz_dB': 55.0,
+          'R_user_2000Hz_dB': 60.0,
+          'R_user_4000Hz_dB': 65.0,
+          'extra_field': 100.0, // Should be excluded from JSON
         },
-        icon: Icons.hearing,
       );
 
-      // Create a validated version of the sound test
-      final validatedData = Map<String, dynamic>.from(soundTest.soundTestData);
+      final json = soundTest.toJson();
+      final soundTestData = json['soundTestData'] as Map<String, dynamic>;
 
-      // Clamp values to valid ranges (0.0 to 90.0 dB)
-      soundTest.soundTestData.forEach((key, value) {
-        if (key.endsWith('Hz_dB') && value is num) {
-          validatedData[key] = (value).clamp(0.0, 90.0);
-        }
-      });
+      // Check that all required frequencies are included
+      expect(soundTestData['L_user_250Hz_dB'], 50.0);
+      expect(soundTestData['L_user_500Hz_dB'], 55.0);
+      expect(soundTestData['L_user_1000Hz_dB'], 60.0);
+      expect(soundTestData['L_user_2000Hz_dB'], 65.0);
+      expect(soundTestData['L_user_4000Hz_dB'], 70.0);
+      expect(soundTestData['R_user_250Hz_dB'], 45.0);
+      expect(soundTestData['R_user_500Hz_dB'], 50.0);
+      expect(soundTestData['R_user_1000Hz_dB'], 55.0);
+      expect(soundTestData['R_user_2000Hz_dB'], 60.0);
+      expect(soundTestData['R_user_4000Hz_dB'], 65.0);
 
-      final validatedSoundTest = SoundTest(
-        id: soundTest.id,
-        name: soundTest.name,
-        dateCreated: soundTest.dateCreated,
-        soundTestData: validatedData,
-        icon: soundTest.icon,
-      );
+      // Check that extra fields are not included
+      expect(soundTestData.containsKey('extra_field'), false);
+    });
 
-      // Assert values are clamped to valid ranges
-      expect(validatedSoundTest.soundTestData['L_user_250Hz_dB'], 90.0);
-      expect(validatedSoundTest.soundTestData['L_user_500Hz_dB'], 0.0);
-      expect(validatedSoundTest.soundTestData['R_user_1000Hz_dB'], 90.0);
-      expect(validatedSoundTest.soundTestData['R_user_2000Hz_dB'], 0.0);
+    test('fromJson should handle incomplete data', () {
+      final json = {
+        'name': 'Incomplete Profile',
+        'dateCreated': DateTime(2023, 1, 1).toIso8601String(),
+        'soundTestData': {
+          'L_user_250Hz_dB': 50.0,
+          // Missing other frequencies
+        },
+      };
 
-      // Values within range should remain unchanged
-      expect(validatedSoundTest.soundTestData['L_user_4000Hz_dB'], 85.0);
-      expect(validatedSoundTest.soundTestData['R_user_8000Hz_dB'], 5.0);
+      final soundTest = SoundTest.fromJson('test_id', json);
 
-      // Original sound test should remain unmodified
-      expect(soundTest.soundTestData['L_user_250Hz_dB'], 100.0);
-      expect(soundTest.soundTestData['R_user_2000Hz_dB'], -20.0);
+      // Verify default values are applied for missing frequencies
+      expect(soundTest.soundTestData['L_user_250Hz_dB'], 50.0);
+      expect(soundTest.soundTestData['L_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_4000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_4000Hz_dB'], -10.0);
+    });
 
-      // Verify clamp operation works on all values
-      for (final entry in validatedSoundTest.soundTestData.entries) {
-        if (entry.key.endsWith('Hz_dB')) {
-          final double value = entry.value as double;
-          expect(value >= 0.0 && value <= 90.0, true,
-              reason:
-                  '${entry.key} value should be between 0.0 and 90.0 but was $value');
-        }
-      }
+    test('fromJson should handle empty soundTestData', () {
+      final json = {
+        'name': 'Empty Data Profile',
+        'dateCreated': DateTime(2023, 1, 1).toIso8601String(),
+        'soundTestData': {},
+      };
+
+      // This should not throw an exception
+      final soundTest = SoundTest.fromJson('test_id', json);
+
+      // Verify default values are applied for all frequencies
+      expect(soundTest.soundTestData['L_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_4000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_4000Hz_dB'], -10.0);
+    });
+
+    test('fromJson should handle null soundTestData', () {
+      final json = {
+        'name': 'Null Data Profile',
+        'dateCreated': DateTime(2023, 1, 1).toIso8601String(),
+        'soundTestData': null,
+      };
+
+      // This should not throw an exception
+      final soundTest = SoundTest.fromJson('test_id', json);
+
+      // Verify default values are applied for all frequencies
+      expect(soundTest.soundTestData['L_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['L_user_4000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_250Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_500Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_1000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_2000Hz_dB'], -10.0);
+      expect(soundTest.soundTestData['R_user_4000Hz_dB'], -10.0);
     });
   });
 }

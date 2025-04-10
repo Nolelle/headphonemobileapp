@@ -70,146 +70,152 @@ class _PresetsListPageState extends State<PresetsListPage> {
             child: HeadphoneInfoBanner(),
           ),
           Expanded(
-            child: Consumer<PresetProvider>(
-              builder: (context, provider, child) {
-                final presets = provider.presets.values.toList();
+            child: SingleChildScrollView(
+              child: Consumer<PresetProvider>(
+                builder: (context, provider, child) {
+                  final presets = provider.presets.values.toList();
 
-                if (presets.isEmpty) {
-                  return Center(
-                    child: Text(
-                      appLocalizations.translate('no_presets'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: theme.textTheme.bodyMedium?.color,
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: presets.length,
-                  itemBuilder: (context, index) {
-                    final preset = presets[index];
-                    final isActive = preset.id == provider.activePresetId;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                activePresetId = preset.id;
-                              });
-
-                              provider.setActivePreset(preset.id);
-
-                              // Send the preset to the device
-                              final soundTestProvider =
-                                  Provider.of<SoundTestProvider>(context,
-                                      listen: false);
-                              provider
-                                  .sendCombinedDataToDevice(soundTestProvider)
-                                  .then((success) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          '${preset.name} ${appLocalizations.translate('preset_applied')}'),
-                                      duration: const Duration(seconds: 1),
-                                    ),
-                                  );
-                                }
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isActive
-                                  ? (theme.brightness == Brightness.dark
-                                      ? theme.colorScheme
-                                          .tertiary // Use the theme color
-                                      : theme.colorScheme.secondary)
-                                  : theme.primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              minimumSize: const Size(double.infinity, 50),
-                            ),
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      preset.name,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (activePresetId == preset.id)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PresetPage(
-                                          presetId: preset.id,
-                                          presetName: preset.name,
-                                          presetProvider: widget.presetProvider,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child:
-                                      Text(appLocalizations.translate('edit')),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: theme.primaryColor,
-                                  ),
-                                  onPressed: () async {
-                                    final shouldDelete =
-                                        await _showDeleteConfirmationDialog(
-                                            context, preset.name);
-                                    if (shouldDelete) {
-                                      provider.deletePreset(preset.id);
-                                      setState(() {
-                                        activePresetId = null;
-                                      });
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              '${preset.name} ${appLocalizations.translate('deleted_successfully')}'),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Text(
-                                      appLocalizations.translate('delete')),
-                                ),
-                              ],
-                            ),
-                        ],
+                  if (presets.isEmpty) {
+                    return Center(
+                      child: Text(
+                        appLocalizations.translate('no_presets'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
                       ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: presets.length,
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final preset = presets[index];
+                      final isActive = preset.id == provider.activePresetId;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  activePresetId = preset.id;
+                                });
+
+                                provider.setActivePreset(preset.id);
+
+                                // Send the preset to the device
+                                final soundTestProvider =
+                                    Provider.of<SoundTestProvider>(context,
+                                        listen: false);
+                                provider
+                                    .sendCombinedDataToDevice(soundTestProvider)
+                                    .then((success) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            '${preset.name} ${appLocalizations.translate('preset_applied')}'),
+                                        duration: const Duration(seconds: 1),
+                                      ),
+                                    );
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isActive
+                                    ? (theme.brightness == Brightness.dark
+                                        ? theme.colorScheme
+                                            .tertiary // Use the theme color
+                                        : theme.colorScheme.secondary)
+                                    : theme.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        preset.name,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (activePresetId == preset.id)
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PresetPage(
+                                            presetId: preset.id,
+                                            presetName: preset.name,
+                                            presetProvider:
+                                                widget.presetProvider,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                        appLocalizations.translate('edit')),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: theme.primaryColor,
+                                    ),
+                                    onPressed: () async {
+                                      final shouldDelete =
+                                          await _showDeleteConfirmationDialog(
+                                              context, preset.name);
+                                      if (shouldDelete) {
+                                        provider.deletePreset(preset.id);
+                                        setState(() {
+                                          activePresetId = null;
+                                        });
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                '${preset.name} ${appLocalizations.translate('deleted_successfully')}'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Text(
+                                        appLocalizations.translate('delete')),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
           Consumer<PresetProvider>(

@@ -32,9 +32,9 @@ final Map<String, String> enTranslations = {
 
   // FAQ Section
   'faq': 'Frequently Asked Questions',
-  'faq_clean': 'How do I clean and maintain my headphones?',
+  'faq_clean': 'What do the values on the audiogram mean?',
   'faq_clean_answer':
-      'Regular cleaning is essential. Use a soft, dry cloth to wipe the exterior daily. For deeper cleaning, follow the manufacturer\'s instructions. We recommend professional cleaning every few months for optimal performance and longevity of your headphones.',
+      'The audiogram shows your hearing thresholds measured in dB HL (Hearing Level). During testing, sounds are played at different dB SPL (Sound Pressure Level) values, which are then converted to dB HL using standard reference values. The dB HL scale is used by audiologists where 0-20 dB represents normal hearing, 20-40 dB mild loss, 40-70 dB moderate loss, 70-90 dB severe loss, and >90 dB profound loss.',
   'faq_adjust': 'How can I adjust the settings on my headphones?',
   'faq_adjust_answer':
       'Connect your headphones via Bluetooth, then go to the Presets tab. You can adjust volume levels, bass, mid, and treble frequencies, and enable features like background noise reduction. Changes are sent to your headphones when you apply a preset.',
@@ -43,7 +43,7 @@ final Map<String, String> enTranslations = {
       'Go to the Hearing Test tab and tap BEGIN SOUND TEST. You\'ll hear sounds at different frequencies that gradually get louder. Tap the button as soon as you hear each sound. The test evaluates both ears and creates a personalized preset based on your hearing profile that can be applied to your headphones.',
   'faq_multiple': 'Can I save multiple hearing test results?',
   'faq_multiple_answer':
-      'Yes! You can perform multiple hearing tests and each one creates a new preset. This allows you to have different presets for various listening environments like music, conversations, or noisy settings. You can store up to 10 presets and easily switch between them.',
+      'You can perform the hearing test multiple times, but the app only saves your most recent test result. Each new test will replace your previous test result. This allows you to update your hearing profile as needed, but the app doesn\'t maintain a history of past test results. Each test evaluates both ears across different frequencies (250Hz, 500Hz, 1kHz, 2kHz, and 4kHz) and displays these results in your audiogram.',
 
   // About
   'about': 'About',
@@ -160,7 +160,7 @@ final Map<String, String> enTranslations = {
 
   // Audiogram labels
   'frequency': 'Frequency (Hz)',
-  'hearing_level': 'Hearing Level (dB)',
+  'hearing_level': 'Hearing Level',
   'normal_hearing': 'Normal',
   'mild_loss': 'Mild',
   'moderate_loss': 'Moderate',
