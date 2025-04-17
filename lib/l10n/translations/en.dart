@@ -100,7 +100,7 @@ final Map<String, String> enTranslations = {
   'set_max_volume': 'Set your device volume to maximum.',
   'wear_headphones_properly':
       'Wear your headphones correctly and comfortably so that it completely fits in your ears.',
-  'test_duration_minutes': 'This will take only take ~5 minutes',
+  'test_duration_minutes': 'This will take ~5 minutes',
   'instructions': 'A few instructions before starting the test:',
   'audio_profiles': 'Audio Profiles:',
   'max_profiles': 'You can only have a maximum of 3 audio profiles!',
