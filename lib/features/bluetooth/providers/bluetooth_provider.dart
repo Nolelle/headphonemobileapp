@@ -18,6 +18,16 @@ class BluetoothProvider extends ChangeNotifier {
   int? _batteryLevel;
   Timer? _batteryCheckTimer;
 
+  // Add timer for name retry
+  Timer? _nameRetryTimer;
+  int _nameRetryCount = 0;
+  final int _maxNameRetries = 5;
+
+  // Add timer for battery retry
+  Timer? _batteryRetryTimer;
+  int _batteryRetryCount = 0;
+  final int _maxBatteryRetries = 3;
+
   // Getters
   bool get isDeviceConnected =>
       _isDeviceConnected || _isEmulatorTestMode || _bypassBluetoothCheck;
@@ -44,8 +54,6 @@ class BluetoothProvider extends ChangeNotifier {
     _init();
   }
 
-// Inside the _init() method of BluetoothProvider
-// Inside the _init() method of BluetoothProvider
   void _init() async {
     if (_isEmulatorTestMode) {
       _isDeviceConnected = true;
@@ -118,7 +126,7 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
-// Public method to save connection state
+  // Public method to save connection state
   Future<void> saveConnectionState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -143,7 +151,7 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
-// Public method to load connection state
+  // Public method to load connection state
   Future<void> loadConnectionState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -191,6 +199,19 @@ class BluetoothProvider extends ChangeNotifier {
         notifyListeners();
         await saveConnectionState();
       }
+
+      // If battery level is null and we don't have a retry timer running, start one
+      if (batteryLevel == null && _batteryRetryTimer == null) {
+        // Start retry timer for battery level
+        print("Starting battery level retry timer");
+        _batteryRetryCount = 0;
+        _batteryRetryTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+          retryGetBatteryLevel();
+        });
+      } else if (batteryLevel != null) {
+        // If we got a valid battery level, cancel any retry timer
+        _cancelBatteryRetryTimer();
+      }
     } catch (e) {
       print('Error updating battery level: $e');
     }
@@ -199,6 +220,42 @@ class BluetoothProvider extends ChangeNotifier {
   // Force battery level update
   Future<void> refreshBatteryLevel() async {
     await _updateBatteryLevel();
+  }
+
+  // Method to retry getting battery level
+  Future<void> retryGetBatteryLevel() async {
+    if (!_isDeviceConnected || _isEmulatorTestMode || _bypassBluetoothCheck)
+      return;
+
+    print("Retrying to get battery level, attempt: ${_batteryRetryCount + 1}");
+    final updatedBatteryLevel = await BluetoothPlatform.retryGetBatteryLevel();
+
+    if (updatedBatteryLevel != null) {
+      _batteryLevel = updatedBatteryLevel;
+      print("Successfully updated battery level to: $_batteryLevel");
+      notifyListeners();
+      await saveConnectionState();
+
+      // Cancel further retries as we succeeded
+      _cancelBatteryRetryTimer();
+    } else {
+      _batteryRetryCount++;
+      print(
+          "Battery retry attempt $_batteryRetryCount failed, will retry again if under max retries");
+
+      // Stop retrying after max attempts
+      if (_batteryRetryCount >= _maxBatteryRetries) {
+        print("Reached max battery retry attempts. Stopping retries.");
+        _cancelBatteryRetryTimer();
+      }
+    }
+  }
+
+  // Helper to cancel the battery retry timer
+  void _cancelBatteryRetryTimer() {
+    _batteryRetryTimer?.cancel();
+    _batteryRetryTimer = null;
+    _batteryRetryCount = 0;
   }
 
   // Method to update connection from another class
@@ -339,6 +396,53 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  // Add a method to retry getting the device name
+  Future<void> retryGetDeviceName() async {
+    if (!_isDeviceConnected || _isEmulatorTestMode || _bypassBluetoothCheck)
+      return;
+
+    // Only retry if the current name is Unknown Device
+    if (_connectedDeviceName == "Unknown Device" ||
+        _connectedDeviceName == "No Device") {
+      print("Retrying to get device name, attempt: ${_nameRetryCount + 1}");
+      final updatedDevice = await BluetoothPlatform.retryGetDeviceName();
+
+      if (updatedDevice != null &&
+          updatedDevice.name != "Unknown Device" &&
+          updatedDevice.name != "No Device") {
+        _connectedDevice = updatedDevice;
+        _connectedDeviceName = updatedDevice.name;
+        print("Successfully updated device name to: $_connectedDeviceName");
+        notifyListeners();
+        await saveConnectionState();
+
+        // Cancel further retries as we succeeded
+        _cancelNameRetryTimer();
+      } else {
+        _nameRetryCount++;
+        print(
+            "Name retry attempt $_nameRetryCount failed, will retry again if under max retries");
+
+        // Stop retrying after max attempts
+        if (_nameRetryCount >= _maxNameRetries) {
+          print("Reached max retry attempts. Stopping retries.");
+          _cancelNameRetryTimer();
+        }
+      }
+    } else {
+      // We already have a proper name, cancel retries
+      _cancelNameRetryTimer();
+    }
+  }
+
+  // Helper to cancel the retry timer
+  void _cancelNameRetryTimer() {
+    _nameRetryTimer?.cancel();
+    _nameRetryTimer = null;
+    _nameRetryCount = 0;
+  }
+
+  // Modify checkBluetoothConnection to start the retry timer if needed
   Future<void> checkBluetoothConnection() async {
     if (_isEmulatorTestMode) return;
 
@@ -355,6 +459,7 @@ class BluetoothProvider extends ChangeNotifier {
       _audioType = await BluetoothPlatform.getBluetoothAudioType();
 
       // Update connection status based on combined results
+      final wasConnected = _isDeviceConnected;
       _isDeviceConnected = _connectedDevice != null || isAudioConnected;
 
       // Log what we found for debugging
@@ -362,88 +467,50 @@ class BluetoothProvider extends ChangeNotifier {
       print("Audio connected: $isAudioConnected");
       print("Audio type: $_audioType");
 
+      // If device state changed from connected to disconnected, cancel any retry timers
+      if (wasConnected && !_isDeviceConnected) {
+        _cancelNameRetryTimer();
+        _cancelBatteryRetryTimer();
+        _batteryLevel = null;
+      }
+
       if (_isDeviceConnected && _connectedDevice != null) {
         _connectedDeviceName = _connectedDevice!.name;
-        // Other code remains the same
+
+        // Start retry timer if we got an unknown device name
+        if (_connectedDeviceName == "Unknown Device" ||
+            _connectedDeviceName == "No Device") {
+          // Cancel any existing retry timer
+          _cancelNameRetryTimer();
+
+          // Start a new retry timer that attempts every 2 seconds
+          print("Starting device name retry timer");
+          _nameRetryTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+            retryGetDeviceName();
+          });
+        }
+
+        // Check battery level on connection
+        await _updateBatteryLevel();
+      } else if (!_isDeviceConnected) {
+        // Clear battery level when disconnected
+        _batteryLevel = null;
       }
 
       notifyListeners();
     } catch (e) {
       print('Error checking Bluetooth connection: $e');
       _isDeviceConnected = false;
+      _batteryLevel = null;
+
+      // Cancel retry timers on error
+      _cancelNameRetryTimer();
+      _cancelBatteryRetryTimer();
+
       notifyListeners();
     }
     await saveConnectionState();
   }
-  // Check Bluetooth connection
-  // Future<void> checkBluetoothConnection() async {
-  //   if (_isEmulatorTestMode) return;
-
-  //   try {
-  //     // Get the currently connected device from the platform
-  //     final platformConnectedDevice =
-  //         await BluetoothPlatform.getConnectedDevice();
-
-  //     // Check with the platform if any audio device is actually connected
-  //     final platformAudioConnected =
-  //         await BluetoothPlatform.isAudioDeviceConnected();
-
-  //     // If platform reports a connected device, use that information
-  //     if (platformConnectedDevice != null && platformAudioConnected) {
-  //       _connectedDevice = platformConnectedDevice;
-  //       _isDeviceConnected = true;
-  //       _connectedDeviceName = _connectedDevice!.name;
-  //       _audioType = await BluetoothPlatform.getBluetoothAudioType();
-
-  //       // Add indicator if it's LE Audio
-  //       if (_audioType == BluetoothAudioType.leAudio) {
-  //         _connectedDeviceName += " (LE Audio)";
-  //       }
-
-  //       // If we have a connection but no registered device, register this one
-  //       _registeredDeviceId ??= _connectedDevice!.id;
-  //       await _saveRegisteredDevice();
-
-  //       print(
-  //           "Connected to: $_connectedDeviceName with audio type: $_audioType");
-  //     }
-  //     // If platform doesn't report a connected device, but we have persistent data
-  //     // try to force a reconnection instead of assuming disconnection
-  //     else if (_connectedDevice != null && _isDeviceConnected) {
-  //       print(
-  //           "Platform reports no connection, but we have saved connection data. Attempting reconnection...");
-  //       try {
-  //         // Try to reconnect using the persisted device
-  //         final reconnected =
-  //             await BluetoothPlatform.connectToDevice(_connectedDevice!.id);
-  //         if (reconnected) {
-  //           await BluetoothPlatform.forceAudioRoutingToBluetooth();
-  //           _isDeviceConnected = true;
-
-  //           // Update audio type after reconnection
-  //           _audioType = await BluetoothPlatform.getBluetoothAudioType();
-  //           print("Successfully reconnected to: $_connectedDeviceName");
-  //         } else {
-  //           // Only if reconnection explicitly fails, mark as disconnected
-  //           _isDeviceConnected = false;
-  //           _connectedDeviceName = "No Device";
-  //         }
-  //       } catch (e) {
-  //         print('Error during reconnection attempt: $e');
-  //         // Don't change connection state on error - maintain previous state
-  //       }
-  //     } else {
-  //       _isDeviceConnected = false;
-  //       _connectedDeviceName = "No Device";
-  //     }
-
-  //     notifyListeners();
-  //   } catch (e) {
-  //     print('Error checking Bluetooth connection: $e');
-  //     // Don't update connection state on error - maintain previous state
-  //   }
-  //   await saveConnectionState();
-  // }
 
   // Register a device
   Future<void> registerDevice(BluetoothDevice device) async {
@@ -518,6 +585,12 @@ class BluetoothProvider extends ChangeNotifier {
       _isDeviceConnected = false;
       _connectedDeviceName = "No Device";
       _audioType = BluetoothAudioType.none;
+      _batteryLevel = null;
+
+      // Cancel any retry timers
+      _cancelNameRetryTimer();
+      _cancelBatteryRetryTimer();
+
       // Don't set _connectedDevice to null here to allow reconnection
 
       notifyListeners();
@@ -526,6 +599,9 @@ class BluetoothProvider extends ChangeNotifier {
       print('Error disconnecting device: $e');
       // Even if there's an error, update the UI state
       _isDeviceConnected = false;
+      _batteryLevel = null;
+      _cancelNameRetryTimer();
+      _cancelBatteryRetryTimer();
       notifyListeners();
     }
     await saveConnectionState();
@@ -547,6 +623,11 @@ class BluetoothProvider extends ChangeNotifier {
       _isDeviceConnected = false;
       _connectedDeviceName = "No Device";
       _audioType = BluetoothAudioType.none;
+      _batteryLevel = null;
+
+      // Cancel any retry timers
+      _cancelNameRetryTimer();
+      _cancelBatteryRetryTimer();
 
       // Clear from persistent storage
       final prefs = await SharedPreferences.getInstance();
@@ -647,10 +728,15 @@ class BluetoothProvider extends ChangeNotifier {
     }
   }
 
+  // Dispose method to clean up resources
   @override
   void dispose() {
+    // Cancel all timers
     _bluetoothStateTimer?.cancel();
     _batteryCheckTimer?.cancel();
+    _nameRetryTimer?.cancel();
+    _batteryRetryTimer?.cancel();
+
     super.dispose();
   }
 }
