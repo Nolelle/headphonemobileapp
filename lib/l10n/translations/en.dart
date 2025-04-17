@@ -191,4 +191,18 @@ final Map<String, String> enTranslations = {
   'demo_reset_message':
       'This will clear all hearing tests and presets. This action cannot be undone.',
   'demo_reset_success': 'App has been reset for demonstration',
+
+  // Hearing test toast notifications
+  'press_hear_to_confirm':
+      'Press "I can hear it" if you can hear the tone to confirm your threshold.',
+  'threshold_for_ear':
+      'Threshold for {ear} ear at {frequency}Hz: {db_hl} dB HL ({db_spl} dB SPL)',
+  'left': 'Left',
+  'right': 'Right',
+  'value_recorded': 'Value recorded',
+  'error_setting_up_audio':
+      'Error setting up audio. Please check your earphones connection.',
+  'please_connect_bluetooth':
+      'Please connect Bluetooth headphones for accurate test results',
+  'error_playing_audio': 'Error playing audio. Please check your headphones.',
 };
