@@ -209,6 +209,16 @@ public class MainActivity extends FlutterActivity {
                         case "getBatteryLevel":
                             getBatteryLevel(result);
                             break;
+                        case "openBluetoothSettings":
+                            openBluetoothSettings();
+                            result.success(null);
+                            break;
+                        case "retryGetDeviceName":
+                            retryGetDeviceName(result);
+                            break;
+                        case "retryGetBatteryLevel":
+                            retryGetBatteryLevel(result);
+                            break;
                         default:
                             result.notImplemented();
                             break;
@@ -773,6 +783,62 @@ public class MainActivity extends FlutterActivity {
         }
     }
     
+    // Add method to retry getting device name
+    private void retryGetDeviceName(MethodChannel.Result result) {
+        Log.d("MainActivity", "Retrying to get device name");
+        
+        if (connectedDevice != null) {
+            // Force refresh the name
+            String deviceName = connectedDevice.getName();
+            Log.d("MainActivity", "Retry getting name for device: " + deviceName);
+            
+            if (deviceName != null && !deviceName.equals("Unknown Device")) {
+                // We got a proper name now
+                Map<String, Object> deviceMap = new HashMap<>();
+                deviceMap.put("id", connectedDevice.getAddress());
+                deviceMap.put("name", deviceName);
+                deviceMap.put("type", getDeviceType(connectedDevice));
+                deviceMap.put("audioType", getBluetoothConnectionType());
+                deviceMap.put("batteryLevel", null);
+                
+                result.success(deviceMap);
+                return;
+            } else {
+                // Try to get from bonded devices by address
+                String address = connectedDevice.getAddress();
+                Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+                
+                for (BluetoothDevice device : bondedDevices) {
+                    if (device.getAddress().equals(address)) {
+                        String bondedName = device.getName();
+                        Log.d("MainActivity", "Found bonded device with matching address, name: " + bondedName);
+                        
+                        if (bondedName != null && !bondedName.isEmpty()) {
+                            Map<String, Object> deviceMap = new HashMap<>();
+                            deviceMap.put("id", address);
+                            deviceMap.put("name", bondedName);
+                            deviceMap.put("type", getDeviceType(device));
+                            deviceMap.put("audioType", getBluetoothConnectionType());
+                            deviceMap.put("batteryLevel", null);
+                            
+                            result.success(deviceMap);
+                            return;
+                        }
+                    }
+                }
+                
+                // Still no luck, try to get any connected device as a fallback
+                Map<String, Object> deviceMap = getConnectedDeviceAsMap();
+                result.success(deviceMap);
+                return;
+            }
+        } else {
+            // No device connected, try to find any connected device
+            Map<String, Object> deviceMap = getConnectedDeviceAsMap();
+            result.success(deviceMap);
+        }
+    }
+    
     // Force audio routing with support for both classic and LE Audio
     private void forceAudioRoutingToBluetooth() {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -1097,6 +1163,142 @@ public class MainActivity extends FlutterActivity {
         } catch (Exception e) {
             Log.e("BluetoothFileTransfer", "Error sending file: " + e.getMessage());
             result.error("SEND_ERROR", "Failed to send file: " + e.getMessage(), null);
+        }
+    }
+
+    // Method to retry getting battery level with different approaches
+    private void retryGetBatteryLevel(final MethodChannel.Result result) {
+        Log.d("MainActivity", "Retrying to get battery level");
+        
+        if (!isAnyAudioDeviceConnected() || connectedDevice == null) {
+            result.success(null); // No device connected
+            return;
+        }
+        
+        // First, invalidate any existing cached battery level
+        cachedBatteryLevel = null;
+        
+        // Try HFP approach again (faster and more reliable)
+        Integer hfpBattery = getBatteryLevelFromHfp();
+        if (hfpBattery != null) {
+            Log.d("MainActivity", "Retry successful - Got battery level from HFP: " + hfpBattery);
+            cachedBatteryLevel = hfpBattery;
+            lastBatteryCheckTime = System.currentTimeMillis();
+            result.success(hfpBattery);
+            return;
+        }
+        
+        // If HFP fails and GATT is not already in use, try GATT approach
+        if (!isGattConnecting && mGatt == null) {
+            Log.d("MainActivity", "Retry - Trying to get battery level via GATT...");
+            
+            // Set up a timeout for GATT connection
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (isGattConnecting) {
+                        Log.d("MainActivity", "Retry - GATT battery level request timed out");
+                        isGattConnecting = false;
+                        if (mGatt != null) {
+                            mGatt.disconnect();
+                            mGatt.close();
+                            mGatt = null;
+                        }
+                        
+                        // Return null for the retry attempt
+                        result.success(null);
+                    }
+                }
+            }, 5000); // 5 second timeout
+            
+            // Connect to GATT
+            try {
+                isGattConnecting = true;
+                mGatt = connectedDevice.connectGatt(this, false, new BluetoothGattCallback() {
+                    @Override
+                    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                        if (newState == BluetoothProfile.STATE_CONNECTED) {
+                            Log.d("MainActivity", "Retry - Connected to GATT server");
+                            gatt.discoverServices();
+                        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                            Log.d("MainActivity", "Retry - Disconnected from GATT server");
+                            isGattConnecting = false;
+                            mGatt = null;
+                        }
+                    }
+
+                    @Override
+                    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                        if (status == BluetoothGatt.GATT_SUCCESS) {
+                            BluetoothGattService batteryService = gatt.getService(BATTERY_SERVICE_UUID);
+                            if (batteryService == null) {
+                                Log.d("MainActivity", "Retry - Battery service not found");
+                                gatt.disconnect();
+                                isGattConnecting = false;
+                                mainHandler.post(() -> result.success(null));
+                                return;
+                            }
+
+                            BluetoothGattCharacteristic batteryChar = 
+                                batteryService.getCharacteristic(BATTERY_LEVEL_CHAR_UUID);
+                            if (batteryChar == null) {
+                                Log.d("MainActivity", "Retry - Battery characteristic not found");
+                                gatt.disconnect();
+                                isGattConnecting = false;
+                                mainHandler.post(() -> result.success(null));
+                                return;
+                            }
+
+                            boolean success = gatt.readCharacteristic(batteryChar);
+                            Log.d("MainActivity", "Retry - Reading battery characteristic: " + success);
+                            if (!success) {
+                                gatt.disconnect();
+                                isGattConnecting = false;
+                                mainHandler.post(() -> result.success(null));
+                            }
+                        } else {
+                            Log.d("MainActivity", "Retry - Service discovery failed: " + status);
+                            gatt.disconnect();
+                            isGattConnecting = false;
+                            mainHandler.post(() -> result.success(null));
+                        }
+                    }
+
+                    @Override
+                    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, 
+                                                  int status) {
+                        if (status == BluetoothGatt.GATT_SUCCESS) {
+                            if (BATTERY_LEVEL_CHAR_UUID.equals(characteristic.getUuid())) {
+                                int batteryLevel = characteristic.getIntValue(
+                                    BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                                Log.d("MainActivity", "Retry - Battery level from GATT: " + batteryLevel);
+                                
+                                // Update cached battery level
+                                cachedBatteryLevel = batteryLevel;
+                                lastBatteryCheckTime = System.currentTimeMillis();
+                                
+                                gatt.disconnect();
+                                isGattConnecting = false;
+                                
+                                mainHandler.post(() -> result.success(batteryLevel));
+                            }
+                        } else {
+                            Log.d("MainActivity", "Retry - Failed to read characteristic: " + status);
+                            gatt.disconnect();
+                            isGattConnecting = false;
+                            mainHandler.post(() -> result.success(null));
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Retry - Error connecting to GATT: " + e.getMessage());
+                isGattConnecting = false;
+                result.success(null);
+            }
+        } else {
+            // If GATT is already in use, just return null
+            Log.d("MainActivity", "Retry - GATT already in use, returning null");
+            result.success(null);
         }
     }
 }

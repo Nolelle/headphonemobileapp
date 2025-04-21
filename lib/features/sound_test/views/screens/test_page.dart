@@ -135,7 +135,7 @@ class _TestPageState extends State<TestPage> {
       debugPrint("Error initializing audio: $e");
       if (mounted) {
         _showCustomToast(context,
-            'Error setting up audio. Please check your earphones connection.');
+            AppLocalizations.of(context).translate('error_setting_up_audio'));
       }
     }
   }
@@ -424,7 +424,8 @@ class _TestPageState extends State<TestPage> {
   }
 
   void _showSaveConfirmationDialog(BuildContext context) {
-    _showCustomToast(context, 'Value recorded');
+    _showCustomToast(
+        context, AppLocalizations.of(context).translate('value_recorded'));
   }
 
   void _showCustomToast(BuildContext context, String message) {
@@ -578,7 +579,8 @@ class _TestPageState extends State<TestPage> {
     } catch (e) {
       debugPrint("AUDIO DEBUG: Error playing frequency: $e");
       if (mounted) {
-        _showCustomToast(context, 'Error playing audio: $e');
+        _showCustomToast(context,
+            AppLocalizations.of(context).translate('error_playing_audio'));
       }
     }
   }
@@ -667,7 +669,7 @@ class _TestPageState extends State<TestPage> {
 
         // Show message about confirmation phase - keeping this toast as it's user guidance
         _showCustomToast(context,
-            'Press "I can hear it" if you can hear the tone to confirm your threshold.');
+            AppLocalizations.of(context).translate('press_hear_to_confirm'));
 
         // Go back up 5dB
         incrementFrequencyVolume(frequency_player);
@@ -698,8 +700,20 @@ class _TestPageState extends State<TestPage> {
         double dbSPLValue = convertVolumeToDBSPL(current_volume);
         double dbHLValue = convertDBSPLtoDBHL(dbSPLValue, frequency);
 
-        _showCustomToast(context,
-            'Threshold for ${current_ear == "L" ? "Left" : "Right"} ear at ${frequencyText}Hz: ${dbHLValue.toStringAsFixed(1)} dB HL (${dbSPLValue.toStringAsFixed(1)} dB SPL)');
+        // Translate left or right ear
+        final String earText = current_ear == "L"
+            ? AppLocalizations.of(context).translate('left')
+            : AppLocalizations.of(context).translate('right');
+
+        // Format the threshold message with the translated template
+        final String thresholdMessage = AppLocalizations.of(context)
+            .translate('threshold_for_ear')
+            .replaceAll('{ear}', earText)
+            .replaceAll('{frequency}', frequencyText)
+            .replaceAll('{db_hl}', dbHLValue.toStringAsFixed(1))
+            .replaceAll('{db_spl}', dbSPLValue.toStringAsFixed(1));
+
+        _showCustomToast(context, thresholdMessage);
 
         // Stop current tone
         stopSound();
@@ -745,8 +759,8 @@ class _TestPageState extends State<TestPage> {
       await testPlayer.play(AssetSource('audio/1000Hz.wav'));
       debugPrint("TEST AUDIO: Play method completed");
 
-      _showCustomToast(
-          context, "Testing sound playback - you should hear a 1kHz tone");
+      _showCustomToast(context,
+          AppLocalizations.of(context).translate('testing_sound_playback'));
 
       // Clean up after 3 seconds
       await Future.delayed(const Duration(seconds: 3));
@@ -754,7 +768,8 @@ class _TestPageState extends State<TestPage> {
       await testPlayer.dispose();
     } catch (e) {
       debugPrint("TEST AUDIO: Error in test play: $e");
-      _showCustomToast(context, "Error testing audio: $e");
+      _showCustomToast(context,
+          AppLocalizations.of(context).translate('error_testing_audio'));
     }
   }
 
@@ -1598,8 +1613,10 @@ class _TestPageState extends State<TestPage> {
       if (!isConnected) {
         debugPrint("WARNING: No Bluetooth headset connected!");
         if (mounted) {
-          _showCustomToast(context,
-              'Please connect Bluetooth headphones for accurate test results');
+          _showCustomToast(
+              context,
+              AppLocalizations.of(context)
+                  .translate('please_connect_bluetooth'));
         }
       } else {
         debugPrint("Bluetooth headset connected, proceeding with test");

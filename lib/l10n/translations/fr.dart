@@ -200,4 +200,19 @@ final Map<String, String> frTranslations = {
       'Cela effacera tous les tests auditifs et préréglages. Cette action ne peut pas être annulée.',
   'demo_reset_success':
       'L\'application a été réinitialisée pour la démonstration',
+
+  // Hearing test toast notifications
+  'press_hear_to_confirm':
+      'Appuyez sur "Je l\'entends!" si vous entendez le son pour confirmer votre seuil.',
+  'threshold_for_ear':
+      'Seuil pour l\'oreille {ear} à {frequency}Hz: {db_hl} dB HL ({db_spl} dB SPL)',
+  'left': 'Gauche',
+  'right': 'Droite',
+  'value_recorded': 'Valeur enregistrée',
+  'error_setting_up_audio':
+      'Erreur de configuration audio. Veuillez vérifier la connexion de vos écouteurs.',
+  'please_connect_bluetooth':
+      'Veuillez connecter des écouteurs Bluetooth pour des résultats de test précis',
+  'error_playing_audio':
+      'Erreur de lecture audio. Veuillez vérifier vos écouteurs.',
 };

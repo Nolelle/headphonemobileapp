@@ -214,12 +214,37 @@ class BluetoothPlatform {
     }
   }
 
+  // Retry getting device name
+  static Future<BluetoothDevice?> retryGetDeviceName() async {
+    try {
+      final Map<dynamic, dynamic>? result =
+          await platform.invokeMethod('retryGetDeviceName');
+      if (result != null) {
+        return BluetoothDevice.fromMap(result);
+      }
+      return null;
+    } on PlatformException catch (e) {
+      print("Failed to retry getting device name: ${e.message}");
+      return null;
+    }
+  }
+
   // Get battery level of connected device
   static Future<int?> getBatteryLevel() async {
     try {
       return await platform.invokeMethod('getBatteryLevel');
     } on PlatformException catch (e) {
       print("Failed to get battery level: ${e.message}");
+      return null;
+    }
+  }
+
+  // Retry getting battery level
+  static Future<int?> retryGetBatteryLevel() async {
+    try {
+      return await platform.invokeMethod('retryGetBatteryLevel');
+    } on PlatformException catch (e) {
+      print("Failed to retry getting battery level: ${e.message}");
       return null;
     }
   }
