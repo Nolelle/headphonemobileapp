@@ -353,7 +353,7 @@ class _PresetPageState extends State<PresetPage> {
                   textColor, subtitleColor, appLocalizations),
               _buildSoundEnhancementSection(
                   textColor, subtitleColor, appLocalizations),
-              _buildShareButton(appLocalizations),
+              // _buildShareButton(appLocalizations), // Commented out share button
             ],
           ),
         ),

@@ -424,6 +424,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
               ],
             ),
             const SizedBox(height: 16),
+            /* Commenting out the Share via Bluetooth button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -441,6 +442,7 @@ class _SoundTestPageState extends State<SoundTestPage> {
                 ),
               ),
             ),
+            */
           ],
         ),
       ),

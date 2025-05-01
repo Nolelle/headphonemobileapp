@@ -1,299 +1,253 @@
 # Mobile Audio Companion App
 
-A Flutter application designed to enhance the user experience of audio headphone devices through precise preset management, sound testing, and Bluetooth connectivity. This app supports both Classic Bluetooth and LE Audio devices (Android 12+).
+A Flutter application designed to enhance the user experience of audio headphone devices through precise preset management, sound testing, and Bluetooth connectivity.
+
+## Table of Contents
+
+- [Mobile Audio Companion App](#mobile-audio-companion-app)
+  - [Table of Contents](#table-of-contents)
+  - [Getting Started: Setup and Installation](#getting-started-setup-and-installation)
+    - [Prerequisites](#prerequisites)
+    - [Installation Steps](#installation-steps)
+    - [Platform-Specific Configuration](#platform-specific-configuration)
+    - [Running the Application](#running-the-application)
+    - [Building for Release](#building-for-release)
+  - [Project Overview](#project-overview)
+  - [Project Directory Overview](#project-directory-overview)
+  - [Architecture Overview](#architecture-overview)
+  - [Key Features](#key-features)
+    - [Preset Management](#preset-management)
+    - [Bluetooth Connectivity](#bluetooth-connectivity)
+    - [Sound Testing](#sound-testing)
+    - [Theme Support](#theme-support)
+    - [Multilingual Support](#multilingual-support)
+  - [Environment Variables (.env)](#environment-variables-env)
+  - [Testing](#testing)
+  - [Development Guidelines](#development-guidelines)
+  - [Dependencies](#dependencies)
+
+## Getting Started: Setup and Installation
+
+Follow these steps to set up the project environment and run the application.
+
+### Prerequisites
+
+- **Flutter SDK:** Version 3.5.4. You can download it from the [Flutter official website](https://flutter.dev/docs/get-started/install). Ensure the `flutter` command is in your PATH.
+- **Dart SDK:** Included with the Flutter SDK.
+- **IDE:** Android Studio or Visual Studio Code with Flutter and Dart extensions installed.
+- **For iOS Development:**
+  - macOS operating system.
+  - Xcode (check Flutter docs for the minimum compatible version for Flutter 3.5.4) with command-line tools installed (`xcode-select --install`).
+  - CocoaPods (`sudo gem install cocoapods`).
+- **For Android Development:**
+  - Android Studio (latest recommended).
+  - Android SDK Platform (check Flutter docs or `android/app/build.gradle` for `compileSdkVersion`).
+  - Android SDK Build-Tools (check Flutter docs or `android/app/build.gradle` for `buildToolsVersion`).
+
+### Installation Steps
+
+1. **Clone the Repository:**
+
+    ```bash
+    git clone <repository-url> # Replace <repository-url> with the actual repo URL
+    cd headphonemobileapp # Or your project's root directory name
+    ```
+
+2. **Install Dependencies:**
+
+    ```bash
+    flutter pub get
+    ```
+
+    This command downloads all the necessary Dart and Flutter packages listed in `pubspec.yaml`.
+
+### Platform-Specific Configuration
+
+**iOS (Requires macOS and Xcode):**
+
+- **Bluetooth Permissions:** You MUST add descriptions for Bluetooth usage in the `ios/Runner/Info.plist` file. Open this file and add the following keys with appropriate user-facing descriptions explaining *why* the app needs Bluetooth access:
+
+    ```xml
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>This app needs Bluetooth access to connect to and manage your headphones.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>This app needs Bluetooth access to discover and connect to your headphones.</string>
+    ```
+
+- **Location Permissions (If needed for BLE Scanning):** If Bluetooth Low Energy scanning doesn't work reliably, you might also need to add location permission descriptions:
+
+    ```xml
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app needs location access to scan for nearby Bluetooth Low Energy devices.</string>
+    ```
+
+- **CocoaPods:** Ensure CocoaPods are installed and updated:
+
+    ```bash
+    cd ios
+    pod install --repo-update
+    cd ..
+    ```
+
+- **Open Xcode:** Open the `ios/Runner.xcworkspace` file in Xcode to configure code signing (select your development team) and potentially adjust build settings if needed.
+
+**Android:**
+
+- **Permissions:** The required permissions (`BLUETOOTH`, `BLUETOOTH_ADMIN`, `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`) are already declared in `android/app/src/main/AndroidManifest.xml`. The application code handles requesting these permissions from the user at runtime when needed.
+- **Android SDK:** Ensure you have the required Android SDK Platform and Build-Tools installed via Android Studio's SDK Manager. Check the versions specified in `android/app/build.gradle`.
+- **File Provider:** Note that a `FileProvider` is configured in `AndroidManifest.xml` (authorities: `${applicationId}.fileprovider`) used with `res/xml/file_paths.xml`. This is typically used for securely sharing files generated by the app.
+
+### Running the Application
+
+1. **Ensure a Device/Emulator is Ready:**
+    - Connect a physical Android/iOS device (with debugging enabled).
+    - Or, launch an Android Emulator or iOS Simulator.
+    - Verify the device is recognized by Flutter: `flutter devices`
+
+2. **Run the App:**
+
+    ```bash
+    flutter run
+    ```
+
+    - If multiple devices are connected, select the target device using: `flutter run -d <device_id>` (get `<device_id>` from `flutter devices`).
+
+### Building for Release
+
+- **Android:** Follow the Flutter guide for [Building and releasing an Android app](https://flutter.dev/docs/deployment/android). This involves setting up signing keys.
+
+    ```bash
+    flutter build apk --release
+    # or for app bundle
+    flutter build appbundle --release
+    ```
+
+- **iOS:** Follow the Flutter guide for [Building and releasing an iOS app](https://flutter.dev/docs/deployment/ios). This involves configuring signing and capabilities in Xcode.
+
+    ```bash
+    flutter build ios --release
+    ```
 
 ## Project Overview
 
 This mobile application serves as a companion for audio headphone devices, allowing users to:
 
-- Create and manage custom audio presets with fine-tuned EQ settings
-- Perform hearing tests across multiple frequencies to generate personalized audio profiles
-- Connect to Bluetooth headphone devices with support for both Classic and LE Audio (Android 12+)
-- Monitor headphone battery levels (where supported by the device)
-- Customize application settings including themes and languages (English/French)
+- Create and manage custom audio presets with fine-tuned EQ settings.
+- Perform hearing tests across multiple frequencies to generate personalized audio profiles.
+- Connect to Bluetooth headphone devices (Classic and LE Audio - Android 12+).
+- Monitor headphone battery levels (if supported).
+- Customize application settings like themes and language (English/French).
 
-## Project Structure
+## Project Directory Overview
 
-The project follows a feature-first architecture with clean separation of concerns:
+The project follows a feature-first architecture:
 
 ```
-lib/
-├── config/                    # App-wide configuration
-│   └── theme.dart            # Custom theme and styling definitions (light/dark themes)
-│
-├── core/                     # Core application components
-│   ├── app.dart             # Main app configuration
-│   └── main_nav.dart        # Main navigation component
-│
-├── features/                  # Feature modules
-│   ├── bluetooth/           # Bluetooth connectivity feature
-│   │   ├── platform/        # Platform-specific Bluetooth implementation
-│   │   ├── providers/       # Bluetooth state management
-│   │   ├── services/        # BLE data services
-│   │   └── views/           # Bluetooth UI components
-│   │
-│   ├── presets/              # Core preset management feature
-│   │   ├── models/           # Data models
-│   │   ├── repositories/     # Data access layer
-│   │   ├── providers/        # State management
-│   │   └── views/           # UI components
-│   │
-│   ├── settings/            # Application settings feature
-│   │   ├── models/          # Settings data models
-│   │   ├── repositories/    # Settings data access
-│   │   ├── providers/       # Settings state management
-│   │   └── views/          # Settings UI components
-│   │
-│   └── sound_test/         # Audio testing feature
-│       ├── models/         # Sound test data models
-│       ├── repositories/   # Sound test data access
-│       ├── providers/      # Sound test state management
-│       └── views/          # Sound test UI components
-│
-├── l10n/                    # Localization resources
-│   ├── app_localizations.dart  # Localization manager
-│   └── translations/        # Translation files
-│
-├── shared/                 # Shared utilities and components
-│
-└── main.dart               # Application entry point
+├── android/                  # Android platform-specific code and configuration
+├── assets/                   # Static assets (images, audio files)
+├── ios/                      # iOS platform-specific code and configuration
+├── lib/                      # Main Dart application code
+│   ├── config/               # App-wide configuration (e.g., themes)
+│   ├── core/                 # Core app components (main app, navigation)
+│   ├── features/             # Individual feature modules (Bluetooth, Presets, Settings, Sound Test)
+│   │   ├── bluetooth/
+│   │   ├── presets/
+│   │   ├── settings/
+│   │   └── sound_test/
+│   ├── l10n/                 # Localization files and setup
+│   ├── shared/               # Shared widgets or utilities
+│   └── main.dart             # Application entry point
+├── test/                     # Automated tests (unit, widget, integration)
+├── pubspec.yaml              # Project dependencies and metadata
+└── README.md                 # This file
 ```
 
 ## Architecture Overview
 
-The application follows these key architectural principles:
+Key architectural principles:
 
-1. **Feature-First Organization**: Each major feature is self-contained with its own models, views, and business logic.
-
-2. **Clean Layer Separation**:
-   - Models: Define data structures
-   - Repositories: Handle data persistence
-   - Providers: Manage application state
-   - Views: Present UI and handle user interactions
-
-3. **State Management**:
-   - Uses Provider pattern for efficient state management
-   - Maintains clean separation between UI and business logic
-   - Implements observable pattern for reactive updates
-
-4. **Data Persistence**:
-   - SharedPreferences for local storage
-   - JSON-based data structure for flexibility
-   - Efficient preset management system
-   - Persists user preferences (theme, language)
-
-5. **Internationalization**:
-   - Supports multiple languages (English, French)
-   - Custom localization system
-   - Language switching with persistent preferences
-
-6. **Lifecycle Management**:
-   - Robust Bluetooth connection management across app lifecycle
-   - Intelligent handling of app foreground/background transitions
-   - Multi-phase connection detection approach
+1. **Feature-First Organization**: Each major feature (Bluetooth, Presets, etc.) is grouped in its own directory within `lib/features/`.
+2. **Layer Separation**: Within features, code is often separated into:
+    - `models/`: Data structures.
+    - `repositories/`: Data access and persistence logic.
+    - `providers/` or `controllers/`: State management and business logic.
+    - `views/` or `widgets/`: UI components.
+3. **State Management**: Uses the `provider` package for managing application state reactively.
+4. **Data Persistence**: Uses `shared_preferences` for storing settings and potentially presets locally.
+5. **Internationalization**: Supports English and French using Flutter's localization system (`intl` package, files in `lib/l10n/`).
 
 ## Key Features
 
 ### Preset Management
 
-- Create, edit, and delete audio presets
-- Adjust volume, sound balance, and enhancement settings
-- Fine-tune bass, mid-range, and treble frequencies
-- Enable/disable features like background noise reduction and wind noise reduction
-- Real-time feedback with optimized notifications
-- Intelligent auto-save functionality
+- Create, edit, delete audio presets with adjustments for volume, balance, EQ (bass, mid, treble), and enhancements (noise/wind reduction).
+- Real-time feedback and auto-save.
 
 ### Bluetooth Connectivity
 
-- Connect to Bluetooth headphone devices
-- Support for both Classic Bluetooth and LE Audio (on Android 12+)
-- Send preset configurations to connected devices using BLE characteristics
-- Retrieve battery level information from supported devices
-- Monitor connection status with automatic reconnection
-- Force audio routing for reliable audio playback
-- Handle device reconnection gracefully across app lifecycle
+- Connect to Classic Bluetooth and LE Audio devices (Android 12+).
+- Send preset data via BLE characteristics.
+- Retrieve battery levels.
+- Connection status monitoring and reconnection logic.
 
 ### Sound Testing
 
-- Perform hearing tests across multiple frequencies (250Hz, 500Hz, 1kHz, 2kHz, 4kHz)
-- Audiogram visualization showing hearing thresholds by frequency
-- User-friendly interface with clear guidance throughout the test
-- Generate personalized audio profiles based on test results
-- Convert test results between dB SPL and dB HL for audiological accuracy
-- Create presets optimized for user's specific hearing profile
+- Perform hearing tests across frequencies (250Hz-8kHz).
+- Generate personalized audiograms and presets based on results.
+- Audiologically relevant dB SPL/HL conversions.
 
 ### Theme Support
 
-- Light and dark mode themes
-- Consistent UI elements across themes with proper contrast
-- Responsive design that adapts to different screen sizes
-- Persistent theme preferences across app sessions
+- Light and dark modes with persistent user preference.
+- Consistent UI styling defined in `lib/config/theme.dart`.
 
 ### Multilingual Support
 
-- English and French language options with complete translations
-- Dynamic language switching without app restart
-- Persistent language preferences
-- Internationalized number formatting and date handling
+- English and French translations managed via `lib/l10n/`.
+- Dynamic language switching with persistent preference.
 
-## Setup and Development
+## Environment Variables (.env)
 
-### Prerequisites
+This project **does not** currently require a `.env` file for environment variable configuration. All necessary configurations are handled within the standard Flutter build process or platform-specific files (`Info.plist`, `AndroidManifest.xml`).
 
-- Flutter SDK (3.5.0 or higher)
-- Dart SDK (3.0.0 or higher)
-- Android Studio or VS Code with Flutter extensions
-- iOS development setup (for iOS deployment)
+## Testing
 
-### Installation
+The project includes tests located in the `test/` directory:
 
-1. Clone the repository:
+- **Unit Tests**: Validate individual functions/classes.
+- **Widget Tests**: Test individual UI components.
+- **Integration Tests** (`integration_test/`): Test end-to-end feature flows.
 
-   ```bash
-   git clone https://github.com/Nolelle/headphonemobileapp.git
-   ```
-
-2. Navigate to project directory:
-
-   ```bash
-   cd headphonemobileapp
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   flutter pub get
-   ```
-
-4. Run the application:
-
-   ```bash
-   flutter run
-   ```
-
-### Testing
-
-The project includes a comprehensive testing suite:
-
-- **Unit Tests**: Validate individual components and functions
-- **Widget Tests**: Ensure UI components work correctly
-- **Integration Tests**: Test feature workflows end-to-end
-- **Mock Services**: Simulate Bluetooth connections for reliable testing
-
-Run tests with:
+Run tests using standard Flutter commands:
 
 ```bash
+# Run unit and widget tests
 flutter test
-```
 
-For integration tests:
-
-```bash
+# Run integration tests (requires a connected device/emulator)
 flutter test integration_test
 ```
 
-### Development Guidelines
+## Development Guidelines
 
-1. **Code Organization**:
-   - Follow feature-first architecture
-   - Maintain separation of concerns
-   - Keep features self-contained
-
-2. **Style Guide**:
-   - Use `flutter format .` for consistent formatting
-   - Follow analysis_options.yaml lint rules
-   - Document public APIs thoroughly
-
-3. **State Management**:
-   - Implement providers for complex state
-   - Use StateNotifier for immutable state
-   - Maintain unidirectional data flow
-
-4. **Localization**:
-   - Add new strings to both language files
-   - Use the AppLocalizations.translate() method for all user-facing strings
-   - Test UI in all supported languages
-
-5. **Theming**:
-   - Use Theme.of(context) to access theme properties
-   - Test UI in both light and dark modes
-   - Ensure sufficient contrast in all themes
-
-6. **Testing**:
-   - Write unit tests for business logic
-   - Create widget tests for UI components
-   - Implement integration tests for features
-   - Use mock Bluetooth services for headphone interaction testing
-
-## Building for Production
-
-Generate production builds using:
-
-For Android:
-
-```bash
-flutter build apk --release
-```
-
-For iOS:
-
-```bash
-flutter build ios --release
-```
+- **Code Organization**: Adhere to the feature-first structure.
+- **Style Guide**: Use `flutter format .` and follow `analysis_options.yaml` rules. Document public APIs.
+- **State Management**: Utilize `provider` effectively.
+- **Localization**: Add new user-facing strings to `lib/l10n/translations/` files and use `AppLocalizations.translate()`.
+- **Theming**: Use `Theme.of(context)` and test in both light/dark modes.
+- **Testing**: Write appropriate tests for new logic and UI components.
 
 ## Dependencies
 
-The app relies on the following key dependencies:
+Key packages used:
 
-- **Provider**: For state management
-- **Shared Preferences**: For data persistence
-- **AudioPlayers**: For audio playback during sound tests
-- **Permission Handler**: For managing Bluetooth and audio permissions
-- **Intl**: For internationalization support
-- **Flutter Localizations**: For language support
-- **URL Launcher**: For opening external links
-- **Path Provider**: For file system access
+- `provider`: State management
+- `shared_preferences`: Local data persistence
+- `audioplayers`: Audio playback for sound tests
+- `permission_handler`: Requesting device permissions
+- `intl`: Internationalization and localization
+- `flutter_localizations`: Built-in localization delegates
+- `url_launcher`: Opening external URLs
+- `external_app_launcher`: Launching external applications
 
-## Platform-Specific Implementation
-
-### Android
-
-The app implements native Bluetooth functionality through `MethodChannel` to communicate with the Android Bluetooth APIs. It supports:
-
-- Classic Bluetooth audio (A2DP profile)
-- LE Audio (on Android 12+ devices)
-- Battery level monitoring via GATT services
-- Permission handling for Android 12+ Bluetooth permissions
-
-### iOS
-
-The app uses Flutter plugins to interface with iOS Bluetooth APIs, with standard CoreBluetooth and AVAudioSession handling.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/NewFeature`)
-3. Commit your changes (`git commit -m 'Add NewFeature'`)
-4. Push to the branch (`git push origin feature/NewFeature`)
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Technical Documentation
-
-For detailed technical documentation about specific components:
-
-- [State Management](docs/state-management.md)
-- [Data Models](docs/data-models.md)
-- [UI Components](docs/ui-components.md)
-- [Testing Guide](docs/testing.md)
-- [Localization](docs/localization.md)
-- [Theming](docs/theming.md)
-
-## Acknowledgments
-
-- Flutter team for the framework
-- Contributors and testers
-- Open source community for various packages used in the project
+See `pubspec.yaml` for a full list of dependencies.
